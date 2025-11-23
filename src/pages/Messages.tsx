@@ -6,11 +6,11 @@ import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
 import Navbar from "@/components/Navbar";
-import { ArrowLeft, Send, Check, CheckCheck, Paperclip, X, Download, FileIcon, Smile, Search, Mic, Trash2, MoreVertical, Edit2, Pin, PinOff, Forward, FileText, Plus } from "lucide-react";
+import { ArrowLeft, Send, Check, CheckCheck, Paperclip, X, Download, FileIcon, Smile, Search, Mic, Trash2, MoreVertical, Edit2, Pin, PinOff, Forward, FileText, Plus, Filter, Calendar } from "lucide-react";
 import { User, Session } from "@supabase/supabase-js";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { VoiceRecorder } from "@/components/VoiceRecorder";
 import { AudioPlayer } from "@/components/AudioPlayer";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -37,6 +37,9 @@ import {
 } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { Calendar as CalendarComponent } from "@/components/ui/calendar";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { format } from "date-fns";
 
 interface Reaction {
   id: string;
@@ -98,6 +101,11 @@ const Messages = () => {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [searchResults, setSearchResults] = useState<string[]>([]);
+  const [showAdvancedSearch, setShowAdvancedSearch] = useState(false);
+  const [searchSender, setSearchSender] = useState<string>("all");
+  const [searchType, setSearchType] = useState<string>("all");
+  const [searchDateFrom, setSearchDateFrom] = useState<Date | undefined>();
+  const [searchDateTo, setSearchDateTo] = useState<Date | undefined>();
   const [isRecordingVoice, setIsRecordingVoice] = useState(false);
   const [messageToDelete, setMessageToDelete] = useState<string | null>(null);
   const [editingMessageId, setEditingMessageId] = useState<string | null>(null);
@@ -864,20 +872,65 @@ const Messages = () => {
   // Search functionality
   const handleSearch = (query: string) => {
     setSearchQuery(query);
-    
-    if (!query.trim()) {
+    performSearch(query, searchSender, searchType, searchDateFrom, searchDateTo);
+  };
+
+  const performSearch = (
+    query: string,
+    sender: string,
+    type: string,
+    dateFrom: Date | undefined,
+    dateTo: Date | undefined
+  ) => {
+    if (!query.trim() && sender === "all" && type === "all" && !dateFrom && !dateTo) {
       setSearchResults([]);
       return;
     }
 
-    const results = messages
-      .filter(msg => 
+    const results = messages.filter(msg => {
+      // Keyword filter
+      const matchesKeyword = !query.trim() || 
         msg.content.toLowerCase().includes(query.toLowerCase()) ||
-        msg.sender_name.toLowerCase().includes(query.toLowerCase())
-      )
-      .map(msg => msg.id);
+        msg.sender_name.toLowerCase().includes(query.toLowerCase());
+
+      // Sender filter
+      const matchesSender = sender === "all" || msg.sender_id === sender;
+
+      // Type filter
+      let matchesType = true;
+      if (type === "text") {
+        matchesType = !msg.file_url;
+      } else if (type === "image") {
+        matchesType = msg.file_type?.startsWith("image/") || false;
+      } else if (type === "file") {
+        matchesType = !!msg.file_url && !msg.file_type?.startsWith("image/") && !msg.file_type?.startsWith("audio/");
+      } else if (type === "voice") {
+        matchesType = msg.file_type?.startsWith("audio/") || false;
+      }
+
+      // Date range filter
+      const messageDate = new Date(msg.created_at);
+      const matchesDateFrom = !dateFrom || messageDate >= dateFrom;
+      const matchesDateTo = !dateTo || messageDate <= new Date(dateTo.setHours(23, 59, 59, 999));
+
+      return matchesKeyword && matchesSender && matchesType && matchesDateFrom && matchesDateTo;
+    }).map(msg => msg.id);
     
     setSearchResults(results);
+  };
+
+  const handleApplyFilters = () => {
+    performSearch(searchQuery, searchSender, searchType, searchDateFrom, searchDateTo);
+  };
+
+  const handleClearFilters = () => {
+    setSearchQuery("");
+    setSearchSender("all");
+    setSearchType("all");
+    setSearchDateFrom(undefined);
+    setSearchDateTo(undefined);
+    setSearchResults([]);
+    setShowAdvancedSearch(false);
   };
 
   const highlightText = (text: string, query: string) => {
@@ -895,9 +948,18 @@ const Messages = () => {
     );
   };
 
-  const filteredMessages = searchQuery.trim() 
+  const filteredMessages = searchQuery.trim() || searchSender !== "all" || searchType !== "all" || searchDateFrom || searchDateTo
     ? messages.filter(msg => searchResults.includes(msg.id))
     : messages;
+
+  // Get unique senders for filter
+  const uniqueSenders = Array.from(new Set(messages.map(msg => ({ id: msg.sender_id, name: msg.sender_name }))))
+    .reduce((acc, sender) => {
+      if (!acc.find(s => s.id === sender.id)) {
+        acc.push(sender);
+      }
+      return acc;
+    }, [] as { id: string; name: string }[]);
 
   // Separate pinned and unpinned messages
   const pinnedMessages = filteredMessages.filter(msg => msg.pinned);
@@ -1035,34 +1097,125 @@ const Messages = () => {
           
           <CardContent className="flex-1 flex flex-col p-0">
             {/* Search bar */}
-            <div className="p-4 border-b">
+            <div className="p-4 border-b space-y-3">
               <div className="relative">
                 <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                 <Input
                   value={searchQuery}
                   onChange={(e) => handleSearch(e.target.value)}
                   placeholder="Search messages..."
-                  className="pl-10"
+                  className="pl-10 pr-20"
                 />
-                {searchQuery && (
-                  <div className="absolute right-3 top-1/2 transform -translate-y-1/2 flex items-center gap-2">
-                    <span className="text-xs text-muted-foreground">
-                      {searchResults.length} result{searchResults.length !== 1 ? 's' : ''}
+                <div className="absolute right-2 top-1/2 transform -translate-y-1/2 flex items-center gap-2">
+                  {(searchQuery || searchResults.length > 0) && (
+                    <span className="text-xs text-muted-foreground whitespace-nowrap">
+                      {searchResults.length} result{searchResults.length !== 1 ? "s" : ""}
                     </span>
+                  )}
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => setShowAdvancedSearch(!showAdvancedSearch)}
+                    className="h-7 px-2"
+                  >
+                    <Filter className={`h-3 w-3 ${showAdvancedSearch ? "text-primary" : ""}`} />
+                  </Button>
+                  {(searchQuery || searchSender !== "all" || searchType !== "all" || searchDateFrom || searchDateTo) && (
                     <Button
                       variant="ghost"
                       size="sm"
-                      onClick={() => {
-                        setSearchQuery("");
-                        setSearchResults([]);
-                      }}
-                      className="h-5 w-5 p-0"
+                      onClick={handleClearFilters}
+                      className="h-7 w-7 p-0"
                     >
                       <X className="h-3 w-3" />
                     </Button>
-                  </div>
-                )}
+                  )}
+                </div>
               </div>
+
+              {/* Advanced Search Filters */}
+              {showAdvancedSearch && (
+                <div className="grid grid-cols-2 gap-3 p-3 bg-muted/30 rounded-lg">
+                  <div className="space-y-1.5">
+                    <Label className="text-xs">Sender</Label>
+                    <Select value={searchSender} onValueChange={setSearchSender}>
+                      <SelectTrigger className="h-9">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent className="bg-background">
+                        <SelectItem value="all">All Senders</SelectItem>
+                        {uniqueSenders.map((sender) => (
+                          <SelectItem key={sender.id} value={sender.id}>
+                            {sender.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  <div className="space-y-1.5">
+                    <Label className="text-xs">Message Type</Label>
+                    <Select value={searchType} onValueChange={setSearchType}>
+                      <SelectTrigger className="h-9">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent className="bg-background">
+                        <SelectItem value="all">All Types</SelectItem>
+                        <SelectItem value="text">Text Only</SelectItem>
+                        <SelectItem value="image">Images</SelectItem>
+                        <SelectItem value="file">Files</SelectItem>
+                        <SelectItem value="voice">Voice Messages</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  <div className="space-y-1.5">
+                    <Label className="text-xs">From Date</Label>
+                    <Popover>
+                      <PopoverTrigger asChild>
+                        <Button variant="outline" className="w-full h-9 justify-start text-left font-normal">
+                          <Calendar className="mr-2 h-4 w-4" />
+                          {searchDateFrom ? format(searchDateFrom, "MMM dd, yyyy") : "Pick date"}
+                        </Button>
+                      </PopoverTrigger>
+                      <PopoverContent className="w-auto p-0 bg-background" align="start">
+                        <CalendarComponent
+                          mode="single"
+                          selected={searchDateFrom}
+                          onSelect={setSearchDateFrom}
+                          initialFocus
+                        />
+                      </PopoverContent>
+                    </Popover>
+                  </div>
+
+                  <div className="space-y-1.5">
+                    <Label className="text-xs">To Date</Label>
+                    <Popover>
+                      <PopoverTrigger asChild>
+                        <Button variant="outline" className="w-full h-9 justify-start text-left font-normal">
+                          <Calendar className="mr-2 h-4 w-4" />
+                          {searchDateTo ? format(searchDateTo, "MMM dd, yyyy") : "Pick date"}
+                        </Button>
+                      </PopoverTrigger>
+                      <PopoverContent className="w-auto p-0 bg-background" align="start">
+                        <CalendarComponent
+                          mode="single"
+                          selected={searchDateTo}
+                          onSelect={setSearchDateTo}
+                          initialFocus
+                        />
+                      </PopoverContent>
+                    </Popover>
+                  </div>
+
+                  <div className="col-span-2">
+                    <Button onClick={handleApplyFilters} className="w-full h-9">
+                      Apply Filters
+                    </Button>
+                  </div>
+                </div>
+              )}
             </div>
 
             <div 
