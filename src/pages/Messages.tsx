@@ -67,6 +67,9 @@ const Messages = () => {
     loadConversation();
     loadMessages();
 
+    // Mark messages as read
+    markMessagesAsRead();
+
     // Subscribe to realtime message updates
     const channel = supabase
       .channel('messages-channel')
@@ -80,8 +83,18 @@ const Messages = () => {
         },
         (payload) => {
           console.log('New message received:', payload);
-          setMessages(prev => [...prev, payload.new as Message]);
+          const newMessage = payload.new as Message;
+          setMessages(prev => [...prev, newMessage]);
           scrollToBottom();
+          
+          // Mark new message as read if it's not from current user
+          if (newMessage.sender_id !== user.id) {
+            supabase
+              .from("messages")
+              .update({ is_read: true })
+              .eq("id", newMessage.id)
+              .then(() => console.log("Message marked as read"));
+          }
         }
       )
       .subscribe();
@@ -133,6 +146,21 @@ const Messages = () => {
     }
 
     setLoading(false);
+  };
+
+  const markMessagesAsRead = async () => {
+    if (!user || !conversationId) return;
+
+    const { error } = await supabase
+      .from("messages")
+      .update({ is_read: true })
+      .eq("conversation_id", conversationId)
+      .neq("sender_id", user.id)
+      .eq("is_read", false);
+
+    if (error) {
+      console.error("Error marking messages as read:", error);
+    }
   };
 
   const scrollToBottom = () => {

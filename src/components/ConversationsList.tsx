@@ -10,6 +10,7 @@ interface Conversation {
   mentor_id: string;
   mentor_name: string;
   last_message_at: string;
+  unread_count: number;
 }
 
 export const ConversationsList = ({ userId }: { userId: string }) => {
@@ -19,26 +20,66 @@ export const ConversationsList = ({ userId }: { userId: string }) => {
 
   useEffect(() => {
     if (!userId) return;
-    loadConversations();
+
+    const fetchConversations = async () => {
+      setLoading(true);
+      
+      const { data: conversationsData, error } = await supabase
+        .from("conversations")
+        .select("*")
+        .eq("user_id", userId)
+        .order("last_message_at", { ascending: false });
+
+      if (error) {
+        console.error("Error fetching conversations:", error);
+        setLoading(false);
+        return;
+      }
+
+      // Fetch unread message counts for each conversation
+      const conversationsWithCounts = await Promise.all(
+        (conversationsData || []).map(async (conv) => {
+          const { count } = await supabase
+            .from("messages")
+            .select("*", { count: "exact", head: true })
+            .eq("conversation_id", conv.id)
+            .eq("is_read", false)
+            .neq("sender_id", userId);
+
+          return {
+            ...conv,
+            unread_count: count || 0,
+          };
+        })
+      );
+
+      setConversations(conversationsWithCounts);
+      setLoading(false);
+    };
+
+    fetchConversations();
+
+    // Subscribe to realtime updates for new messages
+    const channel = supabase
+      .channel('conversations-updates')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'messages',
+        },
+        () => {
+          // Refetch conversations when messages change
+          fetchConversations();
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
   }, [userId]);
-
-  const loadConversations = async () => {
-    setLoading(true);
-    
-    const { data, error } = await supabase
-      .from("conversations")
-      .select("*")
-      .eq("user_id", userId)
-      .order("last_message_at", { ascending: false });
-
-    if (error) {
-      console.error("Error loading conversations:", error);
-    } else {
-      setConversations(data || []);
-    }
-
-    setLoading(false);
-  };
 
   if (loading) {
     return (
@@ -84,9 +125,16 @@ export const ConversationsList = ({ userId }: { userId: string }) => {
                     Last message: {new Date(conversation.last_message_at).toLocaleDateString()}
                   </p>
                 </div>
-                <Button variant="ghost" size="sm">
-                  <ArrowRight className="h-4 w-4" />
-                </Button>
+                <div className="flex items-center gap-2">
+                  {conversation.unread_count > 0 && (
+                    <div className="flex items-center justify-center h-6 min-w-[24px] px-2 rounded-full bg-primary text-primary-foreground text-xs font-semibold">
+                      {conversation.unread_count}
+                    </div>
+                  )}
+                  <Button variant="ghost" size="sm">
+                    <ArrowRight className="h-4 w-4" />
+                  </Button>
+                </div>
               </div>
             ))}
           </div>
