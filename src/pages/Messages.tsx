@@ -8,6 +8,7 @@ import { useToast } from "@/hooks/use-toast";
 import Navbar from "@/components/Navbar";
 import { ArrowLeft, Send, Check, CheckCheck, Paperclip, X, Download, FileIcon, Smile, Search, Mic, Trash2, MoreVertical, Edit2, Pin, PinOff, Forward, FileText, Plus, Filter, Calendar, Clock, Reply, CornerDownRight, Bookmark, BookmarkCheck } from "lucide-react";
 import jsPDF from "jspdf";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { User, Session } from "@supabase/supabase-js";
 import { VoiceRecorder } from "@/components/VoiceRecorder";
 import { AudioPlayer } from "@/components/AudioPlayer";
@@ -57,6 +58,7 @@ interface Message {
   content: string;
   created_at: string;
   is_read: boolean;
+  read_at: string | null;
   file_url: string | null;
   file_name: string | null;
   file_type: string | null;
@@ -219,7 +221,10 @@ const Messages = () => {
           if (newMessage.sender_id !== user.id) {
             supabase
               .from("messages")
-              .update({ is_read: true })
+              .update({ 
+                is_read: true,
+                read_at: new Date().toISOString()
+              })
               .eq("id", newMessage.id)
               .then(() => console.log("Message marked as read"));
           }
@@ -355,7 +360,10 @@ const Messages = () => {
 
     const { error } = await supabase
       .from("messages")
-      .update({ is_read: true })
+      .update({ 
+        is_read: true,
+        read_at: new Date().toISOString()
+      })
       .eq("conversation_id", conversationId)
       .neq("sender_id", user.id)
       .eq("is_read", false);
@@ -1896,13 +1904,38 @@ const Messages = () => {
                                     {message.edited_at && " (edited)"}
                                   </p>
                                   {message.sender_id === user?.id && (
-                                    <span className="text-xs opacity-70">
-                                      {message.is_read ? (
-                                        <CheckCheck className="h-3 w-3 inline ml-1" />
-                                      ) : (
-                                        <Check className="h-3 w-3 inline ml-1" />
-                                      )}
-                                    </span>
+                                    <TooltipProvider>
+                                      <Tooltip>
+                                        <TooltipTrigger asChild>
+                                          <span className="text-xs opacity-70 cursor-help">
+                                            {message.is_read ? (
+                                              <CheckCheck className="h-3 w-3 inline ml-1 text-blue-500" />
+                                            ) : (
+                                              <Check className="h-3 w-3 inline ml-1" />
+                                            )}
+                                          </span>
+                                        </TooltipTrigger>
+                                        <TooltipContent side="top" className="bg-background border">
+                                          <div className="text-xs">
+                                            {message.is_read ? (
+                                              <>
+                                                <p className="font-semibold">Read</p>
+                                                <p className="text-muted-foreground">
+                                                  {message.read_at 
+                                                    ? format(new Date(message.read_at), "MMM dd, yyyy 'at' HH:mm:ss")
+                                                    : "Read at unknown time"}
+                                                </p>
+                                              </>
+                                            ) : (
+                                              <>
+                                                <p className="font-semibold">Sent</p>
+                                                <p className="text-muted-foreground">Not yet read</p>
+                                              </>
+                                            )}
+                                          </div>
+                                        </TooltipContent>
+                                      </Tooltip>
+                                    </TooltipProvider>
                                   )}
                                 </div>
                               </div>
@@ -2152,13 +2185,38 @@ const Messages = () => {
                                 {message.edited_at && " (edited)"}
                               </p>
                               {message.sender_id === user?.id && (
-                                <span className="text-xs opacity-70">
-                                  {message.is_read ? (
-                                    <CheckCheck className="h-3 w-3 inline ml-1" />
-                                  ) : (
-                                    <Check className="h-3 w-3 inline ml-1" />
-                                  )}
-                                </span>
+                                <TooltipProvider>
+                                  <Tooltip>
+                                    <TooltipTrigger asChild>
+                                      <span className="text-xs opacity-70 cursor-help">
+                                        {message.is_read ? (
+                                          <CheckCheck className="h-3 w-3 inline ml-1 text-blue-500" />
+                                        ) : (
+                                          <Check className="h-3 w-3 inline ml-1" />
+                                        )}
+                                      </span>
+                                    </TooltipTrigger>
+                                    <TooltipContent side="top" className="bg-background border">
+                                      <div className="text-xs">
+                                        {message.is_read ? (
+                                          <>
+                                            <p className="font-semibold">Read</p>
+                                            <p className="text-muted-foreground">
+                                              {message.read_at 
+                                                ? format(new Date(message.read_at), "MMM dd, yyyy 'at' HH:mm:ss")
+                                                : "Read at unknown time"}
+                                            </p>
+                                          </>
+                                        ) : (
+                                          <>
+                                            <p className="font-semibold">Sent</p>
+                                            <p className="text-muted-foreground">Not yet read</p>
+                                          </>
+                                        )}
+                                      </div>
+                                    </TooltipContent>
+                                  </Tooltip>
+                                </TooltipProvider>
                               )}
                             </div>
                           </div>

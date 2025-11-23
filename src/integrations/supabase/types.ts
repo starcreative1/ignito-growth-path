@@ -210,6 +210,7 @@ export type Database = {
           id: string
           is_read: boolean
           pinned: boolean
+          read_at: string | null
           reply_to: string | null
           sender_id: string
           sender_name: string
@@ -225,6 +226,7 @@ export type Database = {
           id?: string
           is_read?: boolean
           pinned?: boolean
+          read_at?: string | null
           reply_to?: string | null
           sender_id: string
           sender_name: string
@@ -240,6 +242,7 @@ export type Database = {
           id?: string
           is_read?: boolean
           pinned?: boolean
+          read_at?: string | null
           reply_to?: string | null
           sender_id?: string
           sender_name?: string
