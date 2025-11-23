@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { MessageSquare, ArrowRight, Archive, ArchiveRestore, MoreVertical } from "lucide-react";
+import { MessageSquare, ArrowRight, Archive, ArchiveRestore, MoreVertical, Trash2 } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -12,6 +12,17 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { useToast } from "@/hooks/use-toast";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Checkbox } from "@/components/ui/checkbox";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 interface Conversation {
   id: string;
@@ -27,6 +38,8 @@ export const ConversationsList = ({ userId }: { userId: string }) => {
   const [conversations, setConversations] = useState<Conversation[]>([]);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<"active" | "archived">("active");
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const navigate = useNavigate();
   const { toast } = useToast();
 
@@ -131,6 +144,85 @@ export const ConversationsList = ({ userId }: { userId: string }) => {
     });
   };
 
+  const handleToggleSelect = (conversationId: string) => {
+    setSelectedIds(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(conversationId)) {
+        newSet.delete(conversationId);
+      } else {
+        newSet.add(conversationId);
+      }
+      return newSet;
+    });
+  };
+
+  const handleSelectAll = (conversationList: Conversation[]) => {
+    if (selectedIds.size === conversationList.length) {
+      setSelectedIds(new Set());
+    } else {
+      setSelectedIds(new Set(conversationList.map(c => c.id)));
+    }
+  };
+
+  const handleBulkArchive = async (archive: boolean) => {
+    const { error } = await supabase
+      .from("conversations")
+      .update({ 
+        archived: archive,
+        archived_at: archive ? new Date().toISOString() : null
+      })
+      .in("id", Array.from(selectedIds));
+
+    if (error) {
+      console.error("Error bulk archiving conversations:", error);
+      toast({
+        title: "Error",
+        description: "Failed to update conversations",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setConversations(prev => 
+      prev.map(conv => 
+        selectedIds.has(conv.id)
+          ? { ...conv, archived: archive, archived_at: archive ? new Date().toISOString() : null }
+          : conv
+      )
+    );
+
+    setSelectedIds(new Set());
+    toast({
+      title: archive ? "Conversations archived" : "Conversations restored",
+      description: `${selectedIds.size} conversation(s) updated`,
+    });
+  };
+
+  const handleBulkDelete = async () => {
+    const { error } = await supabase
+      .from("conversations")
+      .delete()
+      .in("id", Array.from(selectedIds));
+
+    if (error) {
+      console.error("Error bulk deleting conversations:", error);
+      toast({
+        title: "Error",
+        description: "Failed to delete conversations",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setConversations(prev => prev.filter(conv => !selectedIds.has(conv.id)));
+    setSelectedIds(new Set());
+    setShowDeleteDialog(false);
+    toast({
+      title: "Conversations deleted",
+      description: `${selectedIds.size} conversation(s) deleted`,
+    });
+  };
+
   const activeConversations = conversations.filter(c => !c.archived);
   const archivedConversations = conversations.filter(c => c.archived);
 
@@ -148,27 +240,74 @@ export const ConversationsList = ({ userId }: { userId: string }) => {
     );
   }
 
-  return (
-    <Card>
-      <CardHeader>
-        <CardTitle className="flex items-center gap-2">
-          <MessageSquare className="h-5 w-5" />
-          Messages
-        </CardTitle>
-        <CardDescription>Your conversations with mentors</CardDescription>
-      </CardHeader>
-      <CardContent>
-        <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as "active" | "archived")}>
-          <TabsList className="grid w-full grid-cols-2 mb-4">
-            <TabsTrigger value="active">
-              Active ({activeConversations.length})
-            </TabsTrigger>
-            <TabsTrigger value="archived">
-              Archived ({archivedConversations.length})
-            </TabsTrigger>
-          </TabsList>
+  const currentList = activeTab === "active" ? activeConversations : archivedConversations;
+  const allSelected = selectedIds.size === currentList.length && currentList.length > 0;
 
-          <TabsContent value="active">
+  return (
+    <>
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <MessageSquare className="h-5 w-5" />
+            Messages
+          </CardTitle>
+          <CardDescription>Your conversations with mentors</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <Tabs value={activeTab} onValueChange={(v) => { setActiveTab(v as "active" | "archived"); setSelectedIds(new Set()); }}>
+            <TabsList className="grid w-full grid-cols-2 mb-4">
+              <TabsTrigger value="active">
+                Active ({activeConversations.length})
+              </TabsTrigger>
+              <TabsTrigger value="archived">
+                Archived ({archivedConversations.length})
+              </TabsTrigger>
+            </TabsList>
+
+            {currentList.length > 0 && (
+              <div className="flex items-center justify-between mb-4 p-3 border rounded-lg bg-muted/30">
+                <div className="flex items-center gap-3">
+                  <Checkbox
+                    checked={allSelected}
+                    onCheckedChange={() => handleSelectAll(currentList)}
+                  />
+                  <span className="text-sm font-medium">
+                    {selectedIds.size > 0 ? `${selectedIds.size} selected` : "Select all"}
+                  </span>
+                </div>
+                {selectedIds.size > 0 && (
+                  <div className="flex items-center gap-2">
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => handleBulkArchive(activeTab === "active")}
+                    >
+                      {activeTab === "active" ? (
+                        <>
+                          <Archive className="h-4 w-4 mr-2" />
+                          Archive
+                        </>
+                      ) : (
+                        <>
+                          <ArchiveRestore className="h-4 w-4 mr-2" />
+                          Restore
+                        </>
+                      )}
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="destructive"
+                      onClick={() => setShowDeleteDialog(true)}
+                    >
+                      <Trash2 className="h-4 w-4 mr-2" />
+                      Delete
+                    </Button>
+                  </div>
+                )}
+              </div>
+            )}
+
+            <TabsContent value="active">
             {activeConversations.length === 0 ? (
               <div className="text-center py-8 text-muted-foreground">
                 <MessageSquare className="h-12 w-12 mx-auto mb-4 opacity-50" />
@@ -180,8 +319,13 @@ export const ConversationsList = ({ userId }: { userId: string }) => {
                 {activeConversations.map((conversation) => (
                   <div
                     key={conversation.id}
-                    className="flex items-center justify-between p-4 border rounded-lg hover:bg-accent/5 transition-colors group"
+                    className="flex items-center gap-3 p-4 border rounded-lg hover:bg-accent/5 transition-colors group"
                   >
+                    <Checkbox
+                      checked={selectedIds.has(conversation.id)}
+                      onCheckedChange={() => handleToggleSelect(conversation.id)}
+                      onClick={(e) => e.stopPropagation()}
+                    />
                     <div 
                       className="flex-1 cursor-pointer"
                       onClick={() => navigate(`/messages/${conversation.id}`)}
@@ -236,8 +380,13 @@ export const ConversationsList = ({ userId }: { userId: string }) => {
                 {archivedConversations.map((conversation) => (
                   <div
                     key={conversation.id}
-                    className="flex items-center justify-between p-4 border rounded-lg hover:bg-accent/5 transition-colors group opacity-70"
+                    className="flex items-center gap-3 p-4 border rounded-lg hover:bg-accent/5 transition-colors group opacity-70"
                   >
+                    <Checkbox
+                      checked={selectedIds.has(conversation.id)}
+                      onCheckedChange={() => handleToggleSelect(conversation.id)}
+                      onClick={(e) => e.stopPropagation()}
+                    />
                     <div 
                       className="flex-1 cursor-pointer"
                       onClick={() => navigate(`/messages/${conversation.id}`)}
@@ -277,5 +426,23 @@ export const ConversationsList = ({ userId }: { userId: string }) => {
         </Tabs>
       </CardContent>
     </Card>
+
+    <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
+      <AlertDialogContent>
+        <AlertDialogHeader>
+          <AlertDialogTitle>Delete conversations?</AlertDialogTitle>
+          <AlertDialogDescription>
+            This will permanently delete {selectedIds.size} conversation(s) and all associated messages. This action cannot be undone.
+          </AlertDialogDescription>
+        </AlertDialogHeader>
+        <AlertDialogFooter>
+          <AlertDialogCancel>Cancel</AlertDialogCancel>
+          <AlertDialogAction onClick={handleBulkDelete} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+            Delete
+          </AlertDialogAction>
+        </AlertDialogFooter>
+      </AlertDialogContent>
+    </AlertDialog>
+    </>
   );
 };
