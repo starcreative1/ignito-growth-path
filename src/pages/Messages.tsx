@@ -20,6 +20,7 @@ interface Message {
 
 interface Conversation {
   id: string;
+  user_id: string;
   mentor_id: string;
   mentor_name: string;
 }
@@ -154,16 +155,19 @@ const Messages = () => {
       .eq("id", user.id)
       .maybeSingle();
 
-    const { error } = await supabase
+    const senderName = profileData?.full_name || user.email?.split("@")[0] || "You";
+    const messageContent = newMessage.trim();
+
+    const { data: messageData, error } = await supabase
       .from("messages")
       .insert({
         conversation_id: conversationId,
         sender_id: user.id,
-        sender_name: profileData?.full_name || user.email?.split("@")[0] || "You",
-        content: newMessage.trim(),
-      });
-
-    setSending(false);
+        sender_name: senderName,
+        content: messageContent,
+      })
+      .select()
+      .single();
 
     if (error) {
       console.error("Error sending message:", error);
@@ -172,9 +176,31 @@ const Messages = () => {
         description: "Failed to send message",
         variant: "destructive",
       });
-    } else {
-      setNewMessage("");
+      setSending(false);
+      return;
     }
+
+    // Send email notification to recipient (mentor or user)
+    const recipientId = conversation.user_id === user.id 
+      ? conversation.mentor_id 
+      : conversation.user_id;
+
+    try {
+      await supabase.functions.invoke("send-message-notification", {
+        body: {
+          messageId: messageData.id,
+          recipientId,
+          senderName,
+          messageContent,
+        },
+      });
+    } catch (notificationError) {
+      console.error("Error sending notification:", notificationError);
+      // Don't show error to user as message was sent successfully
+    }
+
+    setNewMessage("");
+    setSending(false);
   };
 
   if (loading) {
