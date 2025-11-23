@@ -7,6 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
 import Navbar from "@/components/Navbar";
 import { ArrowLeft, Send, Check, CheckCheck, Paperclip, X, Download, FileIcon, Smile, Search, Mic, Trash2, MoreVertical, Edit2, Pin, PinOff, Forward, FileText, Plus, Filter, Calendar, Clock, Reply, CornerDownRight } from "lucide-react";
+import jsPDF from "jspdf";
 import { User, Session } from "@supabase/supabase-js";
 import { VoiceRecorder } from "@/components/VoiceRecorder";
 import { AudioPlayer } from "@/components/AudioPlayer";
@@ -1057,6 +1058,83 @@ const Messages = () => {
     return messages.find(msg => msg.id === replyToId);
   };
 
+  const exportAsCSV = () => {
+    if (!conversation) return;
+    
+    const csvContent = [
+      ['Date', 'Time', 'Sender', 'Message'],
+      ...messages.map(msg => [
+        format(new Date(msg.created_at), 'yyyy-MM-dd'),
+        format(new Date(msg.created_at), 'HH:mm:ss'),
+        msg.sender_name,
+        msg.content
+      ])
+    ].map(row => row.map(cell => `"${cell}"`).join(',')).join('\n');
+    
+    const blob = new Blob([csvContent], { type: 'text/csv' });
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `conversation-${conversation.mentor_name}-${format(new Date(), 'yyyy-MM-dd')}.csv`;
+    a.click();
+    window.URL.revokeObjectURL(url);
+    toast({
+      title: "Conversation exported",
+      description: "Your conversation has been exported as CSV",
+    });
+  };
+
+  const exportAsPDF = () => {
+    if (!conversation) return;
+    
+    const doc = new jsPDF();
+    const pageWidth = doc.internal.pageSize.getWidth();
+    const pageHeight = doc.internal.pageSize.getHeight();
+    const margin = 20;
+    const lineHeight = 7;
+    let yPosition = margin;
+    
+    // Title
+    doc.setFontSize(16);
+    doc.text(`Conversation with ${conversation.mentor_name}`, margin, yPosition);
+    yPosition += lineHeight * 2;
+    
+    doc.setFontSize(10);
+    messages.forEach((msg) => {
+      const dateTime = format(new Date(msg.created_at), 'MMM dd, yyyy HH:mm');
+      const header = `${msg.sender_name} - ${dateTime}`;
+      
+      // Check if we need a new page
+      if (yPosition > pageHeight - margin) {
+        doc.addPage();
+        yPosition = margin;
+      }
+      
+      doc.setFont(undefined, 'bold');
+      doc.text(header, margin, yPosition);
+      yPosition += lineHeight;
+      
+      doc.setFont(undefined, 'normal');
+      const lines = doc.splitTextToSize(msg.content, pageWidth - (margin * 2));
+      lines.forEach((line: string) => {
+        if (yPosition > pageHeight - margin) {
+          doc.addPage();
+          yPosition = margin;
+        }
+        doc.text(line, margin, yPosition);
+        yPosition += lineHeight;
+      });
+      
+      yPosition += lineHeight * 0.5;
+    });
+    
+    doc.save(`conversation-${conversation.mentor_name}-${format(new Date(), 'yyyy-MM-dd')}.pdf`);
+    toast({
+      title: "Conversation exported",
+      description: "Your conversation has been exported as PDF",
+    });
+  };
+
   const handleApplyFilters = () => {
     performSearch(searchQuery, searchSender, searchType, searchDateFrom, searchDateTo);
   };
@@ -1236,41 +1314,60 @@ const Messages = () => {
           </CardHeader>
           
           <CardContent className="flex-1 flex flex-col p-0">
-            {/* Search bar */}
+            {/* Search bar with Export */}
             <div className="p-4 border-b space-y-3">
-              <div className="relative">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                <Input
-                  value={searchQuery}
-                  onChange={(e) => handleSearch(e.target.value)}
-                  placeholder="Search messages..."
-                  className="pl-10 pr-20"
-                />
-                <div className="absolute right-2 top-1/2 transform -translate-y-1/2 flex items-center gap-2">
-                  {(searchQuery || searchResults.length > 0) && (
-                    <span className="text-xs text-muted-foreground whitespace-nowrap">
-                      {searchResults.length} result{searchResults.length !== 1 ? "s" : ""}
-                    </span>
-                  )}
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => setShowAdvancedSearch(!showAdvancedSearch)}
-                    className="h-7 px-2"
-                  >
-                    <Filter className={`h-3 w-3 ${showAdvancedSearch ? "text-primary" : ""}`} />
-                  </Button>
-                  {(searchQuery || searchSender !== "all" || searchType !== "all" || searchDateFrom || searchDateTo) && (
+              <div className="flex items-center gap-2">
+                <div className="relative flex-1">
+                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                  <Input
+                    value={searchQuery}
+                    onChange={(e) => handleSearch(e.target.value)}
+                    placeholder="Search messages..."
+                    className="pl-10 pr-20"
+                  />
+                  <div className="absolute right-2 top-1/2 transform -translate-y-1/2 flex items-center gap-2">
+                    {(searchQuery || searchResults.length > 0) && (
+                      <span className="text-xs text-muted-foreground whitespace-nowrap">
+                        {searchResults.length} result{searchResults.length !== 1 ? "s" : ""}
+                      </span>
+                    )}
                     <Button
                       variant="ghost"
                       size="sm"
-                      onClick={handleClearFilters}
-                      className="h-7 w-7 p-0"
+                      onClick={() => setShowAdvancedSearch(!showAdvancedSearch)}
+                      className="h-7 px-2"
                     >
-                      <X className="h-3 w-3" />
+                      <Filter className={`h-3 w-3 ${showAdvancedSearch ? "text-primary" : ""}`} />
                     </Button>
-              )}
-            </div>
+                    {(searchQuery || searchSender !== "all" || searchType !== "all" || searchDateFrom || searchDateTo) && (
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={handleClearFilters}
+                        className="h-7 w-7 p-0"
+                      >
+                        <X className="h-3 w-3" />
+                      </Button>
+                    )}
+                  </div>
+                </div>
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="outline" size="sm">
+                      <Download className="h-4 w-4 mr-2" />
+                      Export
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end">
+                    <DropdownMenuItem onClick={exportAsCSV}>
+                      Export as CSV
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={exportAsPDF}>
+                      Export as PDF
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              </div>
 
             {/* Scheduled Messages Section */}
             {scheduledMessages.length > 0 && (
@@ -1304,7 +1401,6 @@ const Messages = () => {
                 </div>
               </div>
             )}
-              </div>
 
               {/* Advanced Search Filters */}
               {showAdvancedSearch && (
