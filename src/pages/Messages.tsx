@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
 import Navbar from "@/components/Navbar";
-import { ArrowLeft, Send, Check, CheckCheck, Paperclip, X, Download, FileIcon, Smile, Search, Mic, Trash2, MoreVertical, Edit2, Pin, PinOff, Forward, FileText, Plus, Filter, Calendar, Clock, Reply, CornerDownRight, Bookmark, BookmarkCheck, Languages } from "lucide-react";
+import { ArrowLeft, Send, Check, CheckCheck, Paperclip, X, Download, FileIcon, Smile, Search, Mic, Trash2, MoreVertical, Edit2, Pin, PinOff, Forward, FileText, Plus, Filter, Calendar, Clock, Reply, CornerDownRight, Bookmark, BookmarkCheck, Languages, Eye } from "lucide-react";
 import jsPDF from "jspdf";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { User, Session } from "@supabase/supabase-js";
@@ -142,6 +142,7 @@ const Messages = () => {
   const [userPreferredLanguage, setUserPreferredLanguage] = useState<string | null>(null);
   const [autoTranslateEnabled, setAutoTranslateEnabled] = useState(false);
   const [showLanguageSettings, setShowLanguageSettings] = useState(false);
+  const [readReceipts, setReadReceipts] = useState<Record<string, Array<{ user_id: string; read_at: string; user_name?: string }>>>({});
 
   useEffect(() => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
@@ -177,12 +178,14 @@ const Messages = () => {
     loadBookmarks();
     loadDraft();
     loadUserPreferredLanguage();
+    loadReadReceipts();
 
     // Mark messages as delivered when opening conversation
     markMessagesAsDelivered();
 
-    // Mark messages as read
+    // Mark messages as read and create read receipts
     markMessagesAsRead();
+    createReadReceiptsForExistingMessages();
 
     // Set up presence channel for typing indicators
     const channel = supabase.channel(`presence-${conversationId}`, {
@@ -252,6 +255,9 @@ const Messages = () => {
               .eq("id", newMessage.id)
               .then(() => console.log("Message marked as read"));
             
+            // Create read receipt
+            createReadReceipt(newMessage.id);
+            
             // Auto-translate incoming message if enabled
             if (userPreferredLanguage && autoTranslateEnabled) {
               autoTranslateMessage(newMessage.id, newMessage.content, newMessage.sender_name);
@@ -275,6 +281,20 @@ const Messages = () => {
               msg.id === updatedMessage.id ? updatedMessage : msg
             )
           );
+        }
+      )
+      .on(
+        'postgres_changes',
+        {
+          event: 'INSERT',
+          schema: 'public',
+          table: 'message_read_receipts',
+          filter: `conversation_id=eq.${conversationId}`
+        },
+        (payload) => {
+          console.log('Read receipt received:', payload);
+          const receipt = payload.new as any;
+          loadReadReceiptsForMessage(receipt.message_id);
         }
       )
       .subscribe();
@@ -432,6 +452,85 @@ const Messages = () => {
     } catch (error) {
       console.error('Auto-translation error:', error);
       // Silently fail for auto-translation to not interrupt user experience
+    }
+  };
+
+  const loadReadReceipts = async () => {
+    if (!user || !conversationId) return;
+
+    const { data, error } = await supabase
+      .from("message_read_receipts")
+      .select("message_id, user_id, read_at")
+      .eq("conversation_id", conversationId);
+
+    if (error) {
+      console.error("Error loading read receipts:", error);
+      return;
+    }
+
+    // Group receipts by message_id
+    const receiptsByMessage: Record<string, Array<{ user_id: string; read_at: string }>> = {};
+    data?.forEach(receipt => {
+      if (!receiptsByMessage[receipt.message_id]) {
+        receiptsByMessage[receipt.message_id] = [];
+      }
+      receiptsByMessage[receipt.message_id].push({
+        user_id: receipt.user_id,
+        read_at: receipt.read_at,
+      });
+    });
+
+    setReadReceipts(receiptsByMessage);
+  };
+
+  const loadReadReceiptsForMessage = async (messageId: string) => {
+    if (!user || !conversationId) return;
+
+    const { data, error } = await supabase
+      .from("message_read_receipts")
+      .select("user_id, read_at")
+      .eq("message_id", messageId)
+      .eq("conversation_id", conversationId);
+
+    if (error) {
+      console.error("Error loading read receipts for message:", error);
+      return;
+    }
+
+    setReadReceipts(prev => ({
+      ...prev,
+      [messageId]: data || [],
+    }));
+  };
+
+  const createReadReceipt = async (messageId: string) => {
+    if (!user || !conversationId) return;
+
+    const { error } = await supabase
+      .from("message_read_receipts")
+      .insert({
+        message_id: messageId,
+        user_id: user.id,
+        conversation_id: conversationId,
+      });
+
+    if (error) {
+      // Ignore duplicate errors (user already has a read receipt for this message)
+      if (!error.message.includes('duplicate')) {
+        console.error("Error creating read receipt:", error);
+      }
+    }
+  };
+
+  const createReadReceiptsForExistingMessages = async () => {
+    if (!user || !conversationId) return;
+
+    // Get all messages in this conversation that aren't sent by the user
+    const unreadMessages = messages.filter(msg => msg.sender_id !== user.id);
+    
+    // Create read receipts for all messages
+    for (const message of unreadMessages) {
+      await createReadReceipt(message.id);
     }
   };
 
@@ -2223,6 +2322,37 @@ const Messages = () => {
                                 <p className="text-sm italic opacity-90">
                                   {translations[message.id].text}
                                 </p>
+                              </div>
+                            )}
+                            
+                            {/* Read Receipts Display (only for messages sent by current user) */}
+                            {message.sender_id === user?.id && readReceipts[message.id] && readReceipts[message.id].length > 0 && (
+                              <div className="mt-2 pt-2 border-t border-current/20">
+                                <Popover>
+                                  <PopoverTrigger asChild>
+                                    <Button
+                                      variant="ghost"
+                                      size="sm"
+                                      className="h-auto p-0 text-xs opacity-70 hover:opacity-100"
+                                    >
+                                      <Eye className="h-3 w-3 mr-1" />
+                                      Read by {readReceipts[message.id].length}
+                                    </Button>
+                                  </PopoverTrigger>
+                                  <PopoverContent className="w-64 p-3">
+                                    <div className="space-y-2">
+                                      <p className="font-medium text-sm">Read Receipts</p>
+                                      {readReceipts[message.id].map((receipt, idx) => (
+                                        <div key={idx} className="flex items-start justify-between text-xs">
+                                          <span className="font-medium">Reader {idx + 1}</span>
+                                          <span className="text-muted-foreground">
+                                            {format(new Date(receipt.read_at), "MMM dd, HH:mm")}
+                                          </span>
+                                        </div>
+                                      ))}
+                                    </div>
+                                  </PopoverContent>
+                                </Popover>
                               </div>
                             )}
                             
