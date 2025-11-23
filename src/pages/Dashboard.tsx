@@ -11,6 +11,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { useToast } from "@/hooks/use-toast";
 import Navbar from "@/components/Navbar";
 import { RecommendationsCard } from "@/components/RecommendationsCard";
+import { ConversationsList } from "@/components/ConversationsList";
 import { User, Session } from "@supabase/supabase-js";
 import { Calendar, Clock, LogOut } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
@@ -207,6 +208,7 @@ const Dashboard = () => {
           <TabsList>
             <TabsTrigger value="recommendations">Recommendations</TabsTrigger>
             <TabsTrigger value="sessions">My Sessions</TabsTrigger>
+            <TabsTrigger value="messages">Messages</TabsTrigger>
             <TabsTrigger value="profile" id="profile-tab">Profile</TabsTrigger>
           </TabsList>
 
@@ -215,6 +217,10 @@ const Dashboard = () => {
               recommendations={recommendations}
               loading={recommendationsLoading}
             />
+          </TabsContent>
+
+          <TabsContent value="messages" className="space-y-6">
+            <ConversationsList userId={user?.id || ""} />
           </TabsContent>
 
           <TabsContent value="sessions" className="space-y-6">
