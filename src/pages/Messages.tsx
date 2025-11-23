@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
 import Navbar from "@/components/Navbar";
-import { ArrowLeft, Send, Check, CheckCheck, Paperclip, X, Download, FileIcon, Smile, Search, Mic, Trash2, MoreVertical, Edit2, Pin, PinOff, Forward, FileText, Plus, Filter, Calendar, Clock, Reply, CornerDownRight } from "lucide-react";
+import { ArrowLeft, Send, Check, CheckCheck, Paperclip, X, Download, FileIcon, Smile, Search, Mic, Trash2, MoreVertical, Edit2, Pin, PinOff, Forward, FileText, Plus, Filter, Calendar, Clock, Reply, CornerDownRight, Bookmark, BookmarkCheck } from "lucide-react";
 import jsPDF from "jspdf";
 import { User, Session } from "@supabase/supabase-js";
 import { VoiceRecorder } from "@/components/VoiceRecorder";
@@ -64,6 +64,7 @@ interface Message {
   pinned: boolean;
   reply_to?: string | null;
   reactions?: Reaction[];
+  bookmarked?: boolean;
 }
 
 interface Conversation {
@@ -124,6 +125,8 @@ const Messages = () => {
   const [scheduleTime, setScheduleTime] = useState("12:00");
   const [scheduledMessages, setScheduledMessages] = useState<any[]>([]);
   const [replyingTo, setReplyingTo] = useState<Message | null>(null);
+  const [showBookmarksOnly, setShowBookmarksOnly] = useState(false);
+  const [bookmarkedMessageIds, setBookmarkedMessageIds] = useState<Set<string>>(new Set());
 
   useEffect(() => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
@@ -156,6 +159,7 @@ const Messages = () => {
     loadMessages();
     loadMessageTemplates();
     loadScheduledMessages();
+    loadBookmarks();
 
     // Mark messages as read
     markMessagesAsRead();
@@ -292,6 +296,24 @@ const Messages = () => {
     }
 
     setLoading(false);
+  };
+
+  const loadBookmarks = async () => {
+    if (!user || !conversationId) return;
+
+    const { data, error } = await supabase
+      .from("message_bookmarks")
+      .select("message_id")
+      .eq("user_id", user.id)
+      .eq("conversation_id", conversationId);
+
+    if (error) {
+      console.error("Error loading bookmarks:", error);
+      return;
+    }
+
+    const bookmarkIds = new Set(data?.map(b => b.message_id) || []);
+    setBookmarkedMessageIds(bookmarkIds);
   };
 
   const loadReactions = async (messageId: string): Promise<Reaction[]> => {
@@ -664,6 +686,68 @@ const Messages = () => {
         title: "Error",
         description: "Failed to update message",
         variant: "destructive",
+      });
+    }
+  };
+
+  const handleToggleBookmark = async (messageId: string) => {
+    if (!user) return;
+
+    const isBookmarked = bookmarkedMessageIds.has(messageId);
+
+    if (isBookmarked) {
+      // Remove bookmark
+      const { error } = await supabase
+        .from("message_bookmarks")
+        .delete()
+        .eq("user_id", user.id)
+        .eq("message_id", messageId);
+
+      if (error) {
+        console.error("Error removing bookmark:", error);
+        toast({
+          title: "Error",
+          description: "Failed to remove bookmark",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      setBookmarkedMessageIds(prev => {
+        const newSet = new Set(prev);
+        newSet.delete(messageId);
+        return newSet;
+      });
+
+      toast({
+        title: "Bookmark removed",
+        description: "Message has been unbookmarked",
+      });
+    } else {
+      // Add bookmark
+      const { error } = await supabase
+        .from("message_bookmarks")
+        .insert({
+          user_id: user.id,
+          message_id: messageId,
+          conversation_id: conversationId,
+        });
+
+      if (error) {
+        console.error("Error adding bookmark:", error);
+        toast({
+          title: "Error",
+          description: "Failed to bookmark message",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      setBookmarkedMessageIds(prev => new Set([...prev, messageId]));
+
+      toast({
+        title: "Message bookmarked",
+        description: "You can view bookmarked messages later",
       });
     }
   };
@@ -1168,6 +1252,10 @@ const Messages = () => {
     ? messages.filter(msg => searchResults.includes(msg.id))
     : messages;
 
+  const displayMessages = showBookmarksOnly 
+    ? filteredMessages.filter(msg => bookmarkedMessageIds.has(msg.id))
+    : filteredMessages;
+
   // Get unique senders for filter
   const uniqueSenders = Array.from(new Set(messages.map(msg => ({ id: msg.sender_id, name: msg.sender_name }))))
     .reduce((acc, sender) => {
@@ -1178,8 +1266,10 @@ const Messages = () => {
     }, [] as { id: string; name: string }[]);
 
   // Separate pinned and unpinned messages
-  const pinnedMessages = filteredMessages.filter(msg => msg.pinned);
-  const unpinnedMessages = filteredMessages.filter(msg => !msg.pinned);
+  const pinnedMessages = displayMessages.filter(msg => msg.pinned);
+  const unpinnedMessages = displayMessages.filter(msg => !msg.pinned);
+
+  const bookmarkedCount = bookmarkedMessageIds.size;
 
   const handleSendMessage = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -1367,6 +1457,14 @@ const Messages = () => {
                     </DropdownMenuItem>
                   </DropdownMenuContent>
                 </DropdownMenu>
+                <Button
+                  variant={showBookmarksOnly ? "default" : "outline"}
+                  size="sm"
+                  onClick={() => setShowBookmarksOnly(!showBookmarksOnly)}
+                >
+                  <Bookmark className="h-4 w-4 mr-2" />
+                  Bookmarks {bookmarkedCount > 0 && `(${bookmarkedCount})`}
+                </Button>
               </div>
 
             {/* Scheduled Messages Section */}
@@ -1710,6 +1808,21 @@ const Messages = () => {
                               Reply to Message
                             </DropdownMenuItem>
                             <DropdownMenuItem
+                              onClick={() => handleToggleBookmark(message.id)}
+                            >
+                              {bookmarkedMessageIds.has(message.id) ? (
+                                <>
+                                  <BookmarkCheck className="h-4 w-4 mr-2" />
+                                  Remove Bookmark
+                                </>
+                              ) : (
+                                <>
+                                  <Bookmark className="h-4 w-4 mr-2" />
+                                  Bookmark Message
+                                </>
+                              )}
+                            </DropdownMenuItem>
+                            <DropdownMenuItem
                               onClick={() => handleOpenForwardDialog(message)}
                             >
                               <Forward className="h-4 w-4 mr-2" />
@@ -1939,6 +2052,21 @@ const Messages = () => {
                           >
                             <Reply className="h-4 w-4 mr-2" />
                             Reply to Message
+                          </DropdownMenuItem>
+                          <DropdownMenuItem
+                            onClick={() => handleToggleBookmark(message.id)}
+                          >
+                            {bookmarkedMessageIds.has(message.id) ? (
+                              <>
+                                <BookmarkCheck className="h-4 w-4 mr-2" />
+                                Remove Bookmark
+                              </>
+                            ) : (
+                              <>
+                                <Bookmark className="h-4 w-4 mr-2" />
+                                Bookmark Message
+                              </>
+                            )}
                           </DropdownMenuItem>
                           <DropdownMenuItem
                             onClick={() => handleOpenForwardDialog(message)}
