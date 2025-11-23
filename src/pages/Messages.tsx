@@ -6,9 +6,11 @@ import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
 import Navbar from "@/components/Navbar";
-import { ArrowLeft, Send, Check, CheckCheck, Paperclip, X, Download, FileIcon, Smile, Search } from "lucide-react";
+import { ArrowLeft, Send, Check, CheckCheck, Paperclip, X, Download, FileIcon, Smile, Search, Mic } from "lucide-react";
 import { User, Session } from "@supabase/supabase-js";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { VoiceRecorder } from "@/components/VoiceRecorder";
+import { AudioPlayer } from "@/components/AudioPlayer";
 
 interface Reaction {
   id: string;
@@ -59,6 +61,7 @@ const Messages = () => {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [searchResults, setSearchResults] = useState<string[]>([]);
+  const [isRecordingVoice, setIsRecordingVoice] = useState(false);
 
   useEffect(() => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
@@ -399,6 +402,110 @@ const Messages = () => {
     );
   };
 
+  const handleVoiceRecording = async (audioBlob: Blob) => {
+    if (!conversationId) return;
+
+    setUploading(true);
+    setIsRecordingVoice(false);
+
+    try {
+      // Create a file from the blob
+      const fileName = `${conversationId}/${Date.now()}-voice.webm`;
+      
+      const { error: uploadError } = await supabase.storage
+        .from('message-attachments')
+        .upload(fileName, audioBlob, {
+          contentType: 'audio/webm',
+        });
+
+      if (uploadError) {
+        console.error('Upload error:', uploadError);
+        toast({
+          title: "Upload failed",
+          description: uploadError.message,
+          variant: "destructive",
+        });
+        setUploading(false);
+        return;
+      }
+
+      const { data: { publicUrl } } = supabase.storage
+        .from('message-attachments')
+        .getPublicUrl(fileName);
+
+      // Send message with voice attachment
+      await sendVoiceMessage(publicUrl);
+    } catch (error) {
+      console.error('Error uploading voice message:', error);
+      toast({
+        title: "Error",
+        description: "Failed to upload voice message",
+        variant: "destructive",
+      });
+    } finally {
+      setUploading(false);
+    }
+  };
+
+  const sendVoiceMessage = async (voiceUrl: string) => {
+    if (!user || !conversation) return;
+
+    setSending(true);
+
+    const { data: profileData } = await supabase
+      .from("profiles")
+      .select("full_name")
+      .eq("id", user.id)
+      .maybeSingle();
+
+    const senderName = profileData?.full_name || user.email?.split("@")[0] || "You";
+
+    const { data: messageData, error } = await supabase
+      .from("messages")
+      .insert({
+        conversation_id: conversationId,
+        sender_id: user.id,
+        sender_name: senderName,
+        content: "Voice message",
+        file_url: voiceUrl,
+        file_name: "Voice message",
+        file_type: "audio/webm",
+      })
+      .select()
+      .single();
+
+    if (error) {
+      console.error("Error sending message:", error);
+      toast({
+        title: "Error",
+        description: "Failed to send voice message",
+        variant: "destructive",
+      });
+      setSending(false);
+      return;
+    }
+
+    // Send notification
+    const recipientId = conversation.user_id === user.id 
+      ? conversation.mentor_id 
+      : conversation.user_id;
+
+    try {
+      await supabase.functions.invoke("send-message-notification", {
+        body: {
+          messageId: messageData.id,
+          recipientId,
+          senderName,
+          messageContent: "Sent a voice message",
+        },
+      });
+    } catch (notificationError) {
+      console.error("Error sending notification:", notificationError);
+    }
+
+    setSending(false);
+  };
+
   // Search functionality
   const handleSearch = (query: string) => {
     setSearchQuery(query);
@@ -628,6 +735,8 @@ const Messages = () => {
                                 className="max-w-full max-h-64 rounded cursor-pointer"
                                 onClick={() => window.open(message.file_url!, '_blank')}
                               />
+                            ) : message.file_type?.startsWith('audio/') ? (
+                              <AudioPlayer audioUrl={message.file_url} className="min-w-[200px]" />
                             ) : (
                               <a
                                 href={message.file_url}
@@ -727,51 +836,69 @@ const Messages = () => {
             </div>
 
             <form onSubmit={handleSendMessage} className="p-4 border-t">
-              {selectedFile && (
-                <div className="mb-2 flex items-center gap-2 p-2 bg-muted rounded">
-                  <Paperclip className="h-4 w-4" />
-                  <span className="text-sm flex-1 truncate">{selectedFile.name}</span>
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="sm"
-                    onClick={removeSelectedFile}
-                  >
-                    <X className="h-4 w-4" />
-                  </Button>
-                </div>
+              {isRecordingVoice ? (
+                <VoiceRecorder
+                  onRecordingComplete={handleVoiceRecording}
+                  onCancel={() => setIsRecordingVoice(false)}
+                />
+              ) : (
+                <>
+                  {selectedFile && (
+                    <div className="mb-2 flex items-center gap-2 p-2 bg-muted rounded">
+                      <Paperclip className="h-4 w-4" />
+                      <span className="text-sm flex-1 truncate">{selectedFile.name}</span>
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        onClick={removeSelectedFile}
+                      >
+                        <X className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  )}
+                  <div className="flex gap-2">
+                    <input
+                      ref={fileInputRef}
+                      type="file"
+                      onChange={handleFileSelect}
+                      className="hidden"
+                      accept="image/*,.pdf,.doc,.docx,.txt"
+                    />
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => fileInputRef.current?.click()}
+                      disabled={sending || uploading}
+                    >
+                      <Paperclip className="h-4 w-4" />
+                    </Button>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => setIsRecordingVoice(true)}
+                      disabled={sending || uploading}
+                    >
+                      <Mic className="h-4 w-4" />
+                    </Button>
+                    <Input
+                      value={newMessage}
+                      onChange={(e) => {
+                        setNewMessage(e.target.value);
+                        handleTyping();
+                      }}
+                      placeholder="Type your message..."
+                      disabled={sending || uploading}
+                      className="flex-1"
+                    />
+                    <Button type="submit" disabled={sending || uploading || (!newMessage.trim() && !selectedFile)}>
+                      {uploading ? "Uploading..." : <Send className="h-4 w-4" />}
+                    </Button>
+                  </div>
+                </>
               )}
-              <div className="flex gap-2">
-                <input
-                  ref={fileInputRef}
-                  type="file"
-                  onChange={handleFileSelect}
-                  className="hidden"
-                  accept="image/*,.pdf,.doc,.docx,.txt"
-                />
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="icon"
-                  onClick={() => fileInputRef.current?.click()}
-                  disabled={sending || uploading}
-                >
-                  <Paperclip className="h-4 w-4" />
-                </Button>
-                <Input
-                  value={newMessage}
-                  onChange={(e) => {
-                    setNewMessage(e.target.value);
-                    handleTyping();
-                  }}
-                  placeholder="Type your message..."
-                  disabled={sending || uploading}
-                  className="flex-1"
-                />
-                <Button type="submit" disabled={sending || uploading || (!newMessage.trim() && !selectedFile)}>
-                  {uploading ? "Uploading..." : <Send className="h-4 w-4" />}
-                </Button>
-              </div>
             </form>
           </CardContent>
         </Card>
