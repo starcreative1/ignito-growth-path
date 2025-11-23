@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
 import Navbar from "@/components/Navbar";
-import { ArrowLeft, Send, Check, CheckCheck, Paperclip, X, Download, FileIcon, Smile, Search, Mic, Trash2, MoreVertical, Edit2, Pin, PinOff, Forward, FileText, Plus, Filter, Calendar, Clock, Reply, CornerDownRight, Bookmark, BookmarkCheck, Languages, Eye } from "lucide-react";
+import { ArrowLeft, Send, Check, CheckCheck, Paperclip, X, Download, FileIcon, Smile, Search, Mic, Trash2, MoreVertical, Edit2, Pin, PinOff, Forward, FileText, Plus, Filter, Calendar, Clock, Reply, CornerDownRight, Bookmark, BookmarkCheck, Languages, Eye, Bell } from "lucide-react";
 import jsPDF from "jspdf";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { User, Session } from "@supabase/supabase-js";
@@ -53,6 +53,7 @@ interface Reaction {
 
 interface Message {
   id: string;
+  conversation_id: string;
   sender_id: string;
   sender_name: string;
   content: string;
@@ -147,6 +148,10 @@ const Messages = () => {
   const [activeThread, setActiveThread] = useState<Message | null>(null);
   const [showThreadView, setShowThreadView] = useState(false);
   const [threadMessages, setThreadMessages] = useState<Message[]>([]);
+  const [showReminderDialog, setShowReminderDialog] = useState(false);
+  const [reminderMessage, setReminderMessage] = useState<Message | null>(null);
+  const [reminderTime, setReminderTime] = useState('');
+  const [reminderNote, setReminderNote] = useState('');
 
   useEffect(() => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
@@ -488,6 +493,48 @@ const Messages = () => {
     });
 
     setReadReceipts(receiptsByMessage);
+  };
+
+  const handleSetReminder = (message: Message) => {
+    setReminderMessage(message);
+    setReminderTime('');
+    setReminderNote('');
+    setShowReminderDialog(true);
+  };
+
+  const handleCreateReminder = async () => {
+    if (!reminderMessage || !reminderTime || !user) return;
+
+    try {
+      const { error } = await supabase
+        .from('message_reminders')
+        .insert({
+          message_id: reminderMessage.id,
+          user_id: user.id,
+          conversation_id: reminderMessage.conversation_id,
+          reminder_time: new Date(reminderTime).toISOString(),
+          note: reminderNote,
+        });
+
+      if (error) throw error;
+
+      toast({
+        title: 'Reminder set',
+        description: `You'll be notified at ${new Date(reminderTime).toLocaleString()}`,
+      });
+
+      setShowReminderDialog(false);
+      setReminderMessage(null);
+      setReminderTime('');
+      setReminderNote('');
+    } catch (error) {
+      console.error('Error creating reminder:', error);
+      toast({
+        title: 'Error',
+        description: 'Failed to set reminder',
+        variant: 'destructive',
+      });
+    }
   };
 
   const loadReadReceiptsForMessage = async (messageId: string) => {
@@ -2594,6 +2641,12 @@ const Messages = () => {
                               )}
                             </DropdownMenuItem>
                             <DropdownMenuItem
+                              onClick={() => handleSetReminder(message)}
+                            >
+                              <Bell className="h-4 w-4 mr-2" />
+                              Set Reminder
+                            </DropdownMenuItem>
+                            <DropdownMenuItem
                               onClick={() => openThread(message)}
                             >
                               <Reply className="h-4 w-4 mr-2" />
@@ -3476,6 +3529,49 @@ const Messages = () => {
             <DialogFooter>
               <Button onClick={() => setShowLanguageSettings(false)}>
                 Done
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+
+        {/* Reminder Dialog */}
+        <Dialog open={showReminderDialog} onOpenChange={setShowReminderDialog}>
+          <DialogContent className="sm:max-w-md bg-background">
+            <DialogHeader>
+              <DialogTitle>Set Message Reminder</DialogTitle>
+              <DialogDescription>
+                Get notified about this message at a specific time
+              </DialogDescription>
+            </DialogHeader>
+            <div className="space-y-4">
+              <div>
+                <Label htmlFor="reminder-time" className="text-sm font-medium">Reminder Time</Label>
+                <input
+                  id="reminder-time"
+                  type="datetime-local"
+                  value={reminderTime}
+                  onChange={(e) => setReminderTime(e.target.value)}
+                  className="w-full mt-1 px-3 py-2 border rounded-md bg-background text-foreground"
+                  min={new Date().toISOString().slice(0, 16)}
+                />
+              </div>
+              <div>
+                <Label htmlFor="reminder-note" className="text-sm font-medium">Note (Optional)</Label>
+                <Textarea
+                  id="reminder-note"
+                  value={reminderNote}
+                  onChange={(e) => setReminderNote(e.target.value)}
+                  placeholder="Add a note for this reminder..."
+                  className="mt-1"
+                />
+              </div>
+            </div>
+            <DialogFooter className="gap-2">
+              <Button variant="outline" onClick={() => setShowReminderDialog(false)}>
+                Cancel
+              </Button>
+              <Button onClick={handleCreateReminder} disabled={!reminderTime}>
+                Set Reminder
               </Button>
             </DialogFooter>
           </DialogContent>
