@@ -114,6 +114,220 @@ export type Database = {
           },
         ]
       }
+      mentor_courses: {
+        Row: {
+          created_at: string
+          description: string
+          duration: string
+          id: string
+          is_active: boolean | null
+          lessons: number
+          level: string
+          mentor_id: string
+          price: number
+          thumbnail_url: string | null
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          description: string
+          duration: string
+          id?: string
+          is_active?: boolean | null
+          lessons: number
+          level: string
+          mentor_id: string
+          price: number
+          thumbnail_url?: string | null
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          description?: string
+          duration?: string
+          id?: string
+          is_active?: boolean | null
+          lessons?: number
+          level?: string
+          mentor_id?: string
+          price?: number
+          thumbnail_url?: string | null
+          title?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "mentor_courses_mentor_id_fkey"
+            columns: ["mentor_id"]
+            isOneToOne: false
+            referencedRelation: "mentor_profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      mentor_profiles: {
+        Row: {
+          availability: string
+          bio: string
+          category: string
+          certifications: string[] | null
+          created_at: string
+          education: string
+          experience: string
+          expertise: string[]
+          full_bio: string
+          id: string
+          image_url: string | null
+          is_active: boolean | null
+          languages: string[]
+          name: string
+          price: number
+          rating: number | null
+          review_count: number | null
+          title: string
+          updated_at: string
+          user_id: string | null
+        }
+        Insert: {
+          availability: string
+          bio: string
+          category: string
+          certifications?: string[] | null
+          created_at?: string
+          education: string
+          experience: string
+          expertise: string[]
+          full_bio: string
+          id?: string
+          image_url?: string | null
+          is_active?: boolean | null
+          languages: string[]
+          name: string
+          price: number
+          rating?: number | null
+          review_count?: number | null
+          title: string
+          updated_at?: string
+          user_id?: string | null
+        }
+        Update: {
+          availability?: string
+          bio?: string
+          category?: string
+          certifications?: string[] | null
+          created_at?: string
+          education?: string
+          experience?: string
+          expertise?: string[]
+          full_bio?: string
+          id?: string
+          image_url?: string | null
+          is_active?: boolean | null
+          languages?: string[]
+          name?: string
+          price?: number
+          rating?: number | null
+          review_count?: number | null
+          title?: string
+          updated_at?: string
+          user_id?: string | null
+        }
+        Relationships: []
+      }
+      mentor_reviews: {
+        Row: {
+          comment: string
+          created_at: string
+          id: string
+          mentor_id: string
+          rating: number
+          updated_at: string
+          user_avatar: string | null
+          user_id: string
+          user_name: string
+        }
+        Insert: {
+          comment: string
+          created_at?: string
+          id?: string
+          mentor_id: string
+          rating: number
+          updated_at?: string
+          user_avatar?: string | null
+          user_id: string
+          user_name: string
+        }
+        Update: {
+          comment?: string
+          created_at?: string
+          id?: string
+          mentor_id?: string
+          rating?: number
+          updated_at?: string
+          user_avatar?: string | null
+          user_id?: string
+          user_name?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "mentor_reviews_mentor_id_fkey"
+            columns: ["mentor_id"]
+            isOneToOne: false
+            referencedRelation: "mentor_profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      mentor_time_slots: {
+        Row: {
+          booking_id: string | null
+          created_at: string
+          date: string
+          id: string
+          is_available: boolean | null
+          mentor_id: string
+          time: string
+          updated_at: string
+        }
+        Insert: {
+          booking_id?: string | null
+          created_at?: string
+          date: string
+          id?: string
+          is_available?: boolean | null
+          mentor_id: string
+          time: string
+          updated_at?: string
+        }
+        Update: {
+          booking_id?: string | null
+          created_at?: string
+          date?: string
+          id?: string
+          is_available?: boolean | null
+          mentor_id?: string
+          time?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "mentor_time_slots_booking_id_fkey"
+            columns: ["booking_id"]
+            isOneToOne: false
+            referencedRelation: "bookings"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "mentor_time_slots_mentor_id_fkey"
+            columns: ["mentor_id"]
+            isOneToOne: false
+            referencedRelation: "mentor_profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       message_bookmarks: {
         Row: {
           conversation_id: string

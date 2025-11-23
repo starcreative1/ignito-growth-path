@@ -3,7 +3,16 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { ChevronLeft, ChevronRight, Calendar as CalendarIcon } from "lucide-react";
-import { TimeSlot } from "@/data/mentors";
+
+interface TimeSlot {
+  id: string;
+  mentor_id?: string;
+  mentorId?: string;
+  date: string;
+  time: string;
+  is_available?: boolean;
+  available?: boolean;
+}
 
 interface TimeSlotSelectorProps {
   timeSlots: TimeSlot[];
@@ -136,21 +145,24 @@ const TimeSlotSelector = ({ timeSlots, onSelectSlot }: TimeSlotSelectorProps) =>
             
             {slotsForDate.length > 0 ? (
               <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-                {slotsForDate.map((slot) => (
-                  <Button
-                    key={slot.id}
-                    variant={slot.available ? "outline" : "ghost"}
-                    disabled={!slot.available}
-                    onClick={() => slot.available && onSelectSlot(slot)}
-                    className={`${
-                      slot.available
-                        ? "hover:bg-accent hover:text-accent-foreground"
-                        : "opacity-50 cursor-not-allowed"
-                    }`}
-                  >
-                    {formatTime(slot.time)}
-                  </Button>
-                ))}
+                {slotsForDate.map((slot) => {
+                  const isAvailable = slot.is_available ?? slot.available ?? false;
+                  return (
+                    <Button
+                      key={slot.id}
+                      variant={isAvailable ? "outline" : "ghost"}
+                      disabled={!isAvailable}
+                      onClick={() => isAvailable && onSelectSlot(slot)}
+                      className={`${
+                        isAvailable
+                          ? "hover:bg-accent hover:text-accent-foreground"
+                          : "opacity-50 cursor-not-allowed"
+                      }`}
+                    >
+                      {formatTime(slot.time)}
+                    </Button>
+                  );
+                })}
               </div>
             ) : (
               <p className="text-center text-muted-foreground py-4">
