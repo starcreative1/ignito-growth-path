@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
 import Navbar from "@/components/Navbar";
-import { ArrowLeft, Send, Check, CheckCheck, Paperclip, X, Download, FileIcon, Smile, Search, Mic, Trash2, MoreVertical } from "lucide-react";
+import { ArrowLeft, Send, Check, CheckCheck, Paperclip, X, Download, FileIcon, Smile, Search, Mic, Trash2, MoreVertical, Edit2 } from "lucide-react";
 import { User, Session } from "@supabase/supabase-js";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { VoiceRecorder } from "@/components/VoiceRecorder";
@@ -46,6 +46,7 @@ interface Message {
   file_url: string | null;
   file_name: string | null;
   file_type: string | null;
+  edited_at?: string | null;
   reactions?: Reaction[];
 }
 
@@ -79,6 +80,8 @@ const Messages = () => {
   const [searchResults, setSearchResults] = useState<string[]>([]);
   const [isRecordingVoice, setIsRecordingVoice] = useState(false);
   const [messageToDelete, setMessageToDelete] = useState<string | null>(null);
+  const [editingMessageId, setEditingMessageId] = useState<string | null>(null);
+  const [editContent, setEditContent] = useState("");
 
   useEffect(() => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
@@ -559,6 +562,68 @@ const Messages = () => {
     }
   };
 
+  const canEditMessage = (createdAt: string) => {
+    const messageTime = new Date(createdAt).getTime();
+    const now = new Date().getTime();
+    const fifteenMinutes = 15 * 60 * 1000;
+    return now - messageTime < fifteenMinutes;
+  };
+
+  const handleStartEdit = (messageId: string, content: string) => {
+    setEditingMessageId(messageId);
+    setEditContent(content);
+  };
+
+  const handleCancelEdit = () => {
+    setEditingMessageId(null);
+    setEditContent("");
+  };
+
+  const handleSaveEdit = async (messageId: string) => {
+    if (!editContent.trim()) return;
+
+    try {
+      const { error } = await supabase
+        .from("messages")
+        .update({ 
+          content: editContent.trim(),
+          edited_at: new Date().toISOString()
+        })
+        .eq("id", messageId);
+
+      if (error) {
+        console.error("Error updating message:", error);
+        toast({
+          title: "Error",
+          description: "Failed to update message",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      // Update local state
+      setMessages(prev => prev.map(msg => 
+        msg.id === messageId 
+          ? { ...msg, content: editContent.trim(), edited_at: new Date().toISOString() }
+          : msg
+      ));
+      
+      toast({
+        title: "Message updated",
+        description: "The message has been updated successfully",
+      });
+      
+      handleCancelEdit();
+    } catch (error) {
+      console.error("Error updating message:", error);
+      toast({
+        title: "Error",
+        description: "Failed to update message",
+        variant: "destructive",
+      });
+    }
+  };
+
   // Search functionality
   const handleSearch = (query: string) => {
     setSearchQuery(query);
@@ -773,143 +838,193 @@ const Messages = () => {
                   )}
                 </div>
               ) : (
-                filteredMessages.map((message) => (
-                  <div
-                    key={message.id}
-                    className={`flex gap-2 ${message.sender_id === user?.id ? "justify-end" : "justify-start"} group`}
-                  >
-                    <div className="flex flex-col gap-1 max-w-[70%]">
-                      <div
-                        className={`rounded-lg px-4 py-2 ${
-                          message.sender_id === user?.id
-                            ? "bg-primary text-primary-foreground"
-                            : "bg-muted"
-                        }`}
-                      >
-                        <p className="text-sm font-medium mb-1">{highlightText(message.sender_name, searchQuery)}</p>
-                        {message.content && (
-                          <p className="text-sm whitespace-pre-wrap">{highlightText(message.content, searchQuery)}</p>
-                        )}
-                        {message.file_url && (
-                          <div className="mt-2">
-                            {message.file_type?.startsWith('image/') ? (
-                              <img 
-                                src={message.file_url} 
-                                alt={message.file_name || 'Image attachment'}
-                                className="max-w-full max-h-64 rounded cursor-pointer"
-                                onClick={() => window.open(message.file_url!, '_blank')}
-                              />
-                            ) : message.file_type?.startsWith('audio/') ? (
-                              <AudioPlayer audioUrl={message.file_url} className="min-w-[200px]" />
-                            ) : (
-                              <a
-                                href={message.file_url}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="flex items-center gap-2 p-2 bg-background/10 rounded hover:bg-background/20 transition-colors"
-                              >
-                                <FileIcon className="h-4 w-4" />
-                                <span className="text-sm">{message.file_name || 'Download file'}</span>
-                                <Download className="h-3 w-3 ml-auto" />
-                              </a>
+                filteredMessages.map((message) => {
+                  const isEditing = editingMessageId === message.id;
+                  const canEdit = message.sender_id === user?.id && canEditMessage(message.created_at) && !message.file_url;
+
+                  return (
+                    <div
+                      key={message.id}
+                      className={`flex gap-2 ${message.sender_id === user?.id ? "justify-end" : "justify-start"} group`}
+                    >
+                      <div className="flex flex-col gap-1 max-w-[70%]">
+                        {isEditing ? (
+                          <div className="flex items-center gap-2">
+                            <Input
+                              value={editContent}
+                              onChange={(e) => setEditContent(e.target.value)}
+                              className="flex-1"
+                              onKeyDown={(e) => {
+                                if (e.key === "Enter" && !e.shiftKey) {
+                                  e.preventDefault();
+                                  handleSaveEdit(message.id);
+                                } else if (e.key === "Escape") {
+                                  handleCancelEdit();
+                                }
+                              }}
+                              autoFocus
+                            />
+                            <Button
+                              size="icon"
+                              variant="ghost"
+                              onClick={() => handleSaveEdit(message.id)}
+                              className="h-8 w-8 flex-shrink-0"
+                            >
+                              <Check className="h-4 w-4" />
+                            </Button>
+                            <Button
+                              size="icon"
+                              variant="ghost"
+                              onClick={handleCancelEdit}
+                              className="h-8 w-8 flex-shrink-0"
+                            >
+                              <X className="h-4 w-4" />
+                            </Button>
+                          </div>
+                        ) : (
+                          <div
+                            className={`rounded-lg px-4 py-2 ${
+                              message.sender_id === user?.id
+                                ? "bg-primary text-primary-foreground"
+                                : "bg-muted"
+                            }`}
+                          >
+                            <p className="text-sm font-medium mb-1">{highlightText(message.sender_name, searchQuery)}</p>
+                            {message.content && (
+                              <p className="text-sm whitespace-pre-wrap">{highlightText(message.content, searchQuery)}</p>
                             )}
-                          </div>
-                        )}
-                        <div className="flex items-center gap-1 mt-1">
-                          <p className="text-xs opacity-70">
-                            {new Date(message.created_at).toLocaleTimeString([], {
-                              hour: "2-digit",
-                              minute: "2-digit",
-                            })}
-                          </p>
-                          {message.sender_id === user?.id && (
-                            <span className="text-xs opacity-70">
-                              {message.is_read ? (
-                                <CheckCheck className="h-3 w-3 inline ml-1" />
-                              ) : (
-                                <Check className="h-3 w-3 inline ml-1" />
+                            {message.file_url && (
+                              <div className="mt-2">
+                                {message.file_type?.startsWith('image/') ? (
+                                  <img 
+                                    src={message.file_url} 
+                                    alt={message.file_name || 'Image attachment'}
+                                    className="max-w-full max-h-64 rounded cursor-pointer"
+                                    onClick={() => window.open(message.file_url!, '_blank')}
+                                  />
+                                ) : message.file_type?.startsWith('audio/') ? (
+                                  <AudioPlayer audioUrl={message.file_url} className="min-w-[200px]" />
+                                ) : (
+                                  <a
+                                    href={message.file_url}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="flex items-center gap-2 p-2 bg-background/10 rounded hover:bg-background/20 transition-colors"
+                                  >
+                                    <FileIcon className="h-4 w-4" />
+                                    <span className="text-sm">{message.file_name || 'Download file'}</span>
+                                    <Download className="h-3 w-3 ml-auto" />
+                                  </a>
+                                )}
+                              </div>
+                            )}
+                            <div className="flex items-center gap-1 mt-1">
+                              <p className="text-xs opacity-70">
+                                {new Date(message.created_at).toLocaleTimeString([], {
+                                  hour: "2-digit",
+                                  minute: "2-digit",
+                                })}
+                                {message.edited_at && " (edited)"}
+                              </p>
+                              {message.sender_id === user?.id && (
+                                <span className="text-xs opacity-70">
+                                  {message.is_read ? (
+                                    <CheckCheck className="h-3 w-3 inline ml-1" />
+                                  ) : (
+                                    <Check className="h-3 w-3 inline ml-1" />
+                                  )}
+                                </span>
                               )}
-                            </span>
-                          )}
-                        </div>
-                      </div>
-                      
-                      {/* Reactions display */}
-                      <div className="flex items-center gap-1 mt-1">
-                        {message.reactions && message.reactions.length > 0 && (
-                          <div className="flex gap-1">
-                            {message.reactions.map((reaction) => (
-                              <button
-                                key={reaction.emoji}
-                                onClick={() => handleReaction(message.id, reaction.emoji)}
-                                className={`flex items-center gap-1 px-2 py-0.5 rounded-full text-xs ${
-                                  reaction.users?.includes(user?.id || '')
-                                    ? 'bg-primary/20 border border-primary'
-                                    : 'bg-background/10 border border-border'
-                                } hover:bg-background/20 transition-colors`}
-                              >
-                                <span>{reaction.emoji}</span>
-                                <span>{reaction.count}</span>
-                              </button>
-                            ))}
+                            </div>
                           </div>
                         )}
-                        
-                        {/* Add reaction button */}
-                        <Popover>
-                          <PopoverTrigger asChild>
+                      
+                        {/* Reactions display */}
+                        {!isEditing && (
+                          <div className="flex items-center gap-1 mt-1">
+                            {message.reactions && message.reactions.length > 0 && (
+                              <div className="flex gap-1">
+                                {message.reactions.map((reaction) => (
+                                  <button
+                                    key={reaction.emoji}
+                                    onClick={() => handleReaction(message.id, reaction.emoji)}
+                                    className={`flex items-center gap-1 px-2 py-0.5 rounded-full text-xs ${
+                                      reaction.users?.includes(user?.id || '')
+                                        ? 'bg-primary/20 border border-primary'
+                                        : 'bg-background/10 border border-border'
+                                    } hover:bg-background/20 transition-colors`}
+                                  >
+                                    <span>{reaction.emoji}</span>
+                                    <span>{reaction.count}</span>
+                                  </button>
+                                ))}
+                              </div>
+                            )}
+                            
+                            {/* Add reaction button */}
+                            <Popover>
+                              <PopoverTrigger asChild>
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  className="h-6 w-6 p-0 opacity-0 group-hover:opacity-100 transition-opacity"
+                                >
+                                  <Smile className="h-3 w-3" />
+                                </Button>
+                              </PopoverTrigger>
+                              <PopoverContent className="w-auto p-2">
+                                <div className="flex gap-1">
+                                  {EMOJI_OPTIONS.map((emoji) => (
+                                    <button
+                                      key={emoji}
+                                      onClick={() => handleReaction(message.id, emoji)}
+                                      className="text-2xl hover:scale-125 transition-transform p-1"
+                                    >
+                                      {emoji}
+                                    </button>
+                                  ))}
+                                </div>
+                              </PopoverContent>
+                            </Popover>
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Message actions dropdown (only for own messages) */}
+                      {message.sender_id === user?.id && !isEditing && (
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
                             <Button
                               variant="ghost"
                               size="sm"
                               className="h-6 w-6 p-0 opacity-0 group-hover:opacity-100 transition-opacity"
                             >
-                              <Smile className="h-3 w-3" />
+                              <MoreVertical className="h-4 w-4" />
                             </Button>
-                          </PopoverTrigger>
-                          <PopoverContent className="w-auto p-2">
-                            <div className="flex gap-1">
-                              {EMOJI_OPTIONS.map((emoji) => (
-                                <button
-                                  key={emoji}
-                                  onClick={() => handleReaction(message.id, emoji)}
-                                  className="text-2xl hover:scale-125 transition-transform p-1"
-                                >
-                                  {emoji}
-                                </button>
-                              ))}
-                            </div>
-                          </PopoverContent>
-                        </Popover>
-                      </div>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end">
+                            {canEdit && (
+                              <DropdownMenuItem
+                                onClick={() => handleStartEdit(message.id, message.content)}
+                              >
+                                <Edit2 className="h-4 w-4 mr-2" />
+                                Edit Message
+                              </DropdownMenuItem>
+                            )}
+                            <DropdownMenuItem
+                              onClick={() => setMessageToDelete(message.id)}
+                              className="text-destructive focus:text-destructive"
+                            >
+                              <Trash2 className="h-4 w-4 mr-2" />
+                              Delete Message
+                            </DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                      )}
                     </div>
-
-                    {/* Message actions dropdown (only for own messages) */}
-                    {message.sender_id === user?.id && (
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            className="h-6 w-6 p-0 opacity-0 group-hover:opacity-100 transition-opacity"
-                          >
-                            <MoreVertical className="h-4 w-4" />
-                          </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end">
-                          <DropdownMenuItem
-                            onClick={() => setMessageToDelete(message.id)}
-                            className="text-destructive focus:text-destructive"
-                          >
-                            <Trash2 className="h-4 w-4 mr-2" />
-                            Delete Message
-                          </DropdownMenuItem>
-                        </DropdownMenuContent>
-                      </DropdownMenu>
-                    )}
-                  </div>
-                ))
+                  );
+                })
               )}
-              
               {isTyping && (
                 <div className="flex justify-start">
                   <div className="bg-muted rounded-lg px-4 py-2">
