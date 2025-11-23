@@ -127,6 +127,10 @@ const Messages = () => {
   const [replyingTo, setReplyingTo] = useState<Message | null>(null);
   const [showBookmarksOnly, setShowBookmarksOnly] = useState(false);
   const [bookmarkedMessageIds, setBookmarkedMessageIds] = useState<Set<string>>(new Set());
+  const [showMentionSuggestions, setShowMentionSuggestions] = useState(false);
+  const [mentionSearchQuery, setMentionSearchQuery] = useState("");
+  const [cursorPosition, setCursorPosition] = useState(0);
+  const messageInputRef = useRef<HTMLTextAreaElement>(null);
 
   useEffect(() => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
@@ -752,6 +756,135 @@ const Messages = () => {
     }
   };
 
+  const handleMessageInput = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+    const value = e.target.value;
+    const cursorPos = e.target.selectionStart;
+    
+    setNewMessage(value);
+    setCursorPosition(cursorPos);
+    handleTyping();
+
+    // Check for @ mention
+    const textBeforeCursor = value.substring(0, cursorPos);
+    const lastAtSymbol = textBeforeCursor.lastIndexOf('@');
+    
+    if (lastAtSymbol !== -1) {
+      const textAfterAt = textBeforeCursor.substring(lastAtSymbol + 1);
+      // Check if there's a space after @ (which would end the mention)
+      if (!textAfterAt.includes(' ') && textAfterAt.length < 50) {
+        setMentionSearchQuery(textAfterAt.toLowerCase());
+        setShowMentionSuggestions(true);
+      } else {
+        setShowMentionSuggestions(false);
+      }
+    } else {
+      setShowMentionSuggestions(false);
+    }
+  };
+
+  const insertMention = (username: string) => {
+    if (!messageInputRef.current) return;
+
+    const textBeforeCursor = newMessage.substring(0, cursorPosition);
+    const textAfterCursor = newMessage.substring(cursorPosition);
+    const lastAtSymbol = textBeforeCursor.lastIndexOf('@');
+    
+    if (lastAtSymbol !== -1) {
+      const beforeAt = newMessage.substring(0, lastAtSymbol);
+      const newText = `${beforeAt}@${username} ${textAfterCursor}`;
+      setNewMessage(newText);
+      setShowMentionSuggestions(false);
+      
+      // Set cursor position after the mention
+      setTimeout(() => {
+        if (messageInputRef.current) {
+          const newCursorPos = lastAtSymbol + username.length + 2;
+          messageInputRef.current.focus();
+          messageInputRef.current.setSelectionRange(newCursorPos, newCursorPos);
+        }
+      }, 0);
+    }
+  };
+
+  const getMentionSuggestions = () => {
+    if (!conversation || !user) return [];
+    
+    // Get unique participants from messages
+    const participants = Array.from(
+      new Set(
+        messages
+          .map(msg => ({ id: msg.sender_id, name: msg.sender_name }))
+          .filter(p => p.id !== user.id) // Exclude current user
+      )
+    ).reduce((acc, participant) => {
+      if (!acc.find(p => p.id === participant.id)) {
+        acc.push(participant);
+      }
+      return acc;
+    }, [] as { id: string; name: string }[]);
+
+    // Add mentor if not already in participants
+    if (!participants.find(p => p.name === conversation.mentor_name)) {
+      participants.push({
+        id: conversation.mentor_id,
+        name: conversation.mentor_name,
+      });
+    }
+
+    // Filter by search query
+    return participants.filter(p =>
+      p.name.toLowerCase().includes(mentionSearchQuery)
+    );
+  };
+
+  const parseMentions = (text: string) => {
+    // Split text by @ mentions and create an array of parts
+    const parts: Array<{ text: string; isMention: boolean }> = [];
+    const mentionRegex = /@(\w+(?:\s+\w+)*)/g;
+    let lastIndex = 0;
+    let match;
+
+    while ((match = mentionRegex.exec(text)) !== null) {
+      // Add text before mention
+      if (match.index > lastIndex) {
+        parts.push({
+          text: text.substring(lastIndex, match.index),
+          isMention: false,
+        });
+      }
+      
+      // Add mention
+      parts.push({
+        text: `@${match[1]}`,
+        isMention: true,
+      });
+      
+      lastIndex = match.index + match[0].length;
+    }
+    
+    // Add remaining text
+    if (lastIndex < text.length) {
+      parts.push({
+        text: text.substring(lastIndex),
+        isMention: false,
+      });
+    }
+    
+    return parts.length > 0 ? parts : [{ text, isMention: false }];
+  };
+
+  const extractMentions = (text: string): string[] => {
+    const mentionRegex = /@(\w+(?:\s+\w+)*)/g;
+    const mentions: string[] = [];
+    let match;
+    
+    while ((match = mentionRegex.exec(text)) !== null) {
+      mentions.push(match[1]);
+    }
+    
+    return mentions;
+  };
+
   const handlePinMessage = async (messageId: string, currentlyPinned: boolean) => {
     try {
       const { error } = await supabase
@@ -1336,13 +1469,41 @@ const Messages = () => {
       clearTimeout(typingTimeout);
     }
 
+    // Extract mentions and send notifications
+    const mentions = extractMentions(messageContent);
+    const mentionedUserIds: string[] = [];
+
+    if (mentions.length > 0) {
+      // Find mentioned users from conversation participants
+      const participants = messages
+        .map(msg => ({ id: msg.sender_id, name: msg.sender_name }))
+        .filter(p => p.id !== user.id);
+
+      mentions.forEach(mention => {
+        const mentionedUser = participants.find(p => 
+          p.name.toLowerCase() === mention.toLowerCase()
+        );
+        if (mentionedUser && !mentionedUserIds.includes(mentionedUser.id)) {
+          mentionedUserIds.push(mentionedUser.id);
+        }
+      });
+
+      // Also check if mentor was mentioned
+      if (conversation.mentor_name && 
+          mentions.some(m => m.toLowerCase() === conversation.mentor_name.toLowerCase())) {
+        if (!mentionedUserIds.includes(conversation.mentor_id)) {
+          mentionedUserIds.push(conversation.mentor_id);
+        }
+      }
+    }
+
     // Send email notification to recipient (mentor or user)
     const recipientId = conversation.user_id === user.id 
       ? conversation.mentor_id 
       : conversation.user_id;
 
     try {
-      // Send email notification
+      // Send email notification to main recipient
       await supabase.functions.invoke("send-message-notification", {
         body: {
           messageId: messageData.id,
@@ -1352,7 +1513,7 @@ const Messages = () => {
         },
       });
 
-      // Send push notification
+      // Send push notification to main recipient
       await supabase.functions.invoke("send-push-notification", {
         body: {
           recipientId,
@@ -1361,6 +1522,21 @@ const Messages = () => {
           conversationId,
         },
       });
+
+      // Send notifications to mentioned users
+      for (const mentionedUserId of mentionedUserIds) {
+        if (mentionedUserId !== recipientId) {
+          // Send push notification for mention
+          await supabase.functions.invoke("send-push-notification", {
+            body: {
+              recipientId: mentionedUserId,
+              title: `${senderName} mentioned you`,
+              body: messageContent.substring(0, 100),
+              conversationId,
+            },
+          });
+        }
+      }
     } catch (notificationError) {
       console.error("Error sending notification:", notificationError);
       // Don't show error to user as message was sent successfully
@@ -1674,7 +1850,17 @@ const Messages = () => {
 
                             <p className="text-sm font-medium mb-1">{highlightText(message.sender_name, searchQuery)}</p>
                             {message.content && (
-                              <p className="text-sm whitespace-pre-wrap">{highlightText(message.content, searchQuery)}</p>
+                              <p className="text-sm whitespace-pre-wrap">
+                                {parseMentions(message.content).map((part, idx) => (
+                                  part.isMention ? (
+                                    <span key={idx} className="font-semibold bg-primary/20 px-1 rounded">
+                                      {highlightText(part.text, searchQuery)}
+                                    </span>
+                                  ) : (
+                                    <span key={idx}>{highlightText(part.text, searchQuery)}</span>
+                                  )
+                                ))}
+                              </p>
                             )}
                             {message.file_url && (
                               <div className="mt-2">
@@ -1920,7 +2106,17 @@ const Messages = () => {
 
                             <p className="text-sm font-medium mb-1">{highlightText(message.sender_name, searchQuery)}</p>
                             {message.content && (
-                              <p className="text-sm whitespace-pre-wrap">{highlightText(message.content, searchQuery)}</p>
+                              <p className="text-sm whitespace-pre-wrap">
+                                {parseMentions(message.content).map((part, idx) => (
+                                  part.isMention ? (
+                                    <span key={idx} className="font-semibold bg-primary/20 px-1 rounded">
+                                      {highlightText(part.text, searchQuery)}
+                                    </span>
+                                  ) : (
+                                    <span key={idx}>{highlightText(part.text, searchQuery)}</span>
+                                  )
+                                ))}
+                              </p>
                             )}
                             {message.file_url && (
                               <div className="mt-2">
@@ -2153,7 +2349,7 @@ const Messages = () => {
                       </Button>
                     </div>
                   )}
-                  <div className="flex gap-2">
+                  <div className="relative flex gap-2">
                     <input
                       ref={fileInputRef}
                       type="file"
@@ -2189,16 +2385,42 @@ const Messages = () => {
                     >
                       <Mic className="h-4 w-4" />
                     </Button>
-                    <Input
-                      value={newMessage}
-                      onChange={(e) => {
-                        setNewMessage(e.target.value);
-                        handleTyping();
-                      }}
-                      placeholder="Type your message..."
-                      disabled={sending || uploading}
-                      className="flex-1"
-                    />
+                    <div className="flex-1 relative">
+                      <Textarea
+                        ref={messageInputRef}
+                        value={newMessage}
+                        onChange={handleMessageInput}
+                        onKeyDown={(e) => {
+                          if (e.key === "Enter" && !e.shiftKey) {
+                            e.preventDefault();
+                            handleSendMessage(e as any);
+                          }
+                        }}
+                        placeholder="Type your message... (use @ to mention)"
+                        disabled={sending || uploading}
+                        className="min-h-[40px] max-h-[120px] resize-none"
+                        rows={1}
+                      />
+                      
+                      {/* Mention suggestions dropdown */}
+                      {showMentionSuggestions && getMentionSuggestions().length > 0 && (
+                        <div className="absolute bottom-full left-0 mb-1 w-64 bg-background border rounded-lg shadow-lg max-h-48 overflow-y-auto z-50">
+                          {getMentionSuggestions().map((user) => (
+                            <button
+                              key={user.id}
+                              type="button"
+                              onClick={() => insertMention(user.name)}
+                              className="w-full px-3 py-2 text-left hover:bg-muted transition-colors flex items-center gap-2"
+                            >
+                              <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center text-sm font-medium">
+                                {user.name[0].toUpperCase()}
+                              </div>
+                              <span className="text-sm">{user.name}</span>
+                            </button>
+                          ))}
+                        </div>
+                      )}
+                    </div>
                     <Button
                       type="button"
                       variant="ghost"
