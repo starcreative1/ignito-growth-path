@@ -143,6 +143,10 @@ const Messages = () => {
   const [autoTranslateEnabled, setAutoTranslateEnabled] = useState(false);
   const [showLanguageSettings, setShowLanguageSettings] = useState(false);
   const [readReceipts, setReadReceipts] = useState<Record<string, Array<{ user_id: string; read_at: string; user_name?: string }>>>({});
+  const [threadCounts, setThreadCounts] = useState<Record<string, number>>({});
+  const [activeThread, setActiveThread] = useState<Message | null>(null);
+  const [showThreadView, setShowThreadView] = useState(false);
+  const [threadMessages, setThreadMessages] = useState<Message[]>([]);
 
   useEffect(() => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
@@ -351,6 +355,9 @@ const Messages = () => {
       );
       setMessages(messagesWithReactions || []);
       
+      // Calculate thread counts
+      calculateThreadCounts(messagesWithReactions || []);
+      
       // Auto-translate messages from other users
       if (userPreferredLanguage && autoTranslateEnabled) {
         messagesWithReactions
@@ -532,6 +539,40 @@ const Messages = () => {
     for (const message of unreadMessages) {
       await createReadReceipt(message.id);
     }
+  };
+
+  const calculateThreadCounts = (msgs: Message[]) => {
+    const counts: Record<string, number> = {};
+    
+    msgs.forEach(msg => {
+      if (msg.reply_to) {
+        counts[msg.reply_to] = (counts[msg.reply_to] || 0) + 1;
+      }
+    });
+    
+    setThreadCounts(counts);
+  };
+
+  const openThread = (message: Message) => {
+    setActiveThread(message);
+    
+    // Get all replies to this message
+    const replies = messages
+      .filter(msg => msg.reply_to === message.id)
+      .sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime());
+    
+    setThreadMessages(replies);
+    setShowThreadView(true);
+  };
+
+  const handleReplyInThread = (message: Message) => {
+    setReplyingTo(message);
+    setShowThreadView(false);
+    
+    // Focus the message input
+    setTimeout(() => {
+      messageInputRef.current?.focus();
+    }, 100);
   };
 
   const loadReactions = async (messageId: string): Promise<Reaction[]> => {
@@ -1962,6 +2003,12 @@ const Messages = () => {
     // Clear the draft after sending
     await deleteDraft();
     
+    // Recalculate thread counts if this was a reply
+    if (replyingTo) {
+      const updatedMessages = [...messages, messageData];
+      calculateThreadCounts(updatedMessages);
+    }
+    
     setSending(false);
   };
 
@@ -2356,6 +2403,22 @@ const Messages = () => {
                               </div>
                             )}
                             
+                            {/* Thread indicator */}
+                            {threadCounts[message.id] && threadCounts[message.id] > 0 && (
+                              <div className="mt-2">
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  onClick={() => openThread(message)}
+                                  className="h-auto p-1 text-xs opacity-70 hover:opacity-100"
+                                >
+                                  <Reply className="h-3 w-3 mr-1" />
+                                  {threadCounts[message.id]} {threadCounts[message.id] === 1 ? 'reply' : 'replies'}
+                                </Button>
+                              </div>
+                            )}
+                            
+                            
                             {message.file_url && (
                               <div className="mt-2">
                                 {message.file_type?.startsWith('image/') ? (
@@ -2529,6 +2592,12 @@ const Messages = () => {
                                   Bookmark Message
                                 </>
                               )}
+                            </DropdownMenuItem>
+                            <DropdownMenuItem
+                              onClick={() => openThread(message)}
+                            >
+                              <Reply className="h-4 w-4 mr-2" />
+                              View Thread {threadCounts[message.id] ? `(${threadCounts[message.id]})` : ''}
                             </DropdownMenuItem>
                             <DropdownMenuItem
                               onClick={() => handleOpenForwardDialog(message)}
@@ -3206,6 +3275,120 @@ const Messages = () => {
           </DialogContent>
         </Dialog>
 
+        {/* Thread View Dialog */}
+        <Dialog open={showThreadView} onOpenChange={setShowThreadView}>
+          <DialogContent className="sm:max-w-2xl bg-background max-h-[80vh] flex flex-col">
+            <DialogHeader>
+              <DialogTitle>Thread View</DialogTitle>
+              <DialogDescription>
+                Viewing conversation thread
+              </DialogDescription>
+            </DialogHeader>
+            <div className="flex-1 overflow-y-auto space-y-4">
+              {/* Original Message */}
+              {activeThread && (
+                <div className="border-l-4 border-primary pl-4 py-2 bg-muted/30 rounded">
+                  <div className="flex items-start gap-3">
+                    <div className="flex-1">
+                      <p className="text-sm font-medium mb-1">{activeThread.sender_name}</p>
+                      <p className="text-sm whitespace-pre-wrap">{activeThread.content}</p>
+                      {activeThread.file_url && (
+                        <div className="mt-2">
+                          {activeThread.file_type?.startsWith('image/') ? (
+                            <img 
+                              src={activeThread.file_url} 
+                              alt={activeThread.file_name || 'Image'}
+                              className="max-w-full max-h-48 rounded"
+                            />
+                          ) : activeThread.file_type?.startsWith('audio/') ? (
+                            <AudioPlayer audioUrl={activeThread.file_url} className="min-w-[200px]" />
+                          ) : (
+                            <a
+                              href={activeThread.file_url}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="flex items-center gap-2 p-2 bg-background rounded text-sm hover:bg-muted"
+                            >
+                              <FileIcon className="h-4 w-4" />
+                              <span>{activeThread.file_name || 'Download file'}</span>
+                            </a>
+                          )}
+                        </div>
+                      )}
+                      <p className="text-xs text-muted-foreground mt-1">
+                        {format(new Date(activeThread.created_at), "MMM dd, yyyy 'at' HH:mm")}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Thread Replies */}
+              <div className="space-y-3 pl-8">
+                {threadMessages.length === 0 ? (
+                  <p className="text-sm text-muted-foreground text-center py-4">
+                    No replies yet. Be the first to reply!
+                  </p>
+                ) : (
+                  threadMessages.map((msg) => (
+                    <div 
+                      key={msg.id}
+                      className={`p-3 rounded-lg ${
+                        msg.sender_id === user?.id
+                          ? "bg-primary text-primary-foreground ml-auto max-w-[80%]"
+                          : "bg-muted mr-auto max-w-[80%]"
+                      }`}
+                    >
+                      <p className="text-sm font-medium mb-1">{msg.sender_name}</p>
+                      <p className="text-sm whitespace-pre-wrap">{msg.content}</p>
+                      {msg.file_url && (
+                        <div className="mt-2">
+                          {msg.file_type?.startsWith('image/') ? (
+                            <img 
+                              src={msg.file_url} 
+                              alt={msg.file_name || 'Image'}
+                              className="max-w-full max-h-48 rounded"
+                            />
+                          ) : msg.file_type?.startsWith('audio/') ? (
+                            <AudioPlayer audioUrl={msg.file_url} className="min-w-[200px]" />
+                          ) : (
+                            <a
+                              href={msg.file_url}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="flex items-center gap-2 p-2 bg-background/10 rounded text-sm"
+                            >
+                              <FileIcon className="h-4 w-4" />
+                              <span>{msg.file_name || 'Download file'}</span>
+                            </a>
+                          )}
+                        </div>
+                      )}
+                      <p className="text-xs opacity-70 mt-1">
+                        {format(new Date(msg.created_at), "MMM dd, HH:mm")}
+                      </p>
+                    </div>
+                  ))
+                )}
+              </div>
+            </div>
+            <DialogFooter className="mt-4">
+              <Button
+                variant="outline"
+                onClick={() => setShowThreadView(false)}
+              >
+                Close
+              </Button>
+              {activeThread && (
+                <Button onClick={() => handleReplyInThread(activeThread)}>
+                  <Reply className="h-4 w-4 mr-2" />
+                  Reply in Thread
+                </Button>
+              )}
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+
         {/* Delete confirmation dialog */}
         <AlertDialog open={!!messageToDelete} onOpenChange={() => setMessageToDelete(null)}>
           <AlertDialogContent className="bg-background">
@@ -3225,7 +3408,7 @@ const Messages = () => {
               </AlertDialogAction>
             </AlertDialogFooter>
           </AlertDialogContent>
-        </AlertDialog>
+         </AlertDialog>
 
         {/* Language Settings Dialog */}
         <Dialog open={showLanguageSettings} onOpenChange={setShowLanguageSettings}>
