@@ -614,12 +614,23 @@ const Messages = () => {
       : conversation.user_id;
 
     try {
+      // Send email notification
       await supabase.functions.invoke("send-message-notification", {
         body: {
           messageId: messageData.id,
           recipientId,
           senderName,
           messageContent,
+        },
+      });
+
+      // Send push notification
+      await supabase.functions.invoke("send-push-notification", {
+        body: {
+          recipientId,
+          title: `New message from ${senderName}`,
+          body: messageContent.substring(0, 100),
+          conversationId,
         },
       });
     } catch (notificationError) {
