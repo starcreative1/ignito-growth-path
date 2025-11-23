@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
 import Navbar from "@/components/Navbar";
-import { ArrowLeft, Send, Check, CheckCheck, Paperclip, X, Download, FileIcon, Smile, Search, Mic, Trash2, MoreVertical, Edit2, Pin, PinOff } from "lucide-react";
+import { ArrowLeft, Send, Check, CheckCheck, Paperclip, X, Download, FileIcon, Smile, Search, Mic, Trash2, MoreVertical, Edit2, Pin, PinOff, Forward } from "lucide-react";
 import { User, Session } from "@supabase/supabase-js";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { VoiceRecorder } from "@/components/VoiceRecorder";
@@ -27,6 +27,13 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 
 interface Reaction {
   id: string;
@@ -83,6 +90,8 @@ const Messages = () => {
   const [messageToDelete, setMessageToDelete] = useState<string | null>(null);
   const [editingMessageId, setEditingMessageId] = useState<string | null>(null);
   const [editContent, setEditContent] = useState("");
+  const [forwardingMessage, setForwardingMessage] = useState<Message | null>(null);
+  const [availableConversations, setAvailableConversations] = useState<Conversation[]>([]);
 
   useEffect(() => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
@@ -665,6 +674,79 @@ const Messages = () => {
     }
   };
 
+  const loadAvailableConversations = async () => {
+    if (!user) return;
+
+    const { data, error } = await supabase
+      .from("conversations")
+      .select("*")
+      .eq("user_id", user.id)
+      .neq("id", conversationId);
+
+    if (error) {
+      console.error("Error loading conversations:", error);
+      return;
+    }
+
+    setAvailableConversations(data || []);
+  };
+
+  const handleForwardMessage = async (targetConversationId: string) => {
+    if (!forwardingMessage || !user) return;
+
+    try {
+      const { data: profileData } = await supabase
+        .from("profiles")
+        .select("full_name")
+        .eq("id", user.id)
+        .maybeSingle();
+
+      const senderName = profileData?.full_name || user.email?.split("@")[0] || "You";
+
+      // Create the forwarded message
+      const { error } = await supabase
+        .from("messages")
+        .insert({
+          conversation_id: targetConversationId,
+          sender_id: user.id,
+          sender_name: senderName,
+          content: forwardingMessage.content,
+          file_url: forwardingMessage.file_url,
+          file_name: forwardingMessage.file_name,
+          file_type: forwardingMessage.file_type,
+        });
+
+      if (error) {
+        console.error("Error forwarding message:", error);
+        toast({
+          title: "Error",
+          description: "Failed to forward message",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      toast({
+        title: "Message forwarded",
+        description: "The message has been forwarded successfully",
+      });
+
+      setForwardingMessage(null);
+    } catch (error) {
+      console.error("Error forwarding message:", error);
+      toast({
+        title: "Error",
+        description: "Failed to forward message",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleOpenForwardDialog = (message: Message) => {
+    setForwardingMessage(message);
+    loadAvailableConversations();
+  };
+
   // Search functionality
   const handleSearch = (query: string) => {
     setSearchQuery(query);
@@ -1055,38 +1137,44 @@ const Messages = () => {
                                   <MoreVertical className="h-4 w-4" />
                                 </Button>
                               </DropdownMenuTrigger>
-                              <DropdownMenuContent align="end">
-                                <DropdownMenuItem
-                                  onClick={() => handlePinMessage(message.id, message.pinned)}
-                                >
-                                  {message.pinned ? (
-                                    <>
-                                      <PinOff className="h-4 w-4 mr-2" />
-                                      Unpin Message
-                                    </>
-                                  ) : (
-                                    <>
-                                      <Pin className="h-4 w-4 mr-2" />
-                                      Pin Message
-                                    </>
-                                  )}
-                                </DropdownMenuItem>
-                                {canEdit && (
-                                  <DropdownMenuItem
-                                    onClick={() => handleStartEdit(message.id, message.content)}
-                                  >
-                                    <Edit2 className="h-4 w-4 mr-2" />
-                                    Edit Message
-                                  </DropdownMenuItem>
+                            <DropdownMenuContent align="end">
+                              <DropdownMenuItem
+                                onClick={() => handlePinMessage(message.id, message.pinned)}
+                              >
+                                {message.pinned ? (
+                                  <>
+                                    <PinOff className="h-4 w-4 mr-2" />
+                                    Unpin Message
+                                  </>
+                                ) : (
+                                  <>
+                                    <Pin className="h-4 w-4 mr-2" />
+                                    Pin Message
+                                  </>
                                 )}
+                              </DropdownMenuItem>
+                              <DropdownMenuItem
+                                onClick={() => handleOpenForwardDialog(message)}
+                              >
+                                <Forward className="h-4 w-4 mr-2" />
+                                Forward Message
+                              </DropdownMenuItem>
+                              {canEdit && (
                                 <DropdownMenuItem
-                                  onClick={() => setMessageToDelete(message.id)}
-                                  className="text-destructive focus:text-destructive"
+                                  onClick={() => handleStartEdit(message.id, message.content)}
                                 >
-                                  <Trash2 className="h-4 w-4 mr-2" />
-                                  Delete Message
+                                  <Edit2 className="h-4 w-4 mr-2" />
+                                  Edit Message
                                 </DropdownMenuItem>
-                              </DropdownMenuContent>
+                              )}
+                              <DropdownMenuItem
+                                onClick={() => setMessageToDelete(message.id)}
+                                className="text-destructive focus:text-destructive"
+                              >
+                                <Trash2 className="h-4 w-4 mr-2" />
+                                Delete Message
+                              </DropdownMenuItem>
+                            </DropdownMenuContent>
                             </DropdownMenu>
                           )}
                         </div>
@@ -1260,38 +1348,44 @@ const Messages = () => {
                                 <MoreVertical className="h-4 w-4" />
                               </Button>
                             </DropdownMenuTrigger>
-                            <DropdownMenuContent align="end">
-                              <DropdownMenuItem
-                                onClick={() => handlePinMessage(message.id, message.pinned)}
-                              >
-                                {message.pinned ? (
-                                  <>
-                                    <PinOff className="h-4 w-4 mr-2" />
-                                    Unpin Message
-                                  </>
-                                ) : (
-                                  <>
-                                    <Pin className="h-4 w-4 mr-2" />
-                                    Pin Message
-                                  </>
-                                )}
-                              </DropdownMenuItem>
-                              {canEdit && (
-                                <DropdownMenuItem
-                                  onClick={() => handleStartEdit(message.id, message.content)}
-                                >
-                                  <Edit2 className="h-4 w-4 mr-2" />
-                                  Edit Message
-                                </DropdownMenuItem>
-                              )}
-                              <DropdownMenuItem
-                                onClick={() => setMessageToDelete(message.id)}
-                                className="text-destructive focus:text-destructive"
-                              >
-                                <Trash2 className="h-4 w-4 mr-2" />
-                                Delete Message
-                              </DropdownMenuItem>
-                            </DropdownMenuContent>
+                        <DropdownMenuContent align="end">
+                          <DropdownMenuItem
+                            onClick={() => handlePinMessage(message.id, message.pinned)}
+                          >
+                            {message.pinned ? (
+                              <>
+                                <PinOff className="h-4 w-4 mr-2" />
+                                Unpin Message
+                              </>
+                            ) : (
+                              <>
+                                <Pin className="h-4 w-4 mr-2" />
+                                Pin Message
+                              </>
+                            )}
+                          </DropdownMenuItem>
+                          <DropdownMenuItem
+                            onClick={() => handleOpenForwardDialog(message)}
+                          >
+                            <Forward className="h-4 w-4 mr-2" />
+                            Forward Message
+                          </DropdownMenuItem>
+                          {canEdit && (
+                            <DropdownMenuItem
+                              onClick={() => handleStartEdit(message.id, message.content)}
+                            >
+                              <Edit2 className="h-4 w-4 mr-2" />
+                              Edit Message
+                            </DropdownMenuItem>
+                          )}
+                          <DropdownMenuItem
+                            onClick={() => setMessageToDelete(message.id)}
+                            className="text-destructive focus:text-destructive"
+                          >
+                            <Trash2 className="h-4 w-4 mr-2" />
+                            Delete Message
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
                           </DropdownMenu>
                         )}
                       </div>
@@ -1381,9 +1475,40 @@ const Messages = () => {
           </CardContent>
         </Card>
 
+        {/* Forward Message Dialog */}
+        <Dialog open={!!forwardingMessage} onOpenChange={(open) => !open && setForwardingMessage(null)}>
+          <DialogContent className="sm:max-w-md bg-background">
+            <DialogHeader>
+              <DialogTitle>Forward Message</DialogTitle>
+              <DialogDescription>
+                Select a conversation to forward this message to
+              </DialogDescription>
+            </DialogHeader>
+            <div className="space-y-2 max-h-[400px] overflow-y-auto">
+              {availableConversations.length === 0 ? (
+                <p className="text-sm text-muted-foreground text-center py-4">
+                  No other conversations available
+                </p>
+              ) : (
+                availableConversations.map((conv) => (
+                  <Button
+                    key={conv.id}
+                    variant="outline"
+                    className="w-full justify-start"
+                    onClick={() => handleForwardMessage(conv.id)}
+                  >
+                    <Forward className="h-4 w-4 mr-2" />
+                    Forward to {conv.mentor_name}
+                  </Button>
+                ))
+              )}
+            </div>
+          </DialogContent>
+        </Dialog>
+
         {/* Delete confirmation dialog */}
         <AlertDialog open={!!messageToDelete} onOpenChange={() => setMessageToDelete(null)}>
-          <AlertDialogContent>
+          <AlertDialogContent className="bg-background">
             <AlertDialogHeader>
               <AlertDialogTitle>Delete message?</AlertDialogTitle>
               <AlertDialogDescription>
