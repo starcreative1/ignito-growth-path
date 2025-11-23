@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
 import Navbar from "@/components/Navbar";
-import { ArrowLeft, Send } from "lucide-react";
+import { ArrowLeft, Send, Check, CheckCheck } from "lucide-react";
 import { User, Session } from "@supabase/supabase-js";
 
 interface Message {
@@ -95,6 +95,24 @@ const Messages = () => {
               .eq("id", newMessage.id)
               .then(() => console.log("Message marked as read"));
           }
+        }
+      )
+      .on(
+        'postgres_changes',
+        {
+          event: 'UPDATE',
+          schema: 'public',
+          table: 'messages',
+          filter: `conversation_id=eq.${conversationId}`
+        },
+        (payload) => {
+          console.log('Message updated:', payload);
+          const updatedMessage = payload.new as Message;
+          setMessages(prev => 
+            prev.map(msg => 
+              msg.id === updatedMessage.id ? updatedMessage : msg
+            )
+          );
         }
       )
       .subscribe();
@@ -284,12 +302,23 @@ const Messages = () => {
                     >
                       <p className="text-sm font-medium mb-1">{message.sender_name}</p>
                       <p className="text-sm whitespace-pre-wrap">{message.content}</p>
-                      <p className="text-xs opacity-70 mt-1">
-                        {new Date(message.created_at).toLocaleTimeString([], {
-                          hour: "2-digit",
-                          minute: "2-digit",
-                        })}
-                      </p>
+                      <div className="flex items-center gap-1 mt-1">
+                        <p className="text-xs opacity-70">
+                          {new Date(message.created_at).toLocaleTimeString([], {
+                            hour: "2-digit",
+                            minute: "2-digit",
+                          })}
+                        </p>
+                        {message.sender_id === user?.id && (
+                          <span className="text-xs opacity-70">
+                            {message.is_read ? (
+                              <CheckCheck className="h-3 w-3 inline ml-1" />
+                            ) : (
+                              <Check className="h-3 w-3 inline ml-1" />
+                            )}
+                          </span>
+                        )}
+                      </div>
                     </div>
                   </div>
                 ))
