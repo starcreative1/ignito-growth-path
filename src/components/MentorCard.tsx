@@ -2,6 +2,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Star, Clock, MessageSquare } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 import { Mentor } from "@/data/mentors";
 
 interface MentorCardProps {
@@ -9,8 +10,12 @@ interface MentorCardProps {
 }
 
 const MentorCard = ({ mentor }: MentorCardProps) => {
+  const navigate = useNavigate();
   return (
-    <Card className="group hover:shadow-strong transition-all duration-300 hover:-translate-y-1 overflow-hidden">
+    <Card 
+      className="group hover:shadow-strong transition-all duration-300 hover:-translate-y-1 overflow-hidden cursor-pointer"
+      onClick={() => navigate(`/mentors/${mentor.id}`)}
+    >
       {/* Image Section */}
       <div className="relative h-64 overflow-hidden bg-muted">
         <img
@@ -82,8 +87,15 @@ const MentorCard = ({ mentor }: MentorCardProps) => {
             </div>
             <div className="text-xs text-muted-foreground">per session</div>
           </div>
-          <Button variant="hero" size="sm">
-            Book Session
+          <Button 
+            variant="hero" 
+            size="sm"
+            onClick={(e) => {
+              e.stopPropagation();
+              navigate(`/mentors/${mentor.id}`);
+            }}
+          >
+            View Profile
           </Button>
         </div>
       </CardContent>
