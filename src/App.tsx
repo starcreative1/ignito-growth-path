@@ -10,6 +10,7 @@ import BookingSuccess from "./pages/BookingSuccess";
 import Auth from "./pages/Auth";
 import Dashboard from "./pages/Dashboard";
 import Messages from "./pages/Messages";
+import AdminMentors from "./pages/AdminMentors";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -28,6 +29,7 @@ const App = () => (
           <Route path="/auth" element={<Auth />} />
           <Route path="/dashboard" element={<Dashboard />} />
           <Route path="/messages/:conversationId" element={<Messages />} />
+          <Route path="/admin/mentors" element={<AdminMentors />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>

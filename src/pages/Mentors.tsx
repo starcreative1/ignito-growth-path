@@ -1,20 +1,60 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { Search, SlidersHorizontal } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import MentorCard from "@/components/MentorCard";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
-import { mentors } from "@/data/mentors";
+import { supabase } from "@/integrations/supabase/client";
+import type { Mentor } from "@/data/mentors";
 
 type CategoryFilter = "All" | "Business" | "Tech" | "Creators";
 
 const Mentors = () => {
+  const [mentors, setMentors] = useState<Mentor[]>([]);
+  const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCategory, setSelectedCategory] = useState<CategoryFilter>("All");
   const [sortBy, setSortBy] = useState<"rating" | "price">("rating");
 
   const categories: CategoryFilter[] = ["All", "Business", "Tech", "Creators"];
+
+  useEffect(() => {
+    fetchMentors();
+  }, []);
+
+  const fetchMentors = async () => {
+    setLoading(true);
+    const { data, error } = await supabase
+      .from("mentor_profiles")
+      .select("*")
+      .eq("is_active", true);
+
+    if (error) {
+      console.error("Error fetching mentors:", error);
+    } else {
+      const formattedMentors = (data || []).map(mentor => ({
+        id: mentor.id,
+        name: mentor.name,
+        title: mentor.title,
+        category: mentor.category as "Business" | "Tech" | "Creators",
+        image: mentor.image_url || "/placeholder.svg",
+        rating: parseFloat(mentor.rating?.toString() || "0"),
+        reviewCount: mentor.review_count || 0,
+        price: parseFloat(mentor.price.toString()),
+        bio: mentor.bio,
+        fullBio: mentor.full_bio,
+        expertise: mentor.expertise || [],
+        languages: mentor.languages || [],
+        availability: mentor.availability,
+        experience: mentor.experience,
+        education: mentor.education,
+        certifications: mentor.certifications || [],
+      }));
+      setMentors(formattedMentors);
+    }
+    setLoading(false);
+  };
 
   // Filter and sort mentors
   const filteredMentors = useMemo(() => {
@@ -128,9 +168,13 @@ const Mentors = () => {
           {/* Results Count */}
           <div className="mb-8">
             <p className="text-muted-foreground">
-              Showing <span className="font-semibold text-foreground">{filteredMentors.length}</span> mentors
-              {selectedCategory !== "All" && (
-                <span> in <span className="font-semibold text-foreground">{selectedCategory}</span></span>
+              {loading ? "Loading..." : (
+                <>
+                  Showing <span className="font-semibold text-foreground">{filteredMentors.length}</span> mentors
+                  {selectedCategory !== "All" && (
+                    <span> in <span className="font-semibold text-foreground">{selectedCategory}</span></span>
+                  )}
+                </>
               )}
             </p>
           </div>

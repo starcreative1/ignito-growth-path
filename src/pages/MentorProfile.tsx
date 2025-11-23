@@ -12,17 +12,30 @@ import Footer from "@/components/Footer";
 import ReviewCard from "@/components/ReviewCard";
 import CourseCard from "@/components/CourseCard";
 import TimeSlotSelector from "@/components/TimeSlotSelector";
-import { mentors, reviews, courses, generateTimeSlots, TimeSlot } from "@/data/mentors";
+import type { Mentor, Review, Course } from "@/data/mentors";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+
+interface TimeSlot {
+  id: string;
+  mentor_id: string;
+  date: string;
+  time: string;
+  is_available: boolean;
+}
 
 const MentorProfile = () => {
   const { id } = useParams();
   const navigate = useNavigate();
+  const [mentor, setMentor] = useState<Mentor | null>(null);
+  const [reviews, setReviews] = useState<Review[]>([]);
+  const [courses, setCourses] = useState<Course[]>([]);
+  const [timeSlots, setTimeSlots] = useState<TimeSlot[]>([]);
   const [selectedSlot, setSelectedSlot] = useState<TimeSlot | null>(null);
   const [userEmail, setUserEmail] = useState("");
   const [isBooking, setIsBooking] = useState(false);
   const [user, setUser] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
@@ -30,10 +43,124 @@ const MentorProfile = () => {
     });
   }, []);
 
-  const mentor = mentors.find((m) => m.id === id);
-  const mentorReviews = reviews.filter((r) => r.mentorId === id);
-  const mentorCourses = courses.filter((c) => c.mentorId === id);
-  const timeSlots = id ? generateTimeSlots(id) : [];
+  useEffect(() => {
+    if (id) {
+      fetchMentorData();
+    }
+  }, [id]);
+
+  const fetchMentorData = async () => {
+    setLoading(true);
+    
+    // Fetch mentor profile
+    const { data: mentorData, error: mentorError } = await supabase
+      .from("mentor_profiles")
+      .select("*")
+      .eq("id", id)
+      .eq("is_active", true)
+      .maybeSingle();
+
+    if (mentorError || !mentorData) {
+      console.error("Error fetching mentor:", mentorError);
+      setLoading(false);
+      return;
+    }
+
+    setMentor({
+      id: mentorData.id,
+      name: mentorData.name,
+      title: mentorData.title,
+      category: mentorData.category as "Business" | "Tech" | "Creators",
+      image: mentorData.image_url || "/placeholder.svg",
+      rating: parseFloat(mentorData.rating?.toString() || "0"),
+      reviewCount: mentorData.review_count || 0,
+      price: parseFloat(mentorData.price.toString()),
+      bio: mentorData.bio,
+      fullBio: mentorData.full_bio,
+      expertise: mentorData.expertise || [],
+      languages: mentorData.languages || [],
+      availability: mentorData.availability,
+      experience: mentorData.experience,
+      education: mentorData.education,
+      certifications: mentorData.certifications || [],
+    });
+
+    // Fetch reviews
+    const { data: reviewsData } = await supabase
+      .from("mentor_reviews")
+      .select("*")
+      .eq("mentor_id", id)
+      .order("created_at", { ascending: false });
+
+    if (reviewsData) {
+      setReviews(reviewsData.map(r => ({
+        id: r.id,
+        mentorId: r.mentor_id,
+        userName: r.user_name,
+        userAvatar: r.user_avatar || "/placeholder.svg",
+        rating: r.rating,
+        date: new Date(r.created_at).toISOString().split('T')[0],
+        comment: r.comment,
+      })));
+    }
+
+    // Fetch courses
+    const { data: coursesData } = await supabase
+      .from("mentor_courses")
+      .select("*")
+      .eq("mentor_id", id)
+      .eq("is_active", true);
+
+    if (coursesData) {
+      setCourses(coursesData.map(c => ({
+        id: c.id,
+        mentorId: c.mentor_id,
+        title: c.title,
+        description: c.description,
+        price: parseFloat(c.price.toString()),
+        duration: c.duration,
+        lessons: c.lessons,
+        level: c.level as "Beginner" | "Intermediate" | "Advanced",
+        thumbnail: c.thumbnail_url || "/placeholder.svg",
+      })));
+    }
+
+    // Fetch time slots
+    const { data: slotsData } = await supabase
+      .from("mentor_time_slots")
+      .select("*")
+      .eq("mentor_id", id)
+      .eq("is_available", true)
+      .gte("date", new Date().toISOString().split('T')[0])
+      .order("date", { ascending: true })
+      .order("time", { ascending: true });
+
+    if (slotsData) {
+      setTimeSlots(slotsData.map(s => ({
+        id: s.id,
+        mentor_id: s.mentor_id,
+        date: s.date,
+        time: s.time,
+        is_available: s.is_available,
+      })));
+    }
+
+    setLoading(false);
+  };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-background">
+        <Navbar />
+        <div className="container mx-auto px-4 py-32">
+          <p>Loading...</p>
+        </div>
+      </div>
+    );
+  }
+
+  const mentorReviews = reviews;
+  const mentorCourses = courses;
 
   if (!mentor) {
     return (
@@ -338,8 +465,8 @@ const MentorProfile = () => {
                     </CardHeader>
                     <CardContent>
                       <TimeSlotSelector
-                        timeSlots={timeSlots}
-                        onSelectSlot={setSelectedSlot}
+                        timeSlots={timeSlots as any}
+                        onSelectSlot={(slot: any) => setSelectedSlot(slot as TimeSlot)}
                       />
 
                       {selectedSlot && (
