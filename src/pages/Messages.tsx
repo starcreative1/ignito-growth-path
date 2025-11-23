@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
 import Navbar from "@/components/Navbar";
-import { ArrowLeft, Send, Check, CheckCheck, Paperclip, X, Download, FileIcon, Smile, Search, Mic, Trash2, MoreVertical, Edit2, Pin, PinOff, Forward, FileText, Plus, Filter, Calendar, Clock } from "lucide-react";
+import { ArrowLeft, Send, Check, CheckCheck, Paperclip, X, Download, FileIcon, Smile, Search, Mic, Trash2, MoreVertical, Edit2, Pin, PinOff, Forward, FileText, Plus, Filter, Calendar, Clock, Reply, CornerDownRight } from "lucide-react";
 import { User, Session } from "@supabase/supabase-js";
 import { VoiceRecorder } from "@/components/VoiceRecorder";
 import { AudioPlayer } from "@/components/AudioPlayer";
@@ -61,6 +61,7 @@ interface Message {
   file_type: string | null;
   edited_at?: string | null;
   pinned: boolean;
+  reply_to?: string | null;
   reactions?: Reaction[];
 }
 
@@ -121,6 +122,7 @@ const Messages = () => {
   const [scheduleDate, setScheduleDate] = useState<Date | undefined>();
   const [scheduleTime, setScheduleTime] = useState("12:00");
   const [scheduledMessages, setScheduledMessages] = useState<any[]>([]);
+  const [replyingTo, setReplyingTo] = useState<Message | null>(null);
 
   useEffect(() => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
@@ -1050,6 +1052,11 @@ const Messages = () => {
     }
   };
 
+  const getRepliedMessage = (replyToId: string | null | undefined) => {
+    if (!replyToId) return null;
+    return messages.find(msg => msg.id === replyToId);
+  };
+
   const handleApplyFilters = () => {
     performSearch(searchQuery, searchSender, searchType, searchDateFrom, searchDateTo);
   };
@@ -1137,6 +1144,7 @@ const Messages = () => {
         file_url: fileData?.url || null,
         file_name: fileData?.name || null,
         file_type: fileData?.type || null,
+        reply_to: replyingTo?.id || null,
       })
       .select()
       .single();
@@ -1192,6 +1200,7 @@ const Messages = () => {
 
     setNewMessage("");
     setSelectedFile(null);
+    setReplyingTo(null);
     if (fileInputRef.current) {
       fileInputRef.current.value = "";
     }
@@ -1405,85 +1414,99 @@ const Messages = () => {
                         <span>Pinned Messages</span>
                       </div>
                       {pinnedMessages.map((message) => {
-                        const isEditing = editingMessageId === message.id;
-                        const canEdit = message.sender_id === user?.id && canEditMessage(message.created_at) && !message.file_url;
+                  const isEditing = editingMessageId === message.id;
+                  const canEdit = message.sender_id === user?.id && canEditMessage(message.created_at) && !message.file_url;
+                  const repliedMsg = getRepliedMessage(message.reply_to);
 
-                        return (
+                  return (
+                    <div
+                      key={message.id}
+                      className={`flex gap-2 ${message.sender_id === user?.id ? "justify-end" : "justify-start"} group`}
+                    >
+                      <div className="flex flex-col gap-1 max-w-[70%]">
+                        {isEditing ? (
+                          <div className="flex items-center gap-2">
+                            <Input
+                              value={editContent}
+                              onChange={(e) => setEditContent(e.target.value)}
+                              className="flex-1"
+                              onKeyDown={(e) => {
+                                if (e.key === "Enter" && !e.shiftKey) {
+                                  e.preventDefault();
+                                  handleSaveEdit(message.id);
+                                } else if (e.key === "Escape") {
+                                  handleCancelEdit();
+                                }
+                              }}
+                              autoFocus
+                            />
+                            <Button
+                              size="icon"
+                              variant="ghost"
+                              onClick={() => handleSaveEdit(message.id)}
+                              className="h-8 w-8 flex-shrink-0"
+                            >
+                              <Check className="h-4 w-4" />
+                            </Button>
+                            <Button
+                              size="icon"
+                              variant="ghost"
+                              onClick={handleCancelEdit}
+                              className="h-8 w-8 flex-shrink-0"
+                            >
+                              <X className="h-4 w-4" />
+                            </Button>
+                          </div>
+                        ) : (
                           <div
-                            key={message.id}
-                            className={`flex gap-2 ${message.sender_id === user?.id ? "justify-end" : "justify-start"} group`}
+                            className={`rounded-lg px-4 py-2 border-2 border-primary/30 ${
+                              message.sender_id === user?.id
+                                ? "bg-primary text-primary-foreground"
+                                : "bg-muted"
+                            }`}
                           >
-                            <div className="flex flex-col gap-1 max-w-[70%]">
-                              {isEditing ? (
-                                <div className="flex items-center gap-2">
-                                  <Input
-                                    value={editContent}
-                                    onChange={(e) => setEditContent(e.target.value)}
-                                    className="flex-1"
-                                    onKeyDown={(e) => {
-                                      if (e.key === "Enter" && !e.shiftKey) {
-                                        e.preventDefault();
-                                        handleSaveEdit(message.id);
-                                      } else if (e.key === "Escape") {
-                                        handleCancelEdit();
-                                      }
-                                    }}
-                                    autoFocus
-                                  />
-                                  <Button
-                                    size="icon"
-                                    variant="ghost"
-                                    onClick={() => handleSaveEdit(message.id)}
-                                    className="h-8 w-8 flex-shrink-0"
-                                  >
-                                    <Check className="h-4 w-4" />
-                                  </Button>
-                                  <Button
-                                    size="icon"
-                                    variant="ghost"
-                                    onClick={handleCancelEdit}
-                                    className="h-8 w-8 flex-shrink-0"
-                                  >
-                                    <X className="h-4 w-4" />
-                                  </Button>
-                                </div>
-                              ) : (
-                                <div
-                                  className={`rounded-lg px-4 py-2 border-2 border-primary/30 ${
-                                    message.sender_id === user?.id
-                                      ? "bg-primary text-primary-foreground"
-                                      : "bg-muted"
-                                  }`}
-                                >
-                                <p className="text-sm font-medium mb-1">{highlightText(message.sender_name, searchQuery)}</p>
-                                {message.content && (
-                                  <p className="text-sm whitespace-pre-wrap">{highlightText(message.content, searchQuery)}</p>
-                                )}
-                                {message.file_url && (
-                                  <div className="mt-2">
-                                    {message.file_type?.startsWith('image/') ? (
-                                      <img 
-                                        src={message.file_url} 
-                                        alt={message.file_name || 'Image attachment'}
-                                        className="max-w-full max-h-64 rounded cursor-pointer"
-                                        onClick={() => window.open(message.file_url!, '_blank')}
-                                      />
-                                    ) : message.file_type?.startsWith('audio/') ? (
-                                      <AudioPlayer audioUrl={message.file_url} className="min-w-[200px]" />
-                                    ) : (
-                                      <a
-                                        href={message.file_url}
-                                        target="_blank"
-                                        rel="noopener noreferrer"
-                                        className="flex items-center gap-2 p-2 bg-background/10 rounded hover:bg-background/20 transition-colors"
-                                      >
-                                        <FileIcon className="h-4 w-4" />
-                                        <span className="text-sm">{message.file_name || 'Download file'}</span>
-                                        <Download className="h-3 w-3 ml-auto" />
-                                      </a>
-                                    )}
+                            {/* Show replied message context */}
+                            {repliedMsg && (
+                              <div className="mb-2 pb-2 border-b border-current/20">
+                                <div className="flex items-start gap-1 text-xs opacity-70">
+                                  <CornerDownRight className="h-3 w-3 mt-0.5 flex-shrink-0" />
+                                  <div className="flex-1 min-w-0">
+                                    <p className="font-medium">{repliedMsg.sender_name}</p>
+                                    <p className="truncate">{repliedMsg.content || "Attachment"}</p>
                                   </div>
+                                </div>
+                              </div>
+                            )}
+
+                            <p className="text-sm font-medium mb-1">{highlightText(message.sender_name, searchQuery)}</p>
+                            {message.content && (
+                              <p className="text-sm whitespace-pre-wrap">{highlightText(message.content, searchQuery)}</p>
+                            )}
+                            {message.file_url && (
+                              <div className="mt-2">
+                                {message.file_type?.startsWith('image/') ? (
+                                  <img 
+                                    src={message.file_url} 
+                                    alt={message.file_name || 'Image attachment'}
+                                    className="max-w-full max-h-64 rounded cursor-pointer"
+                                    onClick={() => window.open(message.file_url!, '_blank')}
+                                  />
+                                ) : message.file_type?.startsWith('audio/') ? (
+                                  <AudioPlayer audioUrl={message.file_url} className="min-w-[200px]" />
+                                ) : (
+                                  <a
+                                    href={message.file_url}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="flex items-center gap-2 p-2 bg-background/10 rounded hover:bg-background/20 transition-colors"
+                                  >
+                                    <FileIcon className="h-4 w-4" />
+                                    <span className="text-sm">{message.file_name || 'Download file'}</span>
+                                    <Download className="h-3 w-3 ml-auto" />
+                                  </a>
                                 )}
+                              </div>
+                            )}
                                 <div className="flex items-center gap-1 mt-1">
                                   <p className="text-xs opacity-70">
                                     {new Date(message.created_at).toLocaleTimeString([], {
@@ -1568,44 +1591,50 @@ const Messages = () => {
                                   <MoreVertical className="h-4 w-4" />
                                 </Button>
                               </DropdownMenuTrigger>
-                            <DropdownMenuContent align="end">
-                              <DropdownMenuItem
-                                onClick={() => handlePinMessage(message.id, message.pinned)}
-                              >
-                                {message.pinned ? (
-                                  <>
-                                    <PinOff className="h-4 w-4 mr-2" />
-                                    Unpin Message
-                                  </>
-                                ) : (
-                                  <>
-                                    <Pin className="h-4 w-4 mr-2" />
-                                    Pin Message
-                                  </>
-                                )}
-                              </DropdownMenuItem>
-                              <DropdownMenuItem
-                                onClick={() => handleOpenForwardDialog(message)}
-                              >
-                                <Forward className="h-4 w-4 mr-2" />
-                                Forward Message
-                              </DropdownMenuItem>
-                              {canEdit && (
-                                <DropdownMenuItem
-                                  onClick={() => handleStartEdit(message.id, message.content)}
-                                >
-                                  <Edit2 className="h-4 w-4 mr-2" />
-                                  Edit Message
-                                </DropdownMenuItem>
+                          <DropdownMenuContent align="end">
+                            <DropdownMenuItem
+                              onClick={() => handlePinMessage(message.id, message.pinned)}
+                            >
+                              {message.pinned ? (
+                                <>
+                                  <PinOff className="h-4 w-4 mr-2" />
+                                  Unpin Message
+                                </>
+                              ) : (
+                                <>
+                                  <Pin className="h-4 w-4 mr-2" />
+                                  Pin Message
+                                </>
                               )}
+                            </DropdownMenuItem>
+                            <DropdownMenuItem
+                              onClick={() => setReplyingTo(message)}
+                            >
+                              <Reply className="h-4 w-4 mr-2" />
+                              Reply to Message
+                            </DropdownMenuItem>
+                            <DropdownMenuItem
+                              onClick={() => handleOpenForwardDialog(message)}
+                            >
+                              <Forward className="h-4 w-4 mr-2" />
+                              Forward Message
+                            </DropdownMenuItem>
+                            {canEdit && (
                               <DropdownMenuItem
-                                onClick={() => setMessageToDelete(message.id)}
-                                className="text-destructive focus:text-destructive"
+                                onClick={() => handleStartEdit(message.id, message.content)}
                               >
-                                <Trash2 className="h-4 w-4 mr-2" />
-                                Delete Message
+                                <Edit2 className="h-4 w-4 mr-2" />
+                                Edit Message
                               </DropdownMenuItem>
-                            </DropdownMenuContent>
+                            )}
+                            <DropdownMenuItem
+                              onClick={() => setMessageToDelete(message.id)}
+                              className="text-destructive focus:text-destructive"
+                            >
+                              <Trash2 className="h-4 w-4 mr-2" />
+                              Delete Message
+                            </DropdownMenuItem>
+                          </DropdownMenuContent>
                             </DropdownMenu>
                           )}
                         </div>
@@ -1618,6 +1647,7 @@ const Messages = () => {
                 {unpinnedMessages.map((message) => {
                   const isEditing = editingMessageId === message.id;
                   const canEdit = message.sender_id === user?.id && canEditMessage(message.created_at) && !message.file_url;
+                  const repliedMsg = getRepliedMessage(message.reply_to);
 
                   return (
                     <div
@@ -1666,6 +1696,19 @@ const Messages = () => {
                                 : "bg-muted"
                             }`}
                           >
+                            {/* Show replied message context */}
+                            {repliedMsg && (
+                              <div className="mb-2 pb-2 border-b border-current/20">
+                                <div className="flex items-start gap-1 text-xs opacity-70">
+                                  <CornerDownRight className="h-3 w-3 mt-0.5 flex-shrink-0" />
+                                  <div className="flex-1 min-w-0">
+                                    <p className="font-medium">{repliedMsg.sender_name}</p>
+                                    <p className="truncate">{repliedMsg.content || "Attachment"}</p>
+                                  </div>
+                                </div>
+                              </div>
+                            )}
+
                             <p className="text-sm font-medium mb-1">{highlightText(message.sender_name, searchQuery)}</p>
                             {message.content && (
                               <p className="text-sm whitespace-pre-wrap">{highlightText(message.content, searchQuery)}</p>
@@ -1796,6 +1839,12 @@ const Messages = () => {
                             )}
                           </DropdownMenuItem>
                           <DropdownMenuItem
+                            onClick={() => setReplyingTo(message)}
+                          >
+                            <Reply className="h-4 w-4 mr-2" />
+                            Reply to Message
+                          </DropdownMenuItem>
+                          <DropdownMenuItem
                             onClick={() => handleOpenForwardDialog(message)}
                           >
                             <Forward className="h-4 w-4 mr-2" />
@@ -1839,6 +1888,26 @@ const Messages = () => {
             </div>
 
             <form onSubmit={handleSendMessage} className="p-4 border-t">
+              {/* Reply context */}
+              {replyingTo && (
+                <div className="mb-2 flex items-start gap-2 p-2 bg-muted rounded-lg">
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-1 text-xs text-muted-foreground mb-1">
+                      <Reply className="h-3 w-3" />
+                      <span>Replying to {replyingTo.sender_name}</span>
+                    </div>
+                    <p className="text-sm truncate">{replyingTo.content || "Attachment"}</p>
+                  </div>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => setReplyingTo(null)}
+                    className="h-7 w-7 p-0 flex-shrink-0"
+                  >
+                    <X className="h-3 w-3" />
+                  </Button>
+                </div>
+              )}
               {isRecordingVoice ? (
                 <VoiceRecorder
                   onRecordingComplete={handleVoiceRecording}

@@ -171,6 +171,7 @@ export type Database = {
           id: string
           is_read: boolean
           pinned: boolean
+          reply_to: string | null
           sender_id: string
           sender_name: string
         }
@@ -185,6 +186,7 @@ export type Database = {
           id?: string
           is_read?: boolean
           pinned?: boolean
+          reply_to?: string | null
           sender_id: string
           sender_name: string
         }
@@ -199,6 +201,7 @@ export type Database = {
           id?: string
           is_read?: boolean
           pinned?: boolean
+          reply_to?: string | null
           sender_id?: string
           sender_name?: string
         }
@@ -208,6 +211,13 @@ export type Database = {
             columns: ["conversation_id"]
             isOneToOne: false
             referencedRelation: "conversations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "messages_reply_to_fkey"
+            columns: ["reply_to"]
+            isOneToOne: false
+            referencedRelation: "messages"
             referencedColumns: ["id"]
           },
           {
