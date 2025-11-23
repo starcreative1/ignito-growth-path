@@ -254,6 +254,42 @@ export type Database = {
           },
         ]
       }
+      message_reminders: {
+        Row: {
+          conversation_id: string
+          created_at: string
+          id: string
+          message_id: string
+          note: string | null
+          reminder_time: string
+          sent_at: string | null
+          status: string
+          user_id: string
+        }
+        Insert: {
+          conversation_id: string
+          created_at?: string
+          id?: string
+          message_id: string
+          note?: string | null
+          reminder_time: string
+          sent_at?: string | null
+          status?: string
+          user_id: string
+        }
+        Update: {
+          conversation_id?: string
+          created_at?: string
+          id?: string
+          message_id?: string
+          note?: string | null
+          reminder_time?: string
+          sent_at?: string | null
+          status?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       message_templates: {
         Row: {
           content: string
