@@ -273,6 +273,62 @@ export type Database = {
         }
         Relationships: []
       }
+      scheduled_messages: {
+        Row: {
+          content: string
+          conversation_id: string
+          created_at: string
+          error_message: string | null
+          file_name: string | null
+          file_type: string | null
+          file_url: string | null
+          id: string
+          scheduled_for: string
+          sender_id: string
+          sender_name: string
+          sent_at: string | null
+          status: string
+        }
+        Insert: {
+          content: string
+          conversation_id: string
+          created_at?: string
+          error_message?: string | null
+          file_name?: string | null
+          file_type?: string | null
+          file_url?: string | null
+          id?: string
+          scheduled_for: string
+          sender_id: string
+          sender_name: string
+          sent_at?: string | null
+          status?: string
+        }
+        Update: {
+          content?: string
+          conversation_id?: string
+          created_at?: string
+          error_message?: string | null
+          file_name?: string | null
+          file_type?: string | null
+          file_url?: string | null
+          id?: string
+          scheduled_for?: string
+          sender_id?: string
+          sender_name?: string
+          sent_at?: string | null
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "scheduled_messages_conversation_id_fkey"
+            columns: ["conversation_id"]
+            isOneToOne: false
+            referencedRelation: "conversations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
