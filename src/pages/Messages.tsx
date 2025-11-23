@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
 import Navbar from "@/components/Navbar";
-import { ArrowLeft, Send, Check, CheckCheck, Paperclip, X, Download, FileIcon, Smile, Search, Mic, Trash2, MoreVertical, Edit2, Pin, PinOff, Forward, FileText, Plus, Filter, Calendar, Clock, Reply, CornerDownRight, Bookmark, BookmarkCheck } from "lucide-react";
+import { ArrowLeft, Send, Check, CheckCheck, Paperclip, X, Download, FileIcon, Smile, Search, Mic, Trash2, MoreVertical, Edit2, Pin, PinOff, Forward, FileText, Plus, Filter, Calendar, Clock, Reply, CornerDownRight, Bookmark, BookmarkCheck, Languages } from "lucide-react";
 import jsPDF from "jspdf";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { User, Session } from "@supabase/supabase-js";
@@ -136,6 +136,9 @@ const Messages = () => {
   const messageInputRef = useRef<HTMLTextAreaElement>(null);
   const [draftId, setDraftId] = useState<string | null>(null);
   const draftTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const [translations, setTranslations] = useState<Record<string, { text: string; language: string }>>({});
+  const [translatingMessageId, setTranslatingMessageId] = useState<string | null>(null);
+  const [selectedLanguage, setSelectedLanguage] = useState<string>("Spanish");
 
   useEffect(() => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
@@ -491,6 +494,64 @@ const Messages = () => {
       .eq("id", draftId);
 
     setDraftId(null);
+  };
+
+  const handleTranslateMessage = async (messageId: string, content: string) => {
+    if (!selectedLanguage) {
+      toast({
+        title: "Error",
+        description: "Please select a target language",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setTranslatingMessageId(messageId);
+
+    try {
+      const { data, error } = await supabase.functions.invoke('translate-message', {
+        body: {
+          text: content,
+          targetLanguage: selectedLanguage,
+        },
+      });
+
+      if (error) throw error;
+
+      if (data?.error) {
+        throw new Error(data.error);
+      }
+
+      setTranslations(prev => ({
+        ...prev,
+        [messageId]: {
+          text: data.translatedText,
+          language: selectedLanguage,
+        },
+      }));
+
+      toast({
+        title: "Translation complete",
+        description: `Translated to ${selectedLanguage}`,
+      });
+    } catch (error) {
+      console.error('Translation error:', error);
+      toast({
+        title: "Translation failed",
+        description: error instanceof Error ? error.message : "Failed to translate message",
+        variant: "destructive",
+      });
+    } finally {
+      setTranslatingMessageId(null);
+    }
+  };
+
+  const clearTranslation = (messageId: string) => {
+    setTranslations(prev => {
+      const newTranslations = { ...prev };
+      delete newTranslations[messageId];
+      return newTranslations;
+    });
   };
 
   const scrollToBottom = () => {
@@ -1805,6 +1866,27 @@ const Messages = () => {
                   <Bookmark className="h-4 w-4 mr-2" />
                   Bookmarks {bookmarkedCount > 0 && `(${bookmarkedCount})`}
                 </Button>
+                <div className="flex items-center gap-2">
+                  <Languages className="h-4 w-4 text-muted-foreground" />
+                  <Select value={selectedLanguage} onValueChange={setSelectedLanguage}>
+                    <SelectTrigger className="h-9 w-[140px]">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="Spanish">Spanish</SelectItem>
+                      <SelectItem value="French">French</SelectItem>
+                      <SelectItem value="German">German</SelectItem>
+                      <SelectItem value="Italian">Italian</SelectItem>
+                      <SelectItem value="Portuguese">Portuguese</SelectItem>
+                      <SelectItem value="Chinese">Chinese</SelectItem>
+                      <SelectItem value="Japanese">Japanese</SelectItem>
+                      <SelectItem value="Korean">Korean</SelectItem>
+                      <SelectItem value="Arabic">Arabic</SelectItem>
+                      <SelectItem value="Russian">Russian</SelectItem>
+                      <SelectItem value="Hindi">Hindi</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
               </div>
 
             {/* Scheduled Messages Section */}
@@ -2026,6 +2108,27 @@ const Messages = () => {
                                 ))}
                               </p>
                             )}
+                            
+                            {/* Translation display */}
+                            {translations[message.id] && (
+                              <div className="mt-2 pt-2 border-t border-current/20">
+                                <div className="flex items-center justify-between mb-1">
+                                  <p className="text-xs opacity-70">Translation ({translations[message.id].language})</p>
+                                  <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    className="h-4 w-4 p-0"
+                                    onClick={() => clearTranslation(message.id)}
+                                  >
+                                    <X className="h-3 w-3" />
+                                  </Button>
+                                </div>
+                                <p className="text-sm italic opacity-90">
+                                  {translations[message.id].text}
+                                </p>
+                              </div>
+                            )}
+                            
                             {message.file_url && (
                               <div className="mt-2">
                                 {message.file_type?.startsWith('image/') ? (
@@ -2214,6 +2317,13 @@ const Messages = () => {
                                 Edit Message
                               </DropdownMenuItem>
                             )}
+                            <DropdownMenuItem
+                              onClick={() => handleTranslateMessage(message.id, message.content)}
+                              disabled={translatingMessageId === message.id}
+                            >
+                              <Languages className="h-4 w-4 mr-2" />
+                              {translatingMessageId === message.id ? 'Translating...' : 'Translate Message'}
+                            </DropdownMenuItem>
                             <DropdownMenuItem
                               onClick={() => setMessageToDelete(message.id)}
                               className="text-destructive focus:text-destructive"
