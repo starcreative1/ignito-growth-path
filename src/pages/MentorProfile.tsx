@@ -5,18 +5,23 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import ReviewCard from "@/components/ReviewCard";
 import CourseCard from "@/components/CourseCard";
 import TimeSlotSelector from "@/components/TimeSlotSelector";
 import { mentors, reviews, courses, generateTimeSlots, TimeSlot } from "@/data/mentors";
+import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 
 const MentorProfile = () => {
   const { id } = useParams();
   const navigate = useNavigate();
   const [selectedSlot, setSelectedSlot] = useState<TimeSlot | null>(null);
+  const [userEmail, setUserEmail] = useState("");
+  const [isBooking, setIsBooking] = useState(false);
 
   const mentor = mentors.find((m) => m.id === id);
   const mentorReviews = reviews.filter((r) => r.mentorId === id);
@@ -34,14 +39,46 @@ const MentorProfile = () => {
     );
   }
 
-  const handleBookSession = () => {
-    if (selectedSlot) {
-      toast.success("Session booked successfully!", {
-        description: `Your session is scheduled for ${new Date(selectedSlot.date).toLocaleDateString()} at ${selectedSlot.time}`,
-      });
-      setSelectedSlot(null);
-    } else {
+  const handleBookSession = async () => {
+    if (!selectedSlot) {
       toast.error("Please select a time slot first");
+      return;
+    }
+
+    if (!userEmail || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(userEmail)) {
+      toast.error("Please enter a valid email address");
+      return;
+    }
+
+    setIsBooking(true);
+
+    try {
+      const { data, error } = await supabase.functions.invoke("create-booking", {
+        body: {
+          mentorId: mentor.id,
+          mentorName: mentor.name,
+          bookingDate: selectedSlot.date,
+          bookingTime: selectedSlot.time,
+          price: mentor.price,
+          userEmail: userEmail,
+        },
+      });
+
+      if (error) throw error;
+
+      // Redirect to Stripe checkout
+      if (data?.sessionUrl) {
+        window.location.href = data.sessionUrl;
+      } else {
+        throw new Error("No session URL received");
+      }
+    } catch (error) {
+      console.error("Booking error:", error);
+      toast.error("Failed to create booking", {
+        description: error instanceof Error ? error.message : "Please try again",
+      });
+    } finally {
+      setIsBooking(false);
     }
   };
 
@@ -250,9 +287,9 @@ const MentorProfile = () => {
                       />
 
                       {selectedSlot && (
-                        <div className="mt-6 p-4 bg-accent/10 rounded-lg border border-accent/20">
-                          <h4 className="font-semibold mb-2">Selected Time Slot:</h4>
-                          <p className="text-sm text-muted-foreground mb-4">
+                        <div className="mt-6 p-6 bg-accent/10 rounded-lg border border-accent/20 space-y-4">
+                          <h4 className="font-semibold text-lg">Selected Time Slot:</h4>
+                          <p className="text-sm text-muted-foreground">
                             {new Date(selectedSlot.date).toLocaleDateString('en-US', {
                               weekday: 'long',
                               month: 'long',
@@ -260,14 +297,33 @@ const MentorProfile = () => {
                               year: 'numeric'
                             })} at {selectedSlot.time}
                           </p>
-                          <div className="flex items-center justify-between">
+
+                          <div className="space-y-3">
                             <div>
-                              <div className="text-2xl font-display font-bold">${mentor.price}</div>
-                              <div className="text-xs text-muted-foreground">60-minute session</div>
+                              <Label htmlFor="email">Your Email</Label>
+                              <Input
+                                id="email"
+                                type="email"
+                                placeholder="your@email.com"
+                                value={userEmail}
+                                onChange={(e) => setUserEmail(e.target.value)}
+                                className="mt-1"
+                              />
                             </div>
-                            <Button variant="hero" onClick={handleBookSession}>
-                              Confirm Booking
-                            </Button>
+
+                            <div className="flex items-center justify-between pt-4 border-t border-border">
+                              <div>
+                                <div className="text-2xl font-display font-bold">${mentor.price}</div>
+                                <div className="text-xs text-muted-foreground">60-minute session</div>
+                              </div>
+                              <Button 
+                                variant="hero" 
+                                onClick={handleBookSession}
+                                disabled={isBooking}
+                              >
+                                {isBooking ? "Processing..." : "Proceed to Payment"}
+                              </Button>
+                            </div>
                           </div>
                         </div>
                       )}
