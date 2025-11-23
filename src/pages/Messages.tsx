@@ -134,6 +134,8 @@ const Messages = () => {
   const [mentionSearchQuery, setMentionSearchQuery] = useState("");
   const [cursorPosition, setCursorPosition] = useState(0);
   const messageInputRef = useRef<HTMLTextAreaElement>(null);
+  const [draftId, setDraftId] = useState<string | null>(null);
+  const draftTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   useEffect(() => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
@@ -167,6 +169,7 @@ const Messages = () => {
     loadMessageTemplates();
     loadScheduledMessages();
     loadBookmarks();
+    loadDraft();
 
     // Mark messages as delivered when opening conversation
     markMessagesAsDelivered();
@@ -402,6 +405,92 @@ const Messages = () => {
     if (error) {
       console.error("Error marking messages as read:", error);
     }
+  };
+
+  const loadDraft = async () => {
+    if (!user || !conversationId) return;
+
+    const { data, error } = await supabase
+      .from("message_drafts")
+      .select("*")
+      .eq("user_id", user.id)
+      .eq("conversation_id", conversationId)
+      .maybeSingle();
+
+    if (error) {
+      console.error("Error loading draft:", error);
+      return;
+    }
+
+    if (data) {
+      setNewMessage(data.content);
+      setDraftId(data.id);
+    }
+  };
+
+  const saveDraft = async (content: string) => {
+    if (!user || !conversationId) return;
+
+    // Clear existing timeout
+    if (draftTimeoutRef.current) {
+      clearTimeout(draftTimeoutRef.current);
+    }
+
+    // Don't save empty drafts
+    if (!content.trim()) {
+      // Delete draft if it exists
+      if (draftId) {
+        await supabase
+          .from("message_drafts")
+          .delete()
+          .eq("id", draftId);
+        setDraftId(null);
+      }
+      return;
+    }
+
+    // Debounce saving
+    draftTimeoutRef.current = setTimeout(async () => {
+      if (draftId) {
+        // Update existing draft
+        const { error } = await supabase
+          .from("message_drafts")
+          .update({ content })
+          .eq("id", draftId);
+
+        if (error) {
+          console.error("Error updating draft:", error);
+        }
+      } else {
+        // Create new draft
+        const { data, error } = await supabase
+          .from("message_drafts")
+          .insert({
+            user_id: user.id,
+            conversation_id: conversationId,
+            content,
+          })
+          .select()
+          .single();
+
+        if (error) {
+          console.error("Error creating draft:", error);
+        } else {
+          setDraftId(data.id);
+        }
+      }
+    }, 500); // Save after 500ms of inactivity
+  };
+
+  const deleteDraft = async () => {
+    if (!draftId) return;
+
+    await supabase
+      .from("message_drafts")
+      .delete()
+      .eq("id", draftId);
+
+    setDraftId(null);
   };
 
   const scrollToBottom = () => {
@@ -802,6 +891,7 @@ const Messages = () => {
     setNewMessage(value);
     setCursorPosition(cursorPos);
     handleTyping();
+    saveDraft(value); // Auto-save draft
 
     // Check for @ mention
     const textBeforeCursor = value.substring(0, cursorPos);
@@ -1618,6 +1708,10 @@ const Messages = () => {
     if (fileInputRef.current) {
       fileInputRef.current.value = "";
     }
+    
+    // Clear the draft after sending
+    await deleteDraft();
+    
     setSending(false);
   };
 
