@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
 import Navbar from "@/components/Navbar";
-import { ArrowLeft, Send, Check, CheckCheck, Paperclip, X, Download, FileIcon, Smile, Search, Mic, Trash2, MoreVertical, Edit2, Pin, PinOff, Forward, FileText, Plus, Filter, Calendar } from "lucide-react";
+import { ArrowLeft, Send, Check, CheckCheck, Paperclip, X, Download, FileIcon, Smile, Search, Mic, Trash2, MoreVertical, Edit2, Pin, PinOff, Forward, FileText, Plus, Filter, Calendar, Clock } from "lucide-react";
 import { User, Session } from "@supabase/supabase-js";
 import { VoiceRecorder } from "@/components/VoiceRecorder";
 import { AudioPlayer } from "@/components/AudioPlayer";
@@ -117,6 +117,10 @@ const Messages = () => {
   const [showTemplateManager, setShowTemplateManager] = useState(false);
   const [newTemplateName, setNewTemplateName] = useState("");
   const [newTemplateContent, setNewTemplateContent] = useState("");
+  const [showScheduleDialog, setShowScheduleDialog] = useState(false);
+  const [scheduleDate, setScheduleDate] = useState<Date | undefined>();
+  const [scheduleTime, setScheduleTime] = useState("12:00");
+  const [scheduledMessages, setScheduledMessages] = useState<any[]>([]);
 
   useEffect(() => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
@@ -148,6 +152,7 @@ const Messages = () => {
     loadConversation();
     loadMessages();
     loadMessageTemplates();
+    loadScheduledMessages();
 
     // Mark messages as read
     markMessagesAsRead();
@@ -919,6 +924,132 @@ const Messages = () => {
     setSearchResults(results);
   };
 
+  const loadScheduledMessages = async () => {
+    if (!user || !conversationId) return;
+
+    const { data, error } = await supabase
+      .from("scheduled_messages")
+      .select("*")
+      .eq("conversation_id", conversationId)
+      .eq("status", "pending")
+      .order("scheduled_for");
+
+    if (error) {
+      console.error("Error loading scheduled messages:", error);
+      return;
+    }
+
+    setScheduledMessages(data || []);
+  };
+
+  const handleScheduleMessage = async () => {
+    if (!user || !conversation || !newMessage.trim() || !scheduleDate) return;
+
+    const [hours, minutes] = scheduleTime.split(':');
+    const scheduledDateTime = new Date(scheduleDate);
+    scheduledDateTime.setHours(parseInt(hours), parseInt(minutes), 0, 0);
+
+    // Validate that scheduled time is in the future
+    if (scheduledDateTime <= new Date()) {
+      toast({
+        title: "Invalid schedule time",
+        description: "Please select a future date and time",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    try {
+      const { data: profileData } = await supabase
+        .from("profiles")
+        .select("full_name")
+        .eq("id", user.id)
+        .maybeSingle();
+
+      const senderName = profileData?.full_name || user.email?.split("@")[0] || "You";
+
+      const { error } = await supabase
+        .from("scheduled_messages")
+        .insert({
+          conversation_id: conversationId,
+          sender_id: user.id,
+          sender_name: senderName,
+          content: newMessage.trim(),
+          file_url: selectedFile ? await uploadAndGetUrl(selectedFile) : null,
+          file_name: selectedFile?.name || null,
+          file_type: selectedFile?.type || null,
+          scheduled_for: scheduledDateTime.toISOString(),
+        });
+
+      if (error) {
+        console.error("Error scheduling message:", error);
+        toast({
+          title: "Error",
+          description: "Failed to schedule message",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      toast({
+        title: "Message scheduled",
+        description: `Your message will be sent on ${format(scheduledDateTime, "MMM dd, yyyy 'at' HH:mm")}`,
+      });
+
+      setNewMessage("");
+      setSelectedFile(null);
+      setScheduleDate(undefined);
+      setScheduleTime("12:00");
+      setShowScheduleDialog(false);
+      loadScheduledMessages();
+    } catch (error) {
+      console.error("Error scheduling message:", error);
+      toast({
+        title: "Error",
+        description: "Failed to schedule message",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const uploadAndGetUrl = async (file: File): Promise<string | null> => {
+    const fileData = await uploadFile(file);
+    return fileData?.url || null;
+  };
+
+  const handleCancelScheduledMessage = async (messageId: string) => {
+    try {
+      const { error } = await supabase
+        .from("scheduled_messages")
+        .update({ status: "cancelled" })
+        .eq("id", messageId);
+
+      if (error) {
+        console.error("Error cancelling scheduled message:", error);
+        toast({
+          title: "Error",
+          description: "Failed to cancel scheduled message",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      toast({
+        title: "Message cancelled",
+        description: "The scheduled message has been cancelled",
+      });
+
+      loadScheduledMessages();
+    } catch (error) {
+      console.error("Error cancelling scheduled message:", error);
+      toast({
+        title: "Error",
+        description: "Failed to cancel scheduled message",
+        variant: "destructive",
+      });
+    }
+  };
+
   const handleApplyFilters = () => {
     performSearch(searchQuery, searchSender, searchType, searchDateFrom, searchDateTo);
   };
@@ -1129,8 +1260,41 @@ const Messages = () => {
                     >
                       <X className="h-3 w-3" />
                     </Button>
-                  )}
+              )}
+            </div>
+
+            {/* Scheduled Messages Section */}
+            {scheduledMessages.length > 0 && (
+              <div className="p-4 border-b bg-muted/30">
+                <div className="flex items-center gap-2 text-sm font-medium mb-2">
+                  <Clock className="h-4 w-4" />
+                  <span>Scheduled Messages ({scheduledMessages.length})</span>
                 </div>
+                <div className="space-y-2">
+                  {scheduledMessages.map((msg) => (
+                    <div
+                      key={msg.id}
+                      className="flex items-start gap-2 p-2 bg-background rounded-lg text-sm"
+                    >
+                      <div className="flex-1 min-w-0">
+                        <p className="text-xs text-muted-foreground">
+                          {format(new Date(msg.scheduled_for), "MMM dd, yyyy 'at' HH:mm")}
+                        </p>
+                        <p className="truncate">{msg.content}</p>
+                      </div>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => handleCancelScheduledMessage(msg.id)}
+                        className="h-7 px-2 flex-shrink-0"
+                      >
+                        <X className="h-3 w-3" />
+                      </Button>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
               </div>
 
               {/* Advanced Search Filters */}
@@ -1742,6 +1906,16 @@ const Messages = () => {
                       disabled={sending || uploading}
                       className="flex-1"
                     />
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => setShowScheduleDialog(true)}
+                      disabled={sending || uploading || !newMessage.trim()}
+                      title="Schedule message"
+                    >
+                      <Clock className="h-4 w-4" />
+                    </Button>
                     <Button type="submit" disabled={sending || uploading || (!newMessage.trim() && !selectedFile)}>
                       {uploading ? "Uploading..." : <Send className="h-4 w-4" />}
                     </Button>
@@ -1890,6 +2064,71 @@ const Messages = () => {
                 disabled={!newTemplateName.trim() || !newTemplateContent.trim()}
               >
                 Create Template
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+
+        {/* Schedule Message Dialog */}
+        <Dialog open={showScheduleDialog} onOpenChange={setShowScheduleDialog}>
+          <DialogContent className="sm:max-w-md bg-background">
+            <DialogHeader>
+              <DialogTitle>Schedule Message</DialogTitle>
+              <DialogDescription>
+                Choose when to send this message
+              </DialogDescription>
+            </DialogHeader>
+            <div className="space-y-4">
+              <div className="space-y-2">
+                <Label>Date</Label>
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <Button variant="outline" className="w-full justify-start text-left font-normal">
+                      <Calendar className="mr-2 h-4 w-4" />
+                      {scheduleDate ? format(scheduleDate, "PPP") : "Pick a date"}
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-auto p-0 bg-background" align="start">
+                    <CalendarComponent
+                      mode="single"
+                      selected={scheduleDate}
+                      onSelect={setScheduleDate}
+                      disabled={(date) => date < new Date()}
+                      initialFocus
+                    />
+                  </PopoverContent>
+                </Popover>
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="schedule-time">Time</Label>
+                <Input
+                  id="schedule-time"
+                  type="time"
+                  value={scheduleTime}
+                  onChange={(e) => setScheduleTime(e.target.value)}
+                />
+              </div>
+              <div className="p-3 bg-muted/30 rounded-lg">
+                <p className="text-sm text-muted-foreground mb-1">Message Preview:</p>
+                <p className="text-sm">{newMessage}</p>
+              </div>
+            </div>
+            <DialogFooter>
+              <Button
+                variant="outline"
+                onClick={() => {
+                  setShowScheduleDialog(false);
+                  setScheduleDate(undefined);
+                  setScheduleTime("12:00");
+                }}
+              >
+                Cancel
+              </Button>
+              <Button
+                onClick={handleScheduleMessage}
+                disabled={!scheduleDate}
+              >
+                Schedule Message
               </Button>
             </DialogFooter>
           </DialogContent>
