@@ -10,8 +10,9 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
 import Navbar from "@/components/Navbar";
+import { RecommendationsCard } from "@/components/RecommendationsCard";
 import { User, Session } from "@supabase/supabase-js";
-import { Calendar, Clock, User as UserIcon, LogOut } from "lucide-react";
+import { Calendar, Clock, LogOut } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 
 interface Profile {
@@ -36,7 +37,9 @@ const Dashboard = () => {
   const [session, setSession] = useState<Session | null>(null);
   const [profile, setProfile] = useState<Profile | null>(null);
   const [bookings, setBookings] = useState<Booking[]>([]);
+  const [recommendations, setRecommendations] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [recommendationsLoading, setRecommendationsLoading] = useState(false);
   const navigate = useNavigate();
   const { toast } = useToast();
 
@@ -89,6 +92,44 @@ const Dashboard = () => {
     
     setBookings(bookingsData || []);
     setLoading(false);
+
+    // Load recommendations if profile is complete
+    if (profileData?.interests && profileData?.skill_level) {
+      loadRecommendations(userId);
+    }
+  };
+
+  const loadRecommendations = async (userId: string) => {
+    setRecommendationsLoading(true);
+    
+    try {
+      const { data, error } = await supabase.functions.invoke("recommend-mentors", {
+        body: { userId },
+      });
+
+      if (error) throw error;
+
+      if (data?.recommendations) {
+        setRecommendations(data.recommendations);
+      }
+    } catch (error: any) {
+      console.error("Recommendations error:", error);
+      if (error.message?.includes("Rate limit")) {
+        toast({
+          title: "Rate Limit",
+          description: "Too many requests. Please try again in a moment.",
+          variant: "destructive",
+        });
+      } else if (error.message?.includes("credits")) {
+        toast({
+          title: "Credits Exhausted",
+          description: "AI credits exhausted. Please add credits to continue.",
+          variant: "destructive",
+        });
+      }
+    } finally {
+      setRecommendationsLoading(false);
+    }
   };
 
   const handleSignOut = async () => {
@@ -162,11 +203,19 @@ const Dashboard = () => {
           </Button>
         </div>
 
-        <Tabs defaultValue="sessions" className="space-y-6">
+        <Tabs defaultValue="recommendations" className="space-y-6">
           <TabsList>
+            <TabsTrigger value="recommendations">Recommendations</TabsTrigger>
             <TabsTrigger value="sessions">My Sessions</TabsTrigger>
-            <TabsTrigger value="profile">Profile</TabsTrigger>
+            <TabsTrigger value="profile" id="profile-tab">Profile</TabsTrigger>
           </TabsList>
+
+          <TabsContent value="recommendations" className="space-y-6">
+            <RecommendationsCard 
+              recommendations={recommendations}
+              loading={recommendationsLoading}
+            />
+          </TabsContent>
 
           <TabsContent value="sessions" className="space-y-6">
             <Card>
