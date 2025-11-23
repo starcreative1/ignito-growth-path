@@ -3,7 +3,15 @@ import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { MessageSquare, ArrowRight } from "lucide-react";
+import { MessageSquare, ArrowRight, Archive, ArchiveRestore, MoreVertical } from "lucide-react";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { useToast } from "@/hooks/use-toast";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 interface Conversation {
   id: string;
@@ -11,12 +19,16 @@ interface Conversation {
   mentor_name: string;
   last_message_at: string;
   unread_count: number;
+  archived: boolean;
+  archived_at: string | null;
 }
 
 export const ConversationsList = ({ userId }: { userId: string }) => {
   const [conversations, setConversations] = useState<Conversation[]>([]);
   const [loading, setLoading] = useState(true);
+  const [activeTab, setActiveTab] = useState<"active" | "archived">("active");
   const navigate = useNavigate();
+  const { toast } = useToast();
 
   useEffect(() => {
     if (!userId) return;
@@ -81,6 +93,47 @@ export const ConversationsList = ({ userId }: { userId: string }) => {
     };
   }, [userId]);
 
+  const handleArchiveConversation = async (conversationId: string, currentlyArchived: boolean, e: React.MouseEvent) => {
+    e.stopPropagation();
+
+    const { error } = await supabase
+      .from("conversations")
+      .update({ 
+        archived: !currentlyArchived,
+        archived_at: !currentlyArchived ? new Date().toISOString() : null
+      })
+      .eq("id", conversationId);
+
+    if (error) {
+      console.error("Error archiving conversation:", error);
+      toast({
+        title: "Error",
+        description: "Failed to archive conversation",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    // Update local state
+    setConversations(prev => 
+      prev.map(conv => 
+        conv.id === conversationId 
+          ? { ...conv, archived: !currentlyArchived, archived_at: !currentlyArchived ? new Date().toISOString() : null }
+          : conv
+      )
+    );
+
+    toast({
+      title: currentlyArchived ? "Conversation restored" : "Conversation archived",
+      description: currentlyArchived 
+        ? "Conversation moved back to active" 
+        : "Conversation moved to archive",
+    });
+  };
+
+  const activeConversations = conversations.filter(c => !c.archived);
+  const archivedConversations = conversations.filter(c => c.archived);
+
   if (loading) {
     return (
       <Card>
@@ -105,40 +158,123 @@ export const ConversationsList = ({ userId }: { userId: string }) => {
         <CardDescription>Your conversations with mentors</CardDescription>
       </CardHeader>
       <CardContent>
-        {conversations.length === 0 ? (
-          <div className="text-center py-8 text-muted-foreground">
-            <MessageSquare className="h-12 w-12 mx-auto mb-4 opacity-50" />
-            <p>No conversations yet</p>
-            <p className="text-sm mt-2">Start chatting with a mentor after booking a session</p>
-          </div>
-        ) : (
-          <div className="space-y-3">
-            {conversations.map((conversation) => (
-              <div
-                key={conversation.id}
-                className="flex items-center justify-between p-4 border rounded-lg hover:bg-accent/5 transition-colors cursor-pointer"
-                onClick={() => navigate(`/messages/${conversation.id}`)}
-              >
-                <div className="flex-1">
-                  <p className="font-semibold">{conversation.mentor_name}</p>
-                  <p className="text-sm text-muted-foreground">
-                    Last message: {new Date(conversation.last_message_at).toLocaleDateString()}
-                  </p>
-                </div>
-                <div className="flex items-center gap-2">
-                  {conversation.unread_count > 0 && (
-                    <div className="flex items-center justify-center h-6 min-w-[24px] px-2 rounded-full bg-primary text-primary-foreground text-xs font-semibold">
-                      {conversation.unread_count}
-                    </div>
-                  )}
-                  <Button variant="ghost" size="sm">
-                    <ArrowRight className="h-4 w-4" />
-                  </Button>
-                </div>
+        <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as "active" | "archived")}>
+          <TabsList className="grid w-full grid-cols-2 mb-4">
+            <TabsTrigger value="active">
+              Active ({activeConversations.length})
+            </TabsTrigger>
+            <TabsTrigger value="archived">
+              Archived ({archivedConversations.length})
+            </TabsTrigger>
+          </TabsList>
+
+          <TabsContent value="active">
+            {activeConversations.length === 0 ? (
+              <div className="text-center py-8 text-muted-foreground">
+                <MessageSquare className="h-12 w-12 mx-auto mb-4 opacity-50" />
+                <p>No active conversations</p>
+                <p className="text-sm mt-2">Start chatting with a mentor after booking a session</p>
               </div>
-            ))}
-          </div>
-        )}
+            ) : (
+              <div className="space-y-3">
+                {activeConversations.map((conversation) => (
+                  <div
+                    key={conversation.id}
+                    className="flex items-center justify-between p-4 border rounded-lg hover:bg-accent/5 transition-colors group"
+                  >
+                    <div 
+                      className="flex-1 cursor-pointer"
+                      onClick={() => navigate(`/messages/${conversation.id}`)}
+                    >
+                      <p className="font-semibold">{conversation.mentor_name}</p>
+                      <p className="text-sm text-muted-foreground">
+                        Last message: {new Date(conversation.last_message_at).toLocaleDateString()}
+                      </p>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      {conversation.unread_count > 0 && (
+                        <div className="flex items-center justify-center h-6 min-w-[24px] px-2 rounded-full bg-primary text-primary-foreground text-xs font-semibold">
+                          {conversation.unread_count}
+                        </div>
+                      )}
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button variant="ghost" size="sm" className="opacity-0 group-hover:opacity-100 transition-opacity">
+                            <MoreVertical className="h-4 w-4" />
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end">
+                          <DropdownMenuItem onClick={(e) => handleArchiveConversation(conversation.id, false, e)}>
+                            <Archive className="h-4 w-4 mr-2" />
+                            Archive
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                      <Button 
+                        variant="ghost" 
+                        size="sm"
+                        onClick={() => navigate(`/messages/${conversation.id}`)}
+                      >
+                        <ArrowRight className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </TabsContent>
+
+          <TabsContent value="archived">
+            {archivedConversations.length === 0 ? (
+              <div className="text-center py-8 text-muted-foreground">
+                <Archive className="h-12 w-12 mx-auto mb-4 opacity-50" />
+                <p>No archived conversations</p>
+                <p className="text-sm mt-2">Archived conversations will appear here</p>
+              </div>
+            ) : (
+              <div className="space-y-3">
+                {archivedConversations.map((conversation) => (
+                  <div
+                    key={conversation.id}
+                    className="flex items-center justify-between p-4 border rounded-lg hover:bg-accent/5 transition-colors group opacity-70"
+                  >
+                    <div 
+                      className="flex-1 cursor-pointer"
+                      onClick={() => navigate(`/messages/${conversation.id}`)}
+                    >
+                      <p className="font-semibold">{conversation.mentor_name}</p>
+                      <p className="text-sm text-muted-foreground">
+                        Archived: {conversation.archived_at ? new Date(conversation.archived_at).toLocaleDateString() : 'Unknown'}
+                      </p>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button variant="ghost" size="sm" className="opacity-0 group-hover:opacity-100 transition-opacity">
+                            <MoreVertical className="h-4 w-4" />
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end">
+                          <DropdownMenuItem onClick={(e) => handleArchiveConversation(conversation.id, true, e)}>
+                            <ArchiveRestore className="h-4 w-4 mr-2" />
+                            Restore
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                      <Button 
+                        variant="ghost" 
+                        size="sm"
+                        onClick={() => navigate(`/messages/${conversation.id}`)}
+                      >
+                        <ArrowRight className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </TabsContent>
+        </Tabs>
       </CardContent>
     </Card>
   );
