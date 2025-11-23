@@ -143,6 +143,7 @@ export type Database = {
           file_url: string | null
           id: string
           is_read: boolean
+          pinned: boolean
           sender_id: string
           sender_name: string
         }
@@ -156,6 +157,7 @@ export type Database = {
           file_url?: string | null
           id?: string
           is_read?: boolean
+          pinned?: boolean
           sender_id: string
           sender_name: string
         }
@@ -169,6 +171,7 @@ export type Database = {
           file_url?: string | null
           id?: string
           is_read?: boolean
+          pinned?: boolean
           sender_id?: string
           sender_name?: string
         }
