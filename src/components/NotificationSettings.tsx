@@ -94,7 +94,7 @@ export const NotificationSettings = () => {
       
       if (user) {
         await supabase
-          .from('push_subscriptions')
+          .from('push_subscriptions' as any)
           .upsert({
             user_id: user.id,
             subscription: subscription.toJSON(),
@@ -129,7 +129,7 @@ export const NotificationSettings = () => {
         const { data: { user } } = await supabase.auth.getUser();
         if (user) {
           await supabase
-            .from('push_subscriptions')
+            .from('push_subscriptions' as any)
             .delete()
             .eq('user_id', user.id);
         }

@@ -12,8 +12,9 @@ import { useToast } from "@/hooks/use-toast";
 import Navbar from "@/components/Navbar";
 import { RecommendationsCard } from "@/components/RecommendationsCard";
 import { ConversationsList } from "@/components/ConversationsList";
+import { NotificationSettings } from "@/components/NotificationSettings";
 import { User, Session } from "@supabase/supabase-js";
-import { Calendar, Clock, LogOut } from "lucide-react";
+import { Calendar, Clock, LogOut, Settings } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 
 interface Profile {
@@ -210,6 +211,10 @@ const Dashboard = () => {
             <TabsTrigger value="sessions">My Sessions</TabsTrigger>
             <TabsTrigger value="messages">Messages</TabsTrigger>
             <TabsTrigger value="profile" id="profile-tab">Profile</TabsTrigger>
+            <TabsTrigger value="settings">
+              <Settings className="h-4 w-4 mr-2" />
+              Settings
+            </TabsTrigger>
           </TabsList>
 
           <TabsContent value="recommendations" className="space-y-6">
@@ -355,6 +360,10 @@ const Dashboard = () => {
                 </form>
               </CardContent>
             </Card>
+          </TabsContent>
+
+          <TabsContent value="settings" className="space-y-6">
+            <NotificationSettings />
           </TabsContent>
         </Tabs>
       </div>
