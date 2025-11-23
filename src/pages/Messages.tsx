@@ -59,6 +59,7 @@ interface Message {
   created_at: string;
   is_read: boolean;
   read_at: string | null;
+  delivered_at: string | null;
   file_url: string | null;
   file_name: string | null;
   file_type: string | null;
@@ -167,6 +168,9 @@ const Messages = () => {
     loadScheduledMessages();
     loadBookmarks();
 
+    // Mark messages as delivered when opening conversation
+    markMessagesAsDelivered();
+
     // Mark messages as read
     markMessagesAsRead();
 
@@ -217,8 +221,18 @@ const Messages = () => {
           setMessages(prev => [...prev, newMessage]);
           scrollToBottom();
           
-          // Mark new message as read if it's not from current user
+          // Mark message as delivered when received
           if (newMessage.sender_id !== user.id) {
+            supabase
+              .from("messages")
+              .update({ 
+                delivered_at: new Date().toISOString()
+              })
+              .eq("id", newMessage.id)
+              .is("delivered_at", null)
+              .then(() => console.log("Message marked as delivered"));
+            
+            // Mark as read immediately (since user is viewing the conversation)
             supabase
               .from("messages")
               .update({ 
@@ -353,6 +367,23 @@ const Messages = () => {
     }, {});
 
     return Object.values(grouped);
+  };
+
+  const markMessagesAsDelivered = async () => {
+    if (!user || !conversationId) return;
+
+    const { error } = await supabase
+      .from("messages")
+      .update({ 
+        delivered_at: new Date().toISOString()
+      })
+      .eq("conversation_id", conversationId)
+      .neq("sender_id", user.id)
+      .is("delivered_at", null);
+
+    if (error) {
+      console.error("Error marking messages as delivered:", error);
+    }
   };
 
   const markMessagesAsRead = async () => {
@@ -891,6 +922,37 @@ const Messages = () => {
     }
     
     return mentions;
+  };
+
+  const getDeliveryStatus = (message: Message) => {
+    if (message.sender_id !== user?.id) {
+      return null; // Don't show delivery status for received messages
+    }
+
+    if (message.is_read && message.read_at) {
+      return {
+        status: 'read',
+        icon: <CheckCheck className="h-3 w-3 inline ml-1 text-blue-500" />,
+        label: 'Read',
+        timestamp: message.read_at,
+      };
+    }
+
+    if (message.delivered_at) {
+      return {
+        status: 'delivered',
+        icon: <CheckCheck className="h-3 w-3 inline ml-1 text-muted-foreground" />,
+        label: 'Delivered',
+        timestamp: message.delivered_at,
+      };
+    }
+
+    return {
+      status: 'sent',
+      icon: <Check className="h-3 w-3 inline ml-1 text-muted-foreground" />,
+      label: 'Sent',
+      timestamp: message.created_at,
+    };
   };
 
   const handlePinMessage = async (messageId: string, currentlyPinned: boolean) => {
@@ -1903,34 +1965,37 @@ const Messages = () => {
                                     })}
                                     {message.edited_at && " (edited)"}
                                   </p>
-                                  {message.sender_id === user?.id && (
+                                  {message.sender_id === user?.id && getDeliveryStatus(message) && (
                                     <TooltipProvider>
                                       <Tooltip>
                                         <TooltipTrigger asChild>
                                           <span className="text-xs opacity-70 cursor-help">
-                                            {message.is_read ? (
-                                              <CheckCheck className="h-3 w-3 inline ml-1 text-blue-500" />
-                                            ) : (
-                                              <Check className="h-3 w-3 inline ml-1" />
-                                            )}
+                                            {getDeliveryStatus(message)?.icon}
                                           </span>
                                         </TooltipTrigger>
                                         <TooltipContent side="top" className="bg-background border">
-                                          <div className="text-xs">
-                                            {message.is_read ? (
-                                              <>
+                                          <div className="text-xs space-y-1">
+                                            <div>
+                                              <p className="font-semibold">Sent</p>
+                                              <p className="text-muted-foreground">
+                                                {format(new Date(message.created_at), "MMM dd, yyyy 'at' HH:mm:ss")}
+                                              </p>
+                                            </div>
+                                            {message.delivered_at && (
+                                              <div>
+                                                <p className="font-semibold">Delivered</p>
+                                                <p className="text-muted-foreground">
+                                                  {format(new Date(message.delivered_at), "MMM dd, yyyy 'at' HH:mm:ss")}
+                                                </p>
+                                              </div>
+                                            )}
+                                            {message.is_read && message.read_at && (
+                                              <div>
                                                 <p className="font-semibold">Read</p>
                                                 <p className="text-muted-foreground">
-                                                  {message.read_at 
-                                                    ? format(new Date(message.read_at), "MMM dd, yyyy 'at' HH:mm:ss")
-                                                    : "Read at unknown time"}
+                                                  {format(new Date(message.read_at), "MMM dd, yyyy 'at' HH:mm:ss")}
                                                 </p>
-                                              </>
-                                            ) : (
-                                              <>
-                                                <p className="font-semibold">Sent</p>
-                                                <p className="text-muted-foreground">Not yet read</p>
-                                              </>
+                                              </div>
                                             )}
                                           </div>
                                         </TooltipContent>
@@ -2184,34 +2249,37 @@ const Messages = () => {
                                 })}
                                 {message.edited_at && " (edited)"}
                               </p>
-                              {message.sender_id === user?.id && (
+                              {message.sender_id === user?.id && getDeliveryStatus(message) && (
                                 <TooltipProvider>
                                   <Tooltip>
                                     <TooltipTrigger asChild>
                                       <span className="text-xs opacity-70 cursor-help">
-                                        {message.is_read ? (
-                                          <CheckCheck className="h-3 w-3 inline ml-1 text-blue-500" />
-                                        ) : (
-                                          <Check className="h-3 w-3 inline ml-1" />
-                                        )}
+                                        {getDeliveryStatus(message)?.icon}
                                       </span>
                                     </TooltipTrigger>
                                     <TooltipContent side="top" className="bg-background border">
-                                      <div className="text-xs">
-                                        {message.is_read ? (
-                                          <>
+                                      <div className="text-xs space-y-1">
+                                        <div>
+                                          <p className="font-semibold">Sent</p>
+                                          <p className="text-muted-foreground">
+                                            {format(new Date(message.created_at), "MMM dd, yyyy 'at' HH:mm:ss")}
+                                          </p>
+                                        </div>
+                                        {message.delivered_at && (
+                                          <div>
+                                            <p className="font-semibold">Delivered</p>
+                                            <p className="text-muted-foreground">
+                                              {format(new Date(message.delivered_at), "MMM dd, yyyy 'at' HH:mm:ss")}
+                                            </p>
+                                          </div>
+                                        )}
+                                        {message.is_read && message.read_at && (
+                                          <div>
                                             <p className="font-semibold">Read</p>
                                             <p className="text-muted-foreground">
-                                              {message.read_at 
-                                                ? format(new Date(message.read_at), "MMM dd, yyyy 'at' HH:mm:ss")
-                                                : "Read at unknown time"}
+                                              {format(new Date(message.read_at), "MMM dd, yyyy 'at' HH:mm:ss")}
                                             </p>
-                                          </>
-                                        ) : (
-                                          <>
-                                            <p className="font-semibold">Sent</p>
-                                            <p className="text-muted-foreground">Not yet read</p>
-                                          </>
+                                          </div>
                                         )}
                                       </div>
                                     </TooltipContent>
