@@ -139,6 +139,9 @@ const Messages = () => {
   const [translations, setTranslations] = useState<Record<string, { text: string; language: string }>>({});
   const [translatingMessageId, setTranslatingMessageId] = useState<string | null>(null);
   const [selectedLanguage, setSelectedLanguage] = useState<string>("Spanish");
+  const [userPreferredLanguage, setUserPreferredLanguage] = useState<string | null>(null);
+  const [autoTranslateEnabled, setAutoTranslateEnabled] = useState(false);
+  const [showLanguageSettings, setShowLanguageSettings] = useState(false);
 
   useEffect(() => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
@@ -173,6 +176,7 @@ const Messages = () => {
     loadScheduledMessages();
     loadBookmarks();
     loadDraft();
+    loadUserPreferredLanguage();
 
     // Mark messages as delivered when opening conversation
     markMessagesAsDelivered();
@@ -247,6 +251,11 @@ const Messages = () => {
               })
               .eq("id", newMessage.id)
               .then(() => console.log("Message marked as read"));
+            
+            // Auto-translate incoming message if enabled
+            if (userPreferredLanguage && autoTranslateEnabled) {
+              autoTranslateMessage(newMessage.id, newMessage.content, newMessage.sender_name);
+            }
           }
         }
       )
@@ -321,6 +330,14 @@ const Messages = () => {
         })
       );
       setMessages(messagesWithReactions || []);
+      
+      // Auto-translate messages from other users
+      if (userPreferredLanguage && autoTranslateEnabled) {
+        messagesWithReactions
+          .filter(msg => msg.sender_id !== user?.id)
+          .forEach(msg => autoTranslateMessage(msg.id, msg.content, msg.sender_name));
+      }
+      
       setTimeout(scrollToBottom, 100);
     }
 
@@ -343,6 +360,79 @@ const Messages = () => {
 
     const bookmarkIds = new Set(data?.map(b => b.message_id) || []);
     setBookmarkedMessageIds(bookmarkIds);
+  };
+
+  const loadUserPreferredLanguage = async () => {
+    if (!user) return;
+
+    const { data, error } = await supabase
+      .from("profiles")
+      .select("preferred_language")
+      .eq("id", user.id)
+      .maybeSingle();
+
+    if (error) {
+      console.error("Error loading preferred language:", error);
+      return;
+    }
+
+    if (data?.preferred_language) {
+      setUserPreferredLanguage(data.preferred_language);
+      setAutoTranslateEnabled(true);
+    }
+  };
+
+  const saveUserPreferredLanguage = async (language: string | null) => {
+    if (!user) return;
+
+    const { error } = await supabase
+      .from("profiles")
+      .update({ preferred_language: language })
+      .eq("id", user.id);
+
+    if (error) {
+      console.error("Error saving preferred language:", error);
+      toast({
+        title: "Error",
+        description: "Failed to save language preference",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setUserPreferredLanguage(language);
+    toast({
+      title: "Language preference saved",
+      description: language ? `Auto-translation enabled for ${language}` : "Auto-translation disabled",
+    });
+  };
+
+  const autoTranslateMessage = async (messageId: string, content: string, senderName: string) => {
+    if (!userPreferredLanguage || !autoTranslateEnabled) return;
+    if (!content.trim()) return;
+
+    try {
+      const { data, error } = await supabase.functions.invoke('translate-message', {
+        body: {
+          text: content,
+          targetLanguage: userPreferredLanguage,
+        },
+      });
+
+      if (error) throw error;
+      if (data?.error) throw new Error(data.error);
+
+      setTranslations(prev => ({
+        ...prev,
+        [messageId]: {
+          text: data.translatedText,
+          language: userPreferredLanguage,
+        },
+      }));
+    } catch (error) {
+      console.error('Auto-translation error:', error);
+      // Silently fail for auto-translation to not interrupt user experience
+    }
   };
 
   const loadReactions = async (messageId: string): Promise<Reaction[]> => {
@@ -1866,11 +1956,18 @@ const Messages = () => {
                   <Bookmark className="h-4 w-4 mr-2" />
                   Bookmarks {bookmarkedCount > 0 && `(${bookmarkedCount})`}
                 </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setShowLanguageSettings(true)}
+                >
+                  <Languages className="h-4 w-4 mr-2" />
+                  {autoTranslateEnabled && userPreferredLanguage ? `Auto: ${userPreferredLanguage}` : 'Translation'}
+                </Button>
                 <div className="flex items-center gap-2">
-                  <Languages className="h-4 w-4 text-muted-foreground" />
                   <Select value={selectedLanguage} onValueChange={setSelectedLanguage}>
                     <SelectTrigger className="h-9 w-[140px]">
-                      <SelectValue />
+                      <SelectValue placeholder="Translate to..." />
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="Spanish">Spanish</SelectItem>
@@ -2999,6 +3096,77 @@ const Messages = () => {
             </AlertDialogFooter>
           </AlertDialogContent>
         </AlertDialog>
+
+        {/* Language Settings Dialog */}
+        <Dialog open={showLanguageSettings} onOpenChange={setShowLanguageSettings}>
+          <DialogContent className="sm:max-w-md bg-background">
+            <DialogHeader>
+              <DialogTitle>Auto-Translation Settings</DialogTitle>
+              <DialogDescription>
+                Automatically translate incoming messages to your preferred language
+              </DialogDescription>
+            </DialogHeader>
+            <div className="space-y-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="font-medium">Enable Auto-Translation</p>
+                  <p className="text-sm text-muted-foreground">
+                    Translate messages from others automatically
+                  </p>
+                </div>
+                <Button
+                  variant={autoTranslateEnabled ? "default" : "outline"}
+                  size="sm"
+                  onClick={() => {
+                    const newValue = !autoTranslateEnabled;
+                    setAutoTranslateEnabled(newValue);
+                    if (!newValue) {
+                      saveUserPreferredLanguage(null);
+                    }
+                  }}
+                >
+                  {autoTranslateEnabled ? "Enabled" : "Disabled"}
+                </Button>
+              </div>
+              
+              {autoTranslateEnabled && (
+                <div className="space-y-2">
+                  <Label>Preferred Language</Label>
+                  <Select 
+                    value={userPreferredLanguage || ""} 
+                    onValueChange={(value) => saveUserPreferredLanguage(value)}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select language..." />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="Spanish">Spanish</SelectItem>
+                      <SelectItem value="French">French</SelectItem>
+                      <SelectItem value="German">German</SelectItem>
+                      <SelectItem value="Italian">Italian</SelectItem>
+                      <SelectItem value="Portuguese">Portuguese</SelectItem>
+                      <SelectItem value="Chinese">Chinese</SelectItem>
+                      <SelectItem value="Japanese">Japanese</SelectItem>
+                      <SelectItem value="Korean">Korean</SelectItem>
+                      <SelectItem value="Arabic">Arabic</SelectItem>
+                      <SelectItem value="Russian">Russian</SelectItem>
+                      <SelectItem value="Hindi">Hindi</SelectItem>
+                      <SelectItem value="English">English</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <p className="text-xs text-muted-foreground">
+                    Messages from other users will be automatically translated to {userPreferredLanguage || "your selected language"}
+                  </p>
+                </div>
+              )}
+            </div>
+            <DialogFooter>
+              <Button onClick={() => setShowLanguageSettings(false)}>
+                Done
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
       </div>
     </div>
   );
