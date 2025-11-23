@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
 import Navbar from "@/components/Navbar";
-import { ArrowLeft, Send, Check, CheckCheck } from "lucide-react";
+import { ArrowLeft, Send, Check, CheckCheck, Paperclip, X, Download, FileIcon } from "lucide-react";
 import { User, Session } from "@supabase/supabase-js";
 
 interface Message {
@@ -16,6 +16,9 @@ interface Message {
   content: string;
   created_at: string;
   is_read: boolean;
+  file_url: string | null;
+  file_name: string | null;
+  file_type: string | null;
 }
 
 interface Conversation {
@@ -39,6 +42,9 @@ const Messages = () => {
   const [isTyping, setIsTyping] = useState(false);
   const [typingTimeout, setTypingTimeout] = useState<NodeJS.Timeout | null>(null);
   const [presenceChannel, setPresenceChannel] = useState<any>(null);
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [uploading, setUploading] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
@@ -241,10 +247,79 @@ const Messages = () => {
     setTypingTimeout(timeout);
   };
 
+  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      // Check file size (max 20MB)
+      if (file.size > 20 * 1024 * 1024) {
+        toast({
+          title: "File too large",
+          description: "Maximum file size is 20MB",
+          variant: "destructive",
+        });
+        return;
+      }
+      setSelectedFile(file);
+    }
+  };
+
+  const removeSelectedFile = () => {
+    setSelectedFile(null);
+    if (fileInputRef.current) {
+      fileInputRef.current.value = "";
+    }
+  };
+
+  const uploadFile = async (file: File): Promise<{ url: string; name: string; type: string } | null> => {
+    if (!conversationId) return null;
+
+    const fileExt = file.name.split('.').pop();
+    const fileName = `${conversationId}/${Date.now()}-${Math.random().toString(36).substring(7)}.${fileExt}`;
+
+    const { error: uploadError } = await supabase.storage
+      .from('message-attachments')
+      .upload(fileName, file);
+
+    if (uploadError) {
+      console.error('Upload error:', uploadError);
+      toast({
+        title: "Upload failed",
+        description: uploadError.message,
+        variant: "destructive",
+      });
+      return null;
+    }
+
+    const { data: { publicUrl } } = supabase.storage
+      .from('message-attachments')
+      .getPublicUrl(fileName);
+
+    return {
+      url: publicUrl,
+      name: file.name,
+      type: file.type,
+    };
+  };
+
   const handleSendMessage = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!newMessage.trim() || !user || !conversation) return;
+    if ((!newMessage.trim() && !selectedFile) || !user || !conversation) return;
+
+    setSending(true);
+    setUploading(true);
+
+    let fileData = null;
+    if (selectedFile) {
+      fileData = await uploadFile(selectedFile);
+      if (!fileData) {
+        setSending(false);
+        setUploading(false);
+        return;
+      }
+    }
+
+    setUploading(false);
 
     setSending(true);
 
@@ -263,7 +338,10 @@ const Messages = () => {
         conversation_id: conversationId,
         sender_id: user.id,
         sender_name: senderName,
-        content: messageContent,
+        content: messageContent || (fileData ? "Sent an attachment" : ""),
+        file_url: fileData?.url || null,
+        file_name: fileData?.name || null,
+        file_type: fileData?.type || null,
       })
       .select()
       .single();
@@ -307,6 +385,10 @@ const Messages = () => {
     }
 
     setNewMessage("");
+    setSelectedFile(null);
+    if (fileInputRef.current) {
+      fileInputRef.current.value = "";
+    }
     setSending(false);
   };
 
@@ -362,7 +444,32 @@ const Messages = () => {
                       }`}
                     >
                       <p className="text-sm font-medium mb-1">{message.sender_name}</p>
-                      <p className="text-sm whitespace-pre-wrap">{message.content}</p>
+                      {message.content && (
+                        <p className="text-sm whitespace-pre-wrap">{message.content}</p>
+                      )}
+                      {message.file_url && (
+                        <div className="mt-2">
+                          {message.file_type?.startsWith('image/') ? (
+                            <img 
+                              src={message.file_url} 
+                              alt={message.file_name || 'Image attachment'}
+                              className="max-w-full max-h-64 rounded cursor-pointer"
+                              onClick={() => window.open(message.file_url!, '_blank')}
+                            />
+                          ) : (
+                            <a
+                              href={message.file_url}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="flex items-center gap-2 p-2 bg-background/10 rounded hover:bg-background/20 transition-colors"
+                            >
+                              <FileIcon className="h-4 w-4" />
+                              <span className="text-sm">{message.file_name || 'Download file'}</span>
+                              <Download className="h-3 w-3 ml-auto" />
+                            </a>
+                          )}
+                        </div>
+                      )}
                       <div className="flex items-center gap-1 mt-1">
                         <p className="text-xs opacity-70">
                           {new Date(message.created_at).toLocaleTimeString([], {
@@ -399,7 +506,37 @@ const Messages = () => {
             </div>
 
             <form onSubmit={handleSendMessage} className="p-4 border-t">
+              {selectedFile && (
+                <div className="mb-2 flex items-center gap-2 p-2 bg-muted rounded">
+                  <Paperclip className="h-4 w-4" />
+                  <span className="text-sm flex-1 truncate">{selectedFile.name}</span>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    onClick={removeSelectedFile}
+                  >
+                    <X className="h-4 w-4" />
+                  </Button>
+                </div>
+              )}
               <div className="flex gap-2">
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  onChange={handleFileSelect}
+                  className="hidden"
+                  accept="image/*,.pdf,.doc,.docx,.txt"
+                />
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="icon"
+                  onClick={() => fileInputRef.current?.click()}
+                  disabled={sending || uploading}
+                >
+                  <Paperclip className="h-4 w-4" />
+                </Button>
                 <Input
                   value={newMessage}
                   onChange={(e) => {
@@ -407,11 +544,11 @@ const Messages = () => {
                     handleTyping();
                   }}
                   placeholder="Type your message..."
-                  disabled={sending}
+                  disabled={sending || uploading}
                   className="flex-1"
                 />
-                <Button type="submit" disabled={sending || !newMessage.trim()}>
-                  <Send className="h-4 w-4" />
+                <Button type="submit" disabled={sending || uploading || (!newMessage.trim() && !selectedFile)}>
+                  {uploading ? "Uploading..." : <Send className="h-4 w-4" />}
                 </Button>
               </div>
             </form>
