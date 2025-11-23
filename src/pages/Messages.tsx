@@ -36,6 +36,9 @@ const Messages = () => {
   const [newMessage, setNewMessage] = useState("");
   const [loading, setLoading] = useState(true);
   const [sending, setSending] = useState(false);
+  const [isTyping, setIsTyping] = useState(false);
+  const [typingTimeout, setTypingTimeout] = useState<NodeJS.Timeout | null>(null);
+  const [presenceChannel, setPresenceChannel] = useState<any>(null);
 
   useEffect(() => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
@@ -70,8 +73,38 @@ const Messages = () => {
     // Mark messages as read
     markMessagesAsRead();
 
-    // Subscribe to realtime message updates
-    const channel = supabase
+    // Set up presence channel for typing indicators
+    const channel = supabase.channel(`presence-${conversationId}`, {
+      config: {
+        presence: {
+          key: user.id,
+        },
+      },
+    });
+
+    channel
+      .on('presence', { event: 'sync' }, () => {
+        const state = channel.presenceState();
+        const otherUsers = Object.keys(state).filter(key => key !== user.id);
+        
+        // Check if any other user is typing
+        const someoneTyping = otherUsers.some(key => {
+          const presences = state[key];
+          return presences?.some((p: any) => p.typing === true);
+        });
+        
+        setIsTyping(someoneTyping);
+      })
+      .subscribe(async (status) => {
+        if (status === 'SUBSCRIBED') {
+          await channel.track({ typing: false });
+        }
+      });
+
+    setPresenceChannel(channel);
+
+    // Subscribe to message updates
+    const messagesChannel = supabase
       .channel('messages-channel')
       .on(
         'postgres_changes',
@@ -119,6 +152,7 @@ const Messages = () => {
 
     return () => {
       supabase.removeChannel(channel);
+      supabase.removeChannel(messagesChannel);
     };
   }, [conversationId, user]);
 
@@ -188,6 +222,25 @@ const Messages = () => {
     }
   };
 
+  const handleTyping = () => {
+    if (!presenceChannel) return;
+
+    // Update presence to show user is typing
+    presenceChannel.track({ typing: true });
+
+    // Clear existing timeout
+    if (typingTimeout) {
+      clearTimeout(typingTimeout);
+    }
+
+    // Set new timeout to stop typing after 2 seconds of inactivity
+    const timeout = setTimeout(() => {
+      presenceChannel.track({ typing: false });
+    }, 2000);
+
+    setTypingTimeout(timeout);
+  };
+
   const handleSendMessage = async (e: React.FormEvent) => {
     e.preventDefault();
     
@@ -224,6 +277,14 @@ const Messages = () => {
       });
       setSending(false);
       return;
+    }
+
+    // Stop typing indicator
+    if (presenceChannel) {
+      presenceChannel.track({ typing: false });
+    }
+    if (typingTimeout) {
+      clearTimeout(typingTimeout);
     }
 
     // Send email notification to recipient (mentor or user)
@@ -323,13 +384,28 @@ const Messages = () => {
                   </div>
                 ))
               )}
+              
+              {isTyping && (
+                <div className="flex justify-start">
+                  <div className="bg-muted rounded-lg px-4 py-2">
+                    <div className="flex gap-1">
+                      <span className="w-2 h-2 bg-foreground/40 rounded-full animate-bounce" style={{ animationDelay: '0ms' }}></span>
+                      <span className="w-2 h-2 bg-foreground/40 rounded-full animate-bounce" style={{ animationDelay: '150ms' }}></span>
+                      <span className="w-2 h-2 bg-foreground/40 rounded-full animate-bounce" style={{ animationDelay: '300ms' }}></span>
+                    </div>
+                  </div>
+                </div>
+              )}
             </div>
 
             <form onSubmit={handleSendMessage} className="p-4 border-t">
               <div className="flex gap-2">
                 <Input
                   value={newMessage}
-                  onChange={(e) => setNewMessage(e.target.value)}
+                  onChange={(e) => {
+                    setNewMessage(e.target.value);
+                    handleTyping();
+                  }}
                   placeholder="Type your message..."
                   disabled={sending}
                   className="flex-1"
