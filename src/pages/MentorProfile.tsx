@@ -1,5 +1,5 @@
 import { useParams, useNavigate } from "react-router-dom";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { ArrowLeft, Star, MapPin, Globe, Award, Calendar, MessageSquare } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -22,6 +22,13 @@ const MentorProfile = () => {
   const [selectedSlot, setSelectedSlot] = useState<TimeSlot | null>(null);
   const [userEmail, setUserEmail] = useState("");
   const [isBooking, setIsBooking] = useState(false);
+  const [user, setUser] = useState<any>(null);
+
+  useEffect(() => {
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setUser(session?.user ?? null);
+    });
+  }, []);
 
   const mentor = mentors.find((m) => m.id === id);
   const mentorReviews = reviews.filter((r) => r.mentorId === id);
@@ -38,6 +45,45 @@ const MentorProfile = () => {
       </div>
     );
   }
+
+  const handleStartConversation = async () => {
+    if (!user) {
+      toast.error("Please sign in to message mentors");
+      navigate("/auth");
+      return;
+    }
+
+    // Check if conversation already exists
+    const { data: existingConv } = await supabase
+      .from("conversations")
+      .select("id")
+      .eq("user_id", user.id)
+      .eq("mentor_id", mentor.id)
+      .maybeSingle();
+
+    if (existingConv) {
+      navigate(`/messages/${existingConv.id}`);
+      return;
+    }
+
+    // Create new conversation
+    const { data: newConv, error } = await supabase
+      .from("conversations")
+      .insert({
+        user_id: user.id,
+        mentor_id: mentor.id,
+        mentor_name: mentor.name,
+      })
+      .select()
+      .single();
+
+    if (error) {
+      console.error("Error creating conversation:", error);
+      toast.error("Failed to start conversation");
+    } else {
+      navigate(`/messages/${newConv.id}`);
+    }
+  };
 
   const handleBookSession = async () => {
     if (!selectedSlot) {
@@ -171,7 +217,12 @@ const MentorProfile = () => {
                     >
                       Book a Session
                     </Button>
-                    <Button variant="outline" size="lg" className="w-full">
+                    <Button 
+                      variant="outline" 
+                      size="lg" 
+                      className="w-full"
+                      onClick={handleStartConversation}
+                    >
                       <MessageSquare size={18} className="mr-2" />
                       Send Message
                     </Button>
