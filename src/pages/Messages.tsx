@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
 import Navbar from "@/components/Navbar";
-import { ArrowLeft, Send, Check, CheckCheck, Paperclip, X, Download, FileIcon, Smile } from "lucide-react";
+import { ArrowLeft, Send, Check, CheckCheck, Paperclip, X, Download, FileIcon, Smile, Search } from "lucide-react";
 import { User, Session } from "@supabase/supabase-js";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 
@@ -57,6 +57,8 @@ const Messages = () => {
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [uploading, setUploading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [searchResults, setSearchResults] = useState<string[]>([]);
 
   useEffect(() => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
@@ -397,6 +399,44 @@ const Messages = () => {
     );
   };
 
+  // Search functionality
+  const handleSearch = (query: string) => {
+    setSearchQuery(query);
+    
+    if (!query.trim()) {
+      setSearchResults([]);
+      return;
+    }
+
+    const results = messages
+      .filter(msg => 
+        msg.content.toLowerCase().includes(query.toLowerCase()) ||
+        msg.sender_name.toLowerCase().includes(query.toLowerCase())
+      )
+      .map(msg => msg.id);
+    
+    setSearchResults(results);
+  };
+
+  const highlightText = (text: string, query: string) => {
+    if (!query.trim()) return text;
+    
+    const parts = text.split(new RegExp(`(${query})`, 'gi'));
+    return parts.map((part, index) => 
+      part.toLowerCase() === query.toLowerCase() ? (
+        <mark key={index} className="bg-yellow-300 dark:bg-yellow-600 px-1 rounded">
+          {part}
+        </mark>
+      ) : (
+        part
+      )
+    );
+  };
+
+  const filteredMessages = searchQuery.trim() 
+    ? messages.filter(msg => searchResults.includes(msg.id))
+    : messages;
+
   const handleSendMessage = async (e: React.FormEvent) => {
     e.preventDefault();
     
@@ -517,17 +557,52 @@ const Messages = () => {
           </CardHeader>
           
           <CardContent className="flex-1 flex flex-col p-0">
+            {/* Search bar */}
+            <div className="p-4 border-b">
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <Input
+                  value={searchQuery}
+                  onChange={(e) => handleSearch(e.target.value)}
+                  placeholder="Search messages..."
+                  className="pl-10"
+                />
+                {searchQuery && (
+                  <div className="absolute right-3 top-1/2 transform -translate-y-1/2 flex items-center gap-2">
+                    <span className="text-xs text-muted-foreground">
+                      {searchResults.length} result{searchResults.length !== 1 ? 's' : ''}
+                    </span>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => {
+                        setSearchQuery("");
+                        setSearchResults([]);
+                      }}
+                      className="h-5 w-5 p-0"
+                    >
+                      <X className="h-3 w-3" />
+                    </Button>
+                  </div>
+                )}
+              </div>
+            </div>
+
             <div 
               id="messages-container"
               className="flex-1 overflow-y-auto p-6 space-y-4"
-              style={{ maxHeight: "calc(100vh - 300px)" }}
+              style={{ maxHeight: "calc(100vh - 400px)" }}
             >
-              {messages.length === 0 ? (
+              {filteredMessages.length === 0 ? (
                 <div className="text-center text-muted-foreground py-8">
-                  <p>No messages yet. Start the conversation!</p>
+                  {searchQuery ? (
+                    <p>No messages found matching "{searchQuery}"</p>
+                  ) : (
+                    <p>No messages yet. Start the conversation!</p>
+                  )}
                 </div>
               ) : (
-                messages.map((message) => (
+                filteredMessages.map((message) => (
                   <div
                     key={message.id}
                     className={`flex ${message.sender_id === user?.id ? "justify-end" : "justify-start"} group`}
@@ -540,9 +615,9 @@ const Messages = () => {
                             : "bg-muted"
                         }`}
                       >
-                        <p className="text-sm font-medium mb-1">{message.sender_name}</p>
+                        <p className="text-sm font-medium mb-1">{highlightText(message.sender_name, searchQuery)}</p>
                         {message.content && (
-                          <p className="text-sm whitespace-pre-wrap">{message.content}</p>
+                          <p className="text-sm whitespace-pre-wrap">{highlightText(message.content, searchQuery)}</p>
                         )}
                         {message.file_url && (
                           <div className="mt-2">
