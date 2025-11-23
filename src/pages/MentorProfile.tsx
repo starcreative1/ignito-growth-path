@@ -45,8 +45,12 @@ const MentorProfile = () => {
       return;
     }
 
-    if (!userEmail || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(userEmail)) {
-      toast.error("Please enter a valid email address");
+    // Check if user is authenticated
+    const { data: { session } } = await supabase.auth.getSession();
+    
+    if (!session) {
+      toast.error("Please sign in to book a session");
+      navigate("/auth");
       return;
     }
 
@@ -60,7 +64,8 @@ const MentorProfile = () => {
           bookingDate: selectedSlot.date,
           bookingTime: selectedSlot.time,
           price: mentor.price,
-          userEmail: userEmail,
+          userEmail: session.user.email,
+          userId: session.user.id,
         },
       });
 
@@ -299,18 +304,6 @@ const MentorProfile = () => {
                           </p>
 
                           <div className="space-y-3">
-                            <div>
-                              <Label htmlFor="email">Your Email</Label>
-                              <Input
-                                id="email"
-                                type="email"
-                                placeholder="your@email.com"
-                                value={userEmail}
-                                onChange={(e) => setUserEmail(e.target.value)}
-                                className="mt-1"
-                              />
-                            </div>
-
                             <div className="flex items-center justify-between pt-4 border-t border-border">
                               <div>
                                 <div className="text-2xl font-display font-bold">${mentor.price}</div>
