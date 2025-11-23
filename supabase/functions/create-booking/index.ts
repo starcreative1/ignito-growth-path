@@ -13,11 +13,11 @@ serve(async (req) => {
   }
 
   try {
-    const { mentorId, mentorName, bookingDate, bookingTime, price, userEmail } = await req.json();
+    const { mentorId, mentorName, bookingDate, bookingTime, price, userEmail, userId } = await req.json();
 
     console.log("[CREATE-BOOKING] Creating booking for:", { mentorName, bookingDate, bookingTime });
 
-    if (!mentorId || !mentorName || !bookingDate || !bookingTime || !price || !userEmail) {
+    if (!mentorId || !mentorName || !bookingDate || !bookingTime || !price || !userEmail || !userId) {
       throw new Error("Missing required booking information");
     }
 
@@ -36,6 +36,7 @@ serve(async (req) => {
       .from("bookings")
       .insert({
         user_email: userEmail,
+        user_id: userId,
         mentor_id: mentorId,
         mentor_name: mentorName,
         booking_date: bookingDate,

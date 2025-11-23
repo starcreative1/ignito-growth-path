@@ -36,9 +36,9 @@ const Navbar = () => {
 
           {/* CTA Buttons */}
           <div className="hidden md:flex items-center space-x-4">
-            <Button variant="ghost">Sign In</Button>
-            <Button variant="hero" onClick={() => navigate('/mentors')}>
-              Get Started
+            <Button variant="ghost" onClick={() => navigate('/auth')}>Sign In</Button>
+            <Button variant="hero" onClick={() => navigate('/dashboard')}>
+              Dashboard
             </Button>
           </div>
 
@@ -85,7 +85,14 @@ const Navbar = () => {
               Pricing
             </a>
             <div className="pt-4 space-y-2">
-              <Button variant="ghost" className="w-full">
+              <Button 
+                variant="ghost" 
+                className="w-full"
+                onClick={() => {
+                  setIsOpen(false);
+                  navigate('/auth');
+                }}
+              >
                 Sign In
               </Button>
               <Button 
@@ -93,10 +100,10 @@ const Navbar = () => {
                 className="w-full"
                 onClick={() => {
                   setIsOpen(false);
-                  navigate('/mentors');
+                  navigate('/dashboard');
                 }}
               >
-                Get Started
+                Dashboard
               </Button>
             </div>
           </div>

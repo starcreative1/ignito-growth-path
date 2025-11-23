@@ -7,6 +7,8 @@ import Index from "./pages/Index";
 import Mentors from "./pages/Mentors";
 import MentorProfile from "./pages/MentorProfile";
 import BookingSuccess from "./pages/BookingSuccess";
+import Auth from "./pages/Auth";
+import Dashboard from "./pages/Dashboard";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -22,8 +24,9 @@ const App = () => (
           <Route path="/mentors" element={<Mentors />} />
           <Route path="/mentors/:id" element={<MentorProfile />} />
           <Route path="/booking-success" element={<BookingSuccess />} />
+          <Route path="/auth" element={<Auth />} />
+          <Route path="/dashboard" element={<Dashboard />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
-          <Route path="*" element={<NotFound />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
       </BrowserRouter>
