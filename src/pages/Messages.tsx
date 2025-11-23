@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
 import Navbar from "@/components/Navbar";
-import { ArrowLeft, Send, Check, CheckCheck, Paperclip, X, Download, FileIcon, Smile, Search, Mic, Trash2, MoreVertical, Edit2, Pin, PinOff, Forward } from "lucide-react";
+import { ArrowLeft, Send, Check, CheckCheck, Paperclip, X, Download, FileIcon, Smile, Search, Mic, Trash2, MoreVertical, Edit2, Pin, PinOff, Forward, FileText, Plus } from "lucide-react";
 import { User, Session } from "@supabase/supabase-js";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { VoiceRecorder } from "@/components/VoiceRecorder";
@@ -33,7 +33,10 @@ import {
   DialogDescription,
   DialogHeader,
   DialogTitle,
+  DialogFooter,
 } from "@/components/ui/dialog";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
 
 interface Reaction {
   id: string;
@@ -65,6 +68,15 @@ interface Conversation {
   mentor_name: string;
 }
 
+interface MessageTemplate {
+  id: string;
+  user_id: string;
+  name: string;
+  content: string;
+  created_at: string;
+  updated_at: string;
+}
+
 const EMOJI_OPTIONS = ['👍', '❤️', '😂', '😮', '😢', '🙏'];
 
 const Messages = () => {
@@ -92,6 +104,11 @@ const Messages = () => {
   const [editContent, setEditContent] = useState("");
   const [forwardingMessage, setForwardingMessage] = useState<Message | null>(null);
   const [availableConversations, setAvailableConversations] = useState<Conversation[]>([]);
+  const [messageTemplates, setMessageTemplates] = useState<MessageTemplate[]>([]);
+  const [showTemplateDialog, setShowTemplateDialog] = useState(false);
+  const [showTemplateManager, setShowTemplateManager] = useState(false);
+  const [newTemplateName, setNewTemplateName] = useState("");
+  const [newTemplateContent, setNewTemplateContent] = useState("");
 
   useEffect(() => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
@@ -122,6 +139,7 @@ const Messages = () => {
 
     loadConversation();
     loadMessages();
+    loadMessageTemplates();
 
     // Mark messages as read
     markMessagesAsRead();
@@ -740,6 +758,102 @@ const Messages = () => {
         variant: "destructive",
       });
     }
+  };
+
+  const loadMessageTemplates = async () => {
+    if (!user) return;
+
+    const { data, error } = await supabase
+      .from("message_templates")
+      .select("*")
+      .eq("user_id", user.id)
+      .order("name");
+
+    if (error) {
+      console.error("Error loading templates:", error);
+      return;
+    }
+
+    setMessageTemplates(data || []);
+  };
+
+  const handleCreateTemplate = async () => {
+    if (!user || !newTemplateName.trim() || !newTemplateContent.trim()) return;
+
+    try {
+      const { error } = await supabase
+        .from("message_templates")
+        .insert({
+          user_id: user.id,
+          name: newTemplateName.trim(),
+          content: newTemplateContent.trim(),
+        });
+
+      if (error) {
+        console.error("Error creating template:", error);
+        toast({
+          title: "Error",
+          description: "Failed to create template",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      toast({
+        title: "Template created",
+        description: "Your message template has been saved",
+      });
+
+      setNewTemplateName("");
+      setNewTemplateContent("");
+      setShowTemplateDialog(false);
+      loadMessageTemplates();
+    } catch (error) {
+      console.error("Error creating template:", error);
+      toast({
+        title: "Error",
+        description: "Failed to create template",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleDeleteTemplate = async (templateId: string) => {
+    try {
+      const { error } = await supabase
+        .from("message_templates")
+        .delete()
+        .eq("id", templateId);
+
+      if (error) {
+        console.error("Error deleting template:", error);
+        toast({
+          title: "Error",
+          description: "Failed to delete template",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      toast({
+        title: "Template deleted",
+        description: "Your template has been removed",
+      });
+
+      loadMessageTemplates();
+    } catch (error) {
+      console.error("Error deleting template:", error);
+      toast({
+        title: "Error",
+        description: "Failed to delete template",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleUseTemplate = (content: string) => {
+    setNewMessage(content);
+    setShowTemplateManager(false);
   };
 
   const handleOpenForwardDialog = (message: Message) => {
@@ -1450,6 +1564,16 @@ const Messages = () => {
                       type="button"
                       variant="ghost"
                       size="icon"
+                      onClick={() => setShowTemplateManager(true)}
+                      disabled={sending || uploading}
+                      title="Use template"
+                    >
+                      <FileText className="h-4 w-4" />
+                    </Button>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon"
                       onClick={() => setIsRecordingVoice(true)}
                       disabled={sending || uploading}
                     >
@@ -1503,6 +1627,118 @@ const Messages = () => {
                 ))
               )}
             </div>
+          </DialogContent>
+        </Dialog>
+
+        {/* Template Manager Dialog */}
+        <Dialog open={showTemplateManager} onOpenChange={setShowTemplateManager}>
+          <DialogContent className="sm:max-w-md bg-background">
+            <DialogHeader>
+              <DialogTitle>Message Templates</DialogTitle>
+              <DialogDescription>
+                Select a template to use or create a new one
+              </DialogDescription>
+            </DialogHeader>
+            <div className="space-y-2 max-h-[400px] overflow-y-auto">
+              {messageTemplates.length === 0 ? (
+                <p className="text-sm text-muted-foreground text-center py-4">
+                  No templates yet. Create your first template!
+                </p>
+              ) : (
+                messageTemplates.map((template) => (
+                  <div
+                    key={template.id}
+                    className="flex items-start gap-2 p-3 border rounded-lg hover:bg-muted/50 transition-colors"
+                  >
+                    <div className="flex-1 min-w-0">
+                      <Button
+                        variant="ghost"
+                        className="w-full justify-start h-auto p-0 hover:bg-transparent"
+                        onClick={() => handleUseTemplate(template.content)}
+                      >
+                        <div className="text-left w-full">
+                          <p className="font-medium text-sm">{template.name}</p>
+                          <p className="text-xs text-muted-foreground line-clamp-2">
+                            {template.content}
+                          </p>
+                        </div>
+                      </Button>
+                    </div>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-8 w-8 flex-shrink-0"
+                      onClick={() => handleDeleteTemplate(template.id)}
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  </div>
+                ))
+              )}
+            </div>
+            <DialogFooter>
+              <Button
+                onClick={() => {
+                  setShowTemplateManager(false);
+                  setShowTemplateDialog(true);
+                }}
+                className="w-full"
+              >
+                <Plus className="h-4 w-4 mr-2" />
+                Create New Template
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+
+        {/* Create Template Dialog */}
+        <Dialog open={showTemplateDialog} onOpenChange={setShowTemplateDialog}>
+          <DialogContent className="sm:max-w-md bg-background">
+            <DialogHeader>
+              <DialogTitle>Create Message Template</DialogTitle>
+              <DialogDescription>
+                Save a frequently used message as a template
+              </DialogDescription>
+            </DialogHeader>
+            <div className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="template-name">Template Name</Label>
+                <Input
+                  id="template-name"
+                  placeholder="e.g., Thank you message"
+                  value={newTemplateName}
+                  onChange={(e) => setNewTemplateName(e.target.value)}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="template-content">Message Content</Label>
+                <Textarea
+                  id="template-content"
+                  placeholder="Enter your message template..."
+                  value={newTemplateContent}
+                  onChange={(e) => setNewTemplateContent(e.target.value)}
+                  rows={4}
+                />
+              </div>
+            </div>
+            <DialogFooter>
+              <Button
+                variant="outline"
+                onClick={() => {
+                  setShowTemplateDialog(false);
+                  setNewTemplateName("");
+                  setNewTemplateContent("");
+                }}
+              >
+                Cancel
+              </Button>
+              <Button
+                onClick={handleCreateTemplate}
+                disabled={!newTemplateName.trim() || !newTemplateContent.trim()}
+              >
+                Create Template
+              </Button>
+            </DialogFooter>
           </DialogContent>
         </Dialog>
 
