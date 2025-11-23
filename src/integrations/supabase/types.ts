@@ -322,6 +322,7 @@ export type Database = {
           goals: string | null
           id: string
           interests: string[] | null
+          preferred_language: string | null
           skill_level: string | null
           updated_at: string
         }
@@ -331,6 +332,7 @@ export type Database = {
           goals?: string | null
           id: string
           interests?: string[] | null
+          preferred_language?: string | null
           skill_level?: string | null
           updated_at?: string
         }
@@ -340,6 +342,7 @@ export type Database = {
           goals?: string | null
           id?: string
           interests?: string[] | null
+          preferred_language?: string | null
           skill_level?: string | null
           updated_at?: string
         }
