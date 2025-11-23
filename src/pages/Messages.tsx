@@ -6,8 +6,17 @@ import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
 import Navbar from "@/components/Navbar";
-import { ArrowLeft, Send, Check, CheckCheck, Paperclip, X, Download, FileIcon } from "lucide-react";
+import { ArrowLeft, Send, Check, CheckCheck, Paperclip, X, Download, FileIcon, Smile } from "lucide-react";
 import { User, Session } from "@supabase/supabase-js";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+
+interface Reaction {
+  id: string;
+  emoji: string;
+  user_id: string;
+  count?: number;
+  users?: string[];
+}
 
 interface Message {
   id: string;
@@ -19,6 +28,7 @@ interface Message {
   file_url: string | null;
   file_name: string | null;
   file_type: string | null;
+  reactions?: Reaction[];
 }
 
 interface Conversation {
@@ -27,6 +37,8 @@ interface Conversation {
   mentor_id: string;
   mentor_name: string;
 }
+
+const EMOJI_OPTIONS = ['👍', '❤️', '😂', '😮', '😢', '🙏'];
 
 const Messages = () => {
   const { conversationId } = useParams();
@@ -185,7 +197,7 @@ const Messages = () => {
   const loadMessages = async () => {
     setLoading(true);
     
-    const { data, error } = await supabase
+    const { data: messagesData, error } = await supabase
       .from("messages")
       .select("*")
       .eq("conversation_id", conversationId)
@@ -199,11 +211,48 @@ const Messages = () => {
         variant: "destructive",
       });
     } else {
-      setMessages(data || []);
+      // Load reactions for all messages
+      const messagesWithReactions = await Promise.all(
+        (messagesData || []).map(async (msg) => {
+          const reactions = await loadReactions(msg.id);
+          return { ...msg, reactions };
+        })
+      );
+      setMessages(messagesWithReactions || []);
       setTimeout(scrollToBottom, 100);
     }
 
     setLoading(false);
+  };
+
+  const loadReactions = async (messageId: string): Promise<Reaction[]> => {
+    const { data, error } = await supabase
+      .from("message_reactions")
+      .select("*")
+      .eq("message_id", messageId);
+
+    if (error) {
+      console.error("Error loading reactions:", error);
+      return [];
+    }
+
+    // Group reactions by emoji
+    const grouped = (data || []).reduce((acc: Record<string, Reaction>, reaction) => {
+      if (!acc[reaction.emoji]) {
+        acc[reaction.emoji] = {
+          id: reaction.emoji,
+          emoji: reaction.emoji,
+          user_id: reaction.user_id,
+          count: 0,
+          users: [],
+        };
+      }
+      acc[reaction.emoji].count = (acc[reaction.emoji].count || 0) + 1;
+      acc[reaction.emoji].users?.push(reaction.user_id);
+      return acc;
+    }, {});
+
+    return Object.values(grouped);
   };
 
   const markMessagesAsRead = async () => {
@@ -299,6 +348,53 @@ const Messages = () => {
       name: file.name,
       type: file.type,
     };
+  };
+
+  const handleReaction = async (messageId: string, emoji: string) => {
+    if (!user) return;
+
+    // Check if user already reacted with this emoji
+    const message = messages.find(m => m.id === messageId);
+    const existingReaction = message?.reactions?.find(r => 
+      r.emoji === emoji && r.users?.includes(user.id)
+    );
+
+    if (existingReaction) {
+      // Remove reaction
+      const { error } = await supabase
+        .from("message_reactions")
+        .delete()
+        .eq("message_id", messageId)
+        .eq("user_id", user.id)
+        .eq("emoji", emoji);
+
+      if (error) {
+        console.error("Error removing reaction:", error);
+        return;
+      }
+    } else {
+      // Add reaction
+      const { error } = await supabase
+        .from("message_reactions")
+        .insert({
+          message_id: messageId,
+          user_id: user.id,
+          emoji,
+        });
+
+      if (error) {
+        console.error("Error adding reaction:", error);
+        return;
+      }
+    }
+
+    // Reload reactions for this message
+    const reactions = await loadReactions(messageId);
+    setMessages(prev => 
+      prev.map(msg => 
+        msg.id === messageId ? { ...msg, reactions } : msg
+      )
+    );
   };
 
   const handleSendMessage = async (e: React.FormEvent) => {
@@ -434,58 +530,108 @@ const Messages = () => {
                 messages.map((message) => (
                   <div
                     key={message.id}
-                    className={`flex ${message.sender_id === user?.id ? "justify-end" : "justify-start"}`}
+                    className={`flex ${message.sender_id === user?.id ? "justify-end" : "justify-start"} group`}
                   >
-                    <div
-                      className={`max-w-[70%] rounded-lg px-4 py-2 ${
-                        message.sender_id === user?.id
-                          ? "bg-primary text-primary-foreground"
-                          : "bg-muted"
-                      }`}
-                    >
-                      <p className="text-sm font-medium mb-1">{message.sender_name}</p>
-                      {message.content && (
-                        <p className="text-sm whitespace-pre-wrap">{message.content}</p>
-                      )}
-                      {message.file_url && (
-                        <div className="mt-2">
-                          {message.file_type?.startsWith('image/') ? (
-                            <img 
-                              src={message.file_url} 
-                              alt={message.file_name || 'Image attachment'}
-                              className="max-w-full max-h-64 rounded cursor-pointer"
-                              onClick={() => window.open(message.file_url!, '_blank')}
-                            />
-                          ) : (
-                            <a
-                              href={message.file_url}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="flex items-center gap-2 p-2 bg-background/10 rounded hover:bg-background/20 transition-colors"
-                            >
-                              <FileIcon className="h-4 w-4" />
-                              <span className="text-sm">{message.file_name || 'Download file'}</span>
-                              <Download className="h-3 w-3 ml-auto" />
-                            </a>
+                    <div className="flex flex-col gap-1">
+                      <div
+                        className={`max-w-[70%] rounded-lg px-4 py-2 ${
+                          message.sender_id === user?.id
+                            ? "bg-primary text-primary-foreground"
+                            : "bg-muted"
+                        }`}
+                      >
+                        <p className="text-sm font-medium mb-1">{message.sender_name}</p>
+                        {message.content && (
+                          <p className="text-sm whitespace-pre-wrap">{message.content}</p>
+                        )}
+                        {message.file_url && (
+                          <div className="mt-2">
+                            {message.file_type?.startsWith('image/') ? (
+                              <img 
+                                src={message.file_url} 
+                                alt={message.file_name || 'Image attachment'}
+                                className="max-w-full max-h-64 rounded cursor-pointer"
+                                onClick={() => window.open(message.file_url!, '_blank')}
+                              />
+                            ) : (
+                              <a
+                                href={message.file_url}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="flex items-center gap-2 p-2 bg-background/10 rounded hover:bg-background/20 transition-colors"
+                              >
+                                <FileIcon className="h-4 w-4" />
+                                <span className="text-sm">{message.file_name || 'Download file'}</span>
+                                <Download className="h-3 w-3 ml-auto" />
+                              </a>
+                            )}
+                          </div>
+                        )}
+                        <div className="flex items-center gap-1 mt-1">
+                          <p className="text-xs opacity-70">
+                            {new Date(message.created_at).toLocaleTimeString([], {
+                              hour: "2-digit",
+                              minute: "2-digit",
+                            })}
+                          </p>
+                          {message.sender_id === user?.id && (
+                            <span className="text-xs opacity-70">
+                              {message.is_read ? (
+                                <CheckCheck className="h-3 w-3 inline ml-1" />
+                              ) : (
+                                <Check className="h-3 w-3 inline ml-1" />
+                              )}
+                            </span>
                           )}
                         </div>
-                      )}
+                      </div>
+                      
+                      {/* Reactions display */}
                       <div className="flex items-center gap-1 mt-1">
-                        <p className="text-xs opacity-70">
-                          {new Date(message.created_at).toLocaleTimeString([], {
-                            hour: "2-digit",
-                            minute: "2-digit",
-                          })}
-                        </p>
-                        {message.sender_id === user?.id && (
-                          <span className="text-xs opacity-70">
-                            {message.is_read ? (
-                              <CheckCheck className="h-3 w-3 inline ml-1" />
-                            ) : (
-                              <Check className="h-3 w-3 inline ml-1" />
-                            )}
-                          </span>
+                        {message.reactions && message.reactions.length > 0 && (
+                          <div className="flex gap-1">
+                            {message.reactions.map((reaction) => (
+                              <button
+                                key={reaction.emoji}
+                                onClick={() => handleReaction(message.id, reaction.emoji)}
+                                className={`flex items-center gap-1 px-2 py-0.5 rounded-full text-xs ${
+                                  reaction.users?.includes(user?.id || '')
+                                    ? 'bg-primary/20 border border-primary'
+                                    : 'bg-background/10 border border-border'
+                                } hover:bg-background/20 transition-colors`}
+                              >
+                                <span>{reaction.emoji}</span>
+                                <span>{reaction.count}</span>
+                              </button>
+                            ))}
+                          </div>
                         )}
+                        
+                        {/* Add reaction button */}
+                        <Popover>
+                          <PopoverTrigger asChild>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="h-6 w-6 p-0 opacity-0 group-hover:opacity-100 transition-opacity"
+                            >
+                              <Smile className="h-3 w-3" />
+                            </Button>
+                          </PopoverTrigger>
+                          <PopoverContent className="w-auto p-2">
+                            <div className="flex gap-1">
+                              {EMOJI_OPTIONS.map((emoji) => (
+                                <button
+                                  key={emoji}
+                                  onClick={() => handleReaction(message.id, emoji)}
+                                  className="text-2xl hover:scale-125 transition-transform p-1"
+                                >
+                                  {emoji}
+                                </button>
+                              ))}
+                            </div>
+                          </PopoverContent>
+                        </Popover>
                       </div>
                     </div>
                   </div>
