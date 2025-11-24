@@ -1,139 +1,208 @@
-import { useState, useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { toast } from "sonner";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { useToast } from "@/hooks/use-toast";
 import Navbar from "@/components/Navbar";
-import { Loader2 } from "lucide-react";
+import { MentorStatsCard } from "@/components/MentorStatsCard";
+import { MentorBookingsCard } from "@/components/MentorBookingsCard";
+import { MentorProfileEditor } from "@/components/MentorProfileEditor";
+import { MentorAvailabilityManager } from "@/components/MentorAvailabilityManager";
+import { ConversationsList } from "@/components/ConversationsList";
+import { NotificationSettings } from "@/components/NotificationSettings";
+import { User } from "@supabase/supabase-js";
+import { LogOut, Settings } from "lucide-react";
+
+interface MentorProfile {
+  id: string;
+  user_id: string;
+  name: string;
+  title: string;
+  category: string;
+  bio: string;
+  full_bio: string;
+  price: number;
+  expertise: string[];
+  languages: string[];
+  availability: string;
+  experience: string;
+  education: string;
+  certifications: string[];
+  image_url: string | null;
+  rating: number | null;
+  review_count: number | null;
+}
+
+interface Booking {
+  id: string;
+  user_email: string;
+  booking_date: string;
+  booking_time: string;
+  status: string;
+  price: number;
+}
+
+interface TimeSlot {
+  id: string;
+  date: string;
+  time: string;
+  is_available: boolean;
+}
 
 const MentorCabinet = () => {
+  const [user, setUser] = useState<User | null>(null);
+  const [mentorProfile, setMentorProfile] = useState<MentorProfile | null>(null);
+  const [bookings, setBookings] = useState<Booking[]>([]);
+  const [timeSlots, setTimeSlots] = useState<TimeSlot[]>([]);
   const [loading, setLoading] = useState(true);
-  const [saving, setSaving] = useState(false);
-  const [user, setUser] = useState<any>(null);
-  const [mentorProfile, setMentorProfile] = useState<any>(null);
   const navigate = useNavigate();
-
-  const [formData, setFormData] = useState({
-    name: "",
-    title: "",
-    category: "Business",
-    image_url: "",
-    price: "",
-    bio: "",
-    full_bio: "",
-    expertise: "",
-    languages: "",
-    availability: "Available this week",
-    experience: "",
-    education: "",
-    certifications: "",
-  });
+  const { toast } = useToast();
 
   useEffect(() => {
-    checkAuthAndLoadProfile();
+    checkAuth();
   }, []);
 
-  const checkAuthAndLoadProfile = async () => {
-    setLoading(true);
+  const checkAuth = async () => {
     const { data: { session } } = await supabase.auth.getSession();
+    
     if (!session) {
-      toast.error("Please sign in to access this page");
       navigate("/auth");
       return;
     }
+    
     setUser(session.user);
+    loadMentorData(session.user.id);
+  };
 
-    // Check if user already has a mentor profile
-    const { data: profile } = await supabase
+  const loadMentorData = async (userId: string) => {
+    setLoading(true);
+
+    // Load mentor profile
+    const { data: profileData } = await supabase
       .from("mentor_profiles")
       .select("*")
-      .eq("user_id", session.user.id)
+      .eq("user_id", userId)
       .maybeSingle();
 
-    if (profile) {
-      setMentorProfile(profile);
-      setFormData({
-        name: profile.name,
-        title: profile.title,
-        category: profile.category,
-        image_url: profile.image_url || "",
-        price: profile.price.toString(),
-        bio: profile.bio,
-        full_bio: profile.full_bio,
-        expertise: profile.expertise.join(", "),
-        languages: profile.languages.join(", "),
-        availability: profile.availability,
-        experience: profile.experience,
-        education: profile.education,
-        certifications: profile.certifications ? profile.certifications.join(", ") : "",
-      });
+    setMentorProfile(profileData);
+
+    if (profileData) {
+      // Load bookings for this mentor
+      const { data: bookingsData } = await supabase
+        .from("bookings")
+        .select("*")
+        .eq("mentor_id", profileData.id)
+        .order("booking_date", { ascending: false });
+
+      setBookings(bookingsData || []);
+
+      // Load time slots
+      const { data: slotsData } = await supabase
+        .from("mentor_time_slots")
+        .select("*")
+        .eq("mentor_id", profileData.id)
+        .order("date", { ascending: true });
+
+      setTimeSlots(slotsData || []);
     }
+
     setLoading(false);
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setSaving(true);
+  const handleSignOut = async () => {
+    await supabase.auth.signOut();
+    navigate("/");
+  };
 
-    const mentorData = {
+  const handleProfileSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    if (!user) return;
+
+    const formData = new FormData(e.currentTarget);
+    const expertise = formData.get("expertise")?.toString().split(",").map(e => e.trim()).filter(Boolean) || [];
+    const languages = formData.get("languages")?.toString().split(",").map(l => l.trim()).filter(Boolean) || [];
+    const certifications = formData.get("certifications")?.toString().split(",").map(c => c.trim()).filter(Boolean) || [];
+
+    const profileData = {
       user_id: user.id,
-      name: formData.name,
-      title: formData.title,
-      category: formData.category,
-      image_url: formData.image_url || null,
-      price: parseFloat(formData.price),
-      bio: formData.bio,
-      full_bio: formData.full_bio,
-      expertise: formData.expertise.split(",").map(s => s.trim()),
-      languages: formData.languages.split(",").map(s => s.trim()),
-      availability: formData.availability,
-      experience: formData.experience,
-      education: formData.education,
-      certifications: formData.certifications ? formData.certifications.split(",").map(s => s.trim()) : [],
+      name: formData.get("name")?.toString() || "",
+      title: formData.get("title")?.toString() || "",
+      category: formData.get("category")?.toString() || "",
+      bio: formData.get("bio")?.toString() || "",
+      full_bio: formData.get("full_bio")?.toString() || "",
+      price: parseFloat(formData.get("price")?.toString() || "0"),
+      expertise,
+      languages,
+      availability: formData.get("availability")?.toString() || "",
+      experience: formData.get("experience")?.toString() || "",
+      education: formData.get("education")?.toString() || "",
+      certifications,
+      image_url: formData.get("image_url")?.toString() || null,
     };
 
     if (mentorProfile) {
+      // Update existing profile
       const { error } = await supabase
         .from("mentor_profiles")
-        .update(mentorData)
+        .update(profileData)
         .eq("id", mentorProfile.id);
 
       if (error) {
-        console.error("Error updating mentor profile:", error);
-        toast.error("Failed to update mentor profile");
-        setSaving(false);
-        return;
+        toast({
+          title: "Error",
+          description: error.message,
+          variant: "destructive",
+        });
+      } else {
+        toast({
+          title: "Success",
+          description: "Profile updated successfully",
+        });
+        loadMentorData(user.id);
       }
-      toast.success("Mentor profile updated successfully");
     } else {
+      // Create new profile
       const { error } = await supabase
         .from("mentor_profiles")
-        .insert(mentorData);
+        .insert(profileData);
 
       if (error) {
-        console.error("Error creating mentor profile:", error);
-        toast.error("Failed to create mentor profile");
-        setSaving(false);
-        return;
+        toast({
+          title: "Error",
+          description: error.message,
+          variant: "destructive",
+        });
+      } else {
+        toast({
+          title: "Success",
+          description: "Mentor profile created successfully",
+        });
+        loadMentorData(user.id);
       }
-      toast.success("Mentor profile created successfully! Your profile is now live.");
     }
-
-    setSaving(false);
-    checkAuthAndLoadProfile();
   };
+
+  const upcomingBookings = bookings.filter(b => 
+    new Date(b.booking_date) >= new Date() && b.status !== "cancelled"
+  );
+  
+  const pastBookings = bookings.filter(b => 
+    new Date(b.booking_date) < new Date() || b.status === "cancelled"
+  );
+
+  const totalEarnings = bookings
+    .filter(b => b.status === "confirmed")
+    .reduce((sum, b) => sum + Number(b.price), 0);
+
+  const uniqueStudents = new Set(bookings.map(b => b.user_email)).size;
 
   if (loading) {
     return (
       <div className="min-h-screen bg-background">
         <Navbar />
-        <div className="container mx-auto px-4 py-32 flex justify-center">
-          <Loader2 className="h-8 w-8 animate-spin text-primary" />
+        <div className="container pt-32 px-4">
+          <p className="text-center">Loading...</p>
         </div>
       </div>
     );
@@ -142,189 +211,82 @@ const MentorCabinet = () => {
   return (
     <div className="min-h-screen bg-background">
       <Navbar />
-      
-      <div className="container mx-auto px-4 py-32 max-w-4xl">
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-3xl font-display">
-              {mentorProfile ? "Edit Your Mentor Profile" : "Become a Mentor"}
-            </CardTitle>
-            <CardDescription>
-              {mentorProfile 
-                ? "Update your mentor profile information below" 
-                : "Share your expertise and help others grow. Fill in your details to create your mentor profile."}
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <form onSubmit={handleSubmit} className="space-y-6">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <Label htmlFor="name">Full Name *</Label>
-                  <Input
-                    id="name"
-                    value={formData.name}
-                    onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                    required
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="title">Professional Title *</Label>
-                  <Input
-                    id="title"
-                    placeholder="e.g. Senior Product Manager"
-                    value={formData.title}
-                    onChange={(e) => setFormData({ ...formData, title: e.target.value })}
-                    required
-                  />
-                </div>
-              </div>
+      <div className="container pt-32 px-4 pb-16">
+        <div className="flex justify-between items-center mb-8">
+          <div>
+            <h1 className="text-4xl font-bold mb-2">Mentor Cabinet</h1>
+            <p className="text-muted-foreground">
+              Welcome back, {mentorProfile?.name || user?.email}
+            </p>
+          </div>
+          <Button onClick={handleSignOut} variant="outline">
+            <LogOut className="mr-2 h-4 w-4" />
+            Sign Out
+          </Button>
+        </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <Label htmlFor="category">Category *</Label>
-                  <Select value={formData.category} onValueChange={(value) => setFormData({ ...formData, category: value })}>
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="Business">Business</SelectItem>
-                      <SelectItem value="Tech">Tech</SelectItem>
-                      <SelectItem value="Creators">Creators</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div>
-                  <Label htmlFor="price">Session Price (USD) *</Label>
-                  <Input
-                    id="price"
-                    type="number"
-                    step="0.01"
-                    placeholder="e.g. 150"
-                    value={formData.price}
-                    onChange={(e) => setFormData({ ...formData, price: e.target.value })}
-                    required
-                  />
-                </div>
-              </div>
+        {mentorProfile && (
+          <div className="mb-6">
+            <MentorStatsCard
+              totalEarnings={totalEarnings}
+              totalStudents={uniqueStudents}
+              averageRating={mentorProfile.rating || 0}
+              upcomingSessions={upcomingBookings.length}
+            />
+          </div>
+        )}
 
-              <div>
-                <Label htmlFor="image_url">Profile Image URL</Label>
-                <Input
-                  id="image_url"
-                  type="url"
-                  placeholder="https://example.com/your-photo.jpg"
-                  value={formData.image_url}
-                  onChange={(e) => setFormData({ ...formData, image_url: e.target.value })}
+        <Tabs defaultValue={mentorProfile ? "overview" : "profile"} className="space-y-6">
+          <TabsList>
+            {mentorProfile && <TabsTrigger value="overview">Overview</TabsTrigger>}
+            <TabsTrigger value="profile">Profile</TabsTrigger>
+            {mentorProfile && <TabsTrigger value="availability">Availability</TabsTrigger>}
+            {mentorProfile && <TabsTrigger value="sessions">Sessions</TabsTrigger>}
+            {mentorProfile && <TabsTrigger value="messages">Messages</TabsTrigger>}
+            <TabsTrigger value="settings">
+              <Settings className="h-4 w-4 mr-2" />
+              Settings
+            </TabsTrigger>
+          </TabsList>
+
+          {mentorProfile && (
+            <TabsContent value="overview" className="space-y-6">
+              <MentorBookingsCard bookings={upcomingBookings} type="upcoming" />
+            </TabsContent>
+          )}
+
+          <TabsContent value="profile">
+            <MentorProfileEditor 
+              profile={mentorProfile}
+              onSubmit={handleProfileSubmit}
+            />
+          </TabsContent>
+
+          {mentorProfile && (
+            <>
+              <TabsContent value="availability">
+                <MentorAvailabilityManager
+                  mentorId={mentorProfile.id}
+                  timeSlots={timeSlots}
+                  onUpdate={() => loadMentorData(user?.id || "")}
                 />
-              </div>
+              </TabsContent>
 
-              <div>
-                <Label htmlFor="bio">Short Bio (appears on card) *</Label>
-                <Textarea
-                  id="bio"
-                  placeholder="A brief description of your expertise..."
-                  value={formData.bio}
-                  onChange={(e) => setFormData({ ...formData, bio: e.target.value })}
-                  rows={2}
-                  required
-                />
-              </div>
+              <TabsContent value="sessions" className="space-y-6">
+                <MentorBookingsCard bookings={upcomingBookings} type="upcoming" />
+                <MentorBookingsCard bookings={pastBookings} type="past" />
+              </TabsContent>
 
-              <div>
-                <Label htmlFor="full_bio">Full Bio *</Label>
-                <Textarea
-                  id="full_bio"
-                  placeholder="Tell potential mentees about your background, experience, and what you can help them with..."
-                  value={formData.full_bio}
-                  onChange={(e) => setFormData({ ...formData, full_bio: e.target.value })}
-                  rows={4}
-                  required
-                />
-              </div>
+              <TabsContent value="messages">
+                <ConversationsList userId={user?.id || ""} />
+              </TabsContent>
+            </>
+          )}
 
-              <div>
-                <Label htmlFor="expertise">Areas of Expertise (comma-separated) *</Label>
-                <Input
-                  id="expertise"
-                  placeholder="e.g. Product Strategy, Team Leadership, Scaling"
-                  value={formData.expertise}
-                  onChange={(e) => setFormData({ ...formData, expertise: e.target.value })}
-                  required
-                />
-              </div>
-
-              <div>
-                <Label htmlFor="languages">Languages (comma-separated) *</Label>
-                <Input
-                  id="languages"
-                  placeholder="e.g. English, Spanish, French"
-                  value={formData.languages}
-                  onChange={(e) => setFormData({ ...formData, languages: e.target.value })}
-                  required
-                />
-              </div>
-
-              <div>
-                <Label htmlFor="availability">Availability *</Label>
-                <Input
-                  id="availability"
-                  placeholder="e.g. Available this week, Weekends only"
-                  value={formData.availability}
-                  onChange={(e) => setFormData({ ...formData, availability: e.target.value })}
-                  required
-                />
-              </div>
-
-              <div>
-                <Label htmlFor="experience">Professional Experience *</Label>
-                <Input
-                  id="experience"
-                  placeholder="e.g. 10+ years in product management"
-                  value={formData.experience}
-                  onChange={(e) => setFormData({ ...formData, experience: e.target.value })}
-                  required
-                />
-              </div>
-
-              <div>
-                <Label htmlFor="education">Education *</Label>
-                <Input
-                  id="education"
-                  placeholder="e.g. MBA, Stanford University"
-                  value={formData.education}
-                  onChange={(e) => setFormData({ ...formData, education: e.target.value })}
-                  required
-                />
-              </div>
-
-              <div>
-                <Label htmlFor="certifications">Certifications (comma-separated)</Label>
-                <Input
-                  id="certifications"
-                  placeholder="e.g. PMP, Certified Scrum Master"
-                  value={formData.certifications}
-                  onChange={(e) => setFormData({ ...formData, certifications: e.target.value })}
-                />
-              </div>
-
-              <div className="flex justify-end gap-2">
-                <Button type="button" variant="outline" onClick={() => navigate("/")}>
-                  Cancel
-                </Button>
-                <Button type="submit" variant="hero" disabled={saving}>
-                  {saving ? (
-                    <>
-                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                      Saving...
-                    </>
-                  ) : (
-                    mentorProfile ? "Update Profile" : "Create Profile"
-                  )}
-                </Button>
-              </div>
-            </form>
-          </CardContent>
-        </Card>
+          <TabsContent value="settings">
+            <NotificationSettings />
+          </TabsContent>
+        </Tabs>
       </div>
     </div>
   );
