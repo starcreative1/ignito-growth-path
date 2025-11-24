@@ -37,6 +37,9 @@ const Navbar = () => {
           {/* CTA Buttons */}
           <div className="hidden md:flex items-center space-x-4">
             <Button variant="ghost" onClick={() => navigate('/auth')}>Sign In</Button>
+            <Button variant="outline" onClick={() => navigate('/mentor-cabinet')}>
+              Become a Mentor
+            </Button>
             <Button variant="hero" onClick={() => navigate('/dashboard')}>
               Dashboard
             </Button>
@@ -94,6 +97,16 @@ const Navbar = () => {
                 }}
               >
                 Sign In
+              </Button>
+              <Button 
+                variant="outline" 
+                className="w-full"
+                onClick={() => {
+                  setIsOpen(false);
+                  navigate('/mentor-cabinet');
+                }}
+              >
+                Become a Mentor
               </Button>
               <Button 
                 variant="hero" 
