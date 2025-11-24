@@ -70,7 +70,12 @@ const Hero = () => {
               Join as Learner
               <ArrowRight className="ml-2" size={20} />
             </Button>
-            <Button variant="outline" size="lg" className="text-lg px-8 py-6">
+            <Button 
+              variant="outline" 
+              size="lg" 
+              className="text-lg px-8 py-6"
+              onClick={() => navigate('/mentor-cabinet')}
+            >
               Become a Mentor
             </Button>
           </div>
