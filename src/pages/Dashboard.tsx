@@ -23,6 +23,7 @@ interface Profile {
   interests: string[] | null;
   skill_level: string | null;
   goals: string | null;
+  preferred_language: string | null;
 }
 
 interface Booking {
@@ -144,13 +145,13 @@ const Dashboard = () => {
     if (!user) return;
 
     const formData = new FormData(e.currentTarget);
-    const interests = formData.get("interests")?.toString().split(",").map(i => i.trim()).filter(Boolean) || [];
+    const selectedInterests = formData.getAll("interests").filter((v): v is string => typeof v === 'string');
 
     const { error } = await supabase
       .from("profiles")
       .update({
         full_name: formData.get("full_name")?.toString(),
-        interests,
+        interests: selectedInterests,
         skill_level: formData.get("skill_level")?.toString(),
         goals: formData.get("goals")?.toString(),
       })
@@ -320,13 +321,42 @@ const Dashboard = () => {
                   </div>
                   
                   <div className="space-y-2">
-                    <Label htmlFor="interests">Interests (comma-separated)</Label>
-                    <Input
-                      id="interests"
-                      name="interests"
-                      defaultValue={profile?.interests?.join(", ") || ""}
-                      placeholder="AI, Machine Learning, Web Development"
-                    />
+                    <Label htmlFor="interests">Categories of Interest*</Label>
+                    <div className="space-y-2">
+                      <div className="flex items-center space-x-2">
+                        <input
+                          type="checkbox"
+                          id="interest-business"
+                          name="interests"
+                          value="Business"
+                          defaultChecked={profile?.interests?.includes("Business")}
+                          className="h-4 w-4"
+                        />
+                        <Label htmlFor="interest-business" className="font-normal cursor-pointer">Business</Label>
+                      </div>
+                      <div className="flex items-center space-x-2">
+                        <input
+                          type="checkbox"
+                          id="interest-tech"
+                          name="interests"
+                          value="Tech"
+                          defaultChecked={profile?.interests?.includes("Tech")}
+                          className="h-4 w-4"
+                        />
+                        <Label htmlFor="interest-tech" className="font-normal cursor-pointer">Tech</Label>
+                      </div>
+                      <div className="flex items-center space-x-2">
+                        <input
+                          type="checkbox"
+                          id="interest-creators"
+                          name="interests"
+                          value="Creators"
+                          defaultChecked={profile?.interests?.includes("Creators")}
+                          className="h-4 w-4"
+                        />
+                        <Label htmlFor="interest-creators" className="font-normal cursor-pointer">Creators</Label>
+                      </div>
+                    </div>
                   </div>
 
                   <div className="space-y-2">
