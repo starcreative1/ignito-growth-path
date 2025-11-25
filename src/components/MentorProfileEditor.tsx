@@ -63,16 +63,14 @@ export const MentorProfileEditor = ({ profile, onSubmit }: MentorProfileEditorPr
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label htmlFor="category">Category*</Label>
-              <Select name="category" defaultValue={profile?.category || ""}>
+              <Select name="category" defaultValue={profile?.category || ""} required>
                 <SelectTrigger>
                   <SelectValue placeholder="Select category" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="business">Business</SelectItem>
-                  <SelectItem value="tech">Tech</SelectItem>
-                  <SelectItem value="creator">Creator</SelectItem>
-                  <SelectItem value="marketing">Marketing</SelectItem>
-                  <SelectItem value="design">Design</SelectItem>
+                  <SelectItem value="Business">Business</SelectItem>
+                  <SelectItem value="Tech">Tech</SelectItem>
+                  <SelectItem value="Creators">Creators</SelectItem>
                 </SelectContent>
               </Select>
             </div>
