@@ -12,6 +12,9 @@ interface Mentor {
   category: string;
   experience: string;
   bio: string;
+  price?: number;
+  rating?: number;
+  image_url?: string;
 }
 
 interface Recommendation {
@@ -96,6 +99,16 @@ export const RecommendationsCard = ({ recommendations, loading }: Recommendation
                   <div>
                     <h4 className="font-semibold text-lg">{rec.mentor.name}</h4>
                     <p className="text-sm text-muted-foreground">{rec.mentor.title}</p>
+                    <div className="flex items-center gap-2 mt-1">
+                      <Badge variant="outline" className="text-xs">
+                        {rec.mentor.category}
+                      </Badge>
+                      {rec.mentor.price && (
+                        <span className="text-xs text-muted-foreground">
+                          ${rec.mentor.price}/hr
+                        </span>
+                      )}
+                    </div>
                   </div>
                 </div>
                 <Badge variant="secondary" className="gap-1">
@@ -132,7 +145,7 @@ export const RecommendationsCard = ({ recommendations, loading }: Recommendation
 
                 <Button 
                   className="w-full mt-4" 
-                  onClick={() => navigate(`/mentors/${rec.mentorId}`)}
+                  onClick={() => navigate(`/mentor/${rec.mentor.id}`)}
                 >
                   View Profile
                   <ArrowRight className="ml-2 h-4 w-4" />

@@ -37,63 +37,28 @@ serve(async (req) => {
 
     console.log("[RECOMMEND-MENTORS] Profile loaded:", profile);
 
-    // Get all mentors data (in a real app, this would come from a mentors table)
-    const mentorsData = [
-      {
-        id: "1",
-        name: "Dr. Sarah Chen",
-        title: "AI Research Scientist at Meta",
-        expertise: ["Machine Learning", "Deep Learning", "Computer Vision", "Natural Language Processing"],
-        category: "AI & ML",
-        experience: "12+ years in AI research",
-        bio: "Specialized in cutting-edge AI research with focus on practical applications"
-      },
-      {
-        id: "2",
-        name: "Marcus Rodriguez",
-        title: "Senior Product Designer at Google",
-        expertise: ["UI/UX Design", "Product Strategy", "Design Systems", "User Research"],
-        category: "Design",
-        experience: "10+ years in product design",
-        bio: "Expert in creating intuitive user experiences and scalable design systems"
-      },
-      {
-        id: "3",
-        name: "Emily Watson",
-        title: "VP of Engineering at Stripe",
-        expertise: ["Full-Stack Development", "System Architecture", "Cloud Infrastructure", "Team Leadership"],
-        category: "Engineering",
-        experience: "15+ years in software engineering",
-        bio: "Passionate about building scalable systems and mentoring engineering teams"
-      },
-      {
-        id: "4",
-        name: "David Kim",
-        title: "Blockchain Lead at Coinbase",
-        expertise: ["Blockchain Technology", "Smart Contracts", "DeFi", "Web3 Development"],
-        category: "Blockchain",
-        experience: "8+ years in blockchain",
-        bio: "Pioneer in decentralized finance and blockchain applications"
-      },
-      {
-        id: "5",
-        name: "Lisa Anderson",
-        title: "Data Science Director at Amazon",
-        expertise: ["Data Science", "Statistical Analysis", "Big Data", "Predictive Modeling"],
-        category: "Data Science",
-        experience: "11+ years in data science",
-        bio: "Expert in turning data into actionable business insights"
-      },
-      {
-        id: "6",
-        name: "James Park",
-        title: "Cybersecurity Expert",
-        expertise: ["Network Security", "Penetration Testing", "Security Architecture", "Compliance"],
-        category: "Security",
-        experience: "9+ years in cybersecurity",
-        bio: "Dedicated to securing systems and educating on best security practices"
-      }
-    ];
+    // Fetch real mentors from database
+    const { data: mentors, error: mentorsError } = await supabaseClient
+      .from("mentor_profiles")
+      .select("*")
+      .eq("is_active", true);
+
+    if (mentorsError) {
+      console.error("[RECOMMEND-MENTORS] Mentors error:", mentorsError);
+      throw new Error("Failed to fetch mentors");
+    }
+
+    if (!mentors || mentors.length === 0) {
+      return new Response(
+        JSON.stringify({ recommendations: [] }),
+        {
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+          status: 200,
+        }
+      );
+    }
+
+    console.log(`[RECOMMEND-MENTORS] Found ${mentors.length} active mentors`);
 
     // Use Lovable AI to recommend mentors
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
@@ -104,20 +69,31 @@ serve(async (req) => {
     const userContext = `
 User Profile:
 - Name: ${profile.full_name || "Not provided"}
-- Interests: ${profile.interests?.join(", ") || "Not specified"}
+- Categories of Interest: ${profile.interests?.join(", ") || "Not specified"}
 - Skill Level: ${profile.skill_level || "Not specified"}
 - Goals: ${profile.goals || "Not specified"}
 
-Available Mentors:
-${mentorsData.map(m => `
-- ${m.name} (${m.title})
-  Category: ${m.category}
-  Expertise: ${m.expertise.join(", ")}
-  Experience: ${m.experience}
-  Bio: ${m.bio}
+Available Mentors (${mentors.length} total):
+${mentors.map(m => `
+- ID: ${m.id}
+- Name: ${m.name}
+- Title: ${m.title}
+- Category: ${m.category}
+- Expertise: ${m.expertise.join(", ")}
+- Price: $${m.price}/hour
+- Experience: ${m.experience}
+- Bio: ${m.bio}
 `).join("\n")}
 
-Based on this user's profile, recommend the top 3 mentors that would be the best match. Consider their interests, skill level, and goals when making recommendations.
+Task: Recommend the top 3 mentors that best match this user's profile. 
+
+Matching Rules:
+1. Prioritize matching the user's categories of interest (Business, Tech, Creators) with mentor categories
+2. Consider the user's skill level when recommending mentors
+3. Factor in the user's goals and how each mentor can help achieve them
+4. Provide a match score (0-100) based on overall fit
+5. Give specific, actionable reasons for each recommendation
+6. Use the EXACT mentor ID from the list above
 `;
 
     const aiResponse = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
@@ -131,7 +107,7 @@ Based on this user's profile, recommend the top 3 mentors that would be the best
         messages: [
           {
             role: "system",
-            content: "You are an expert career mentor matching system. Analyze user profiles and recommend the most suitable mentors based on their interests, skill level, and goals. Return recommendations as a JSON array with mentor IDs and detailed reasoning for each match."
+            content: "You are an expert mentor matching AI. Analyze user profiles and recommend mentors based on category alignment (Business, Tech, Creators), skill level compatibility, and goal achievement potential. Always use the EXACT mentor ID provided in the context. Be specific and actionable in your reasoning."
           },
           {
             role: "user",
@@ -204,12 +180,29 @@ Based on this user's profile, recommend the top 3 mentors that would be the best
 
     // Enrich recommendations with full mentor data
     const enrichedRecommendations = recommendations.map((rec: any) => {
-      const mentor = mentorsData.find(m => m.id === rec.mentorId);
+      const mentor = mentors.find(m => m.id === rec.mentorId);
+      if (!mentor) {
+        console.warn(`[RECOMMEND-MENTORS] Mentor not found for ID: ${rec.mentorId}`);
+        return null;
+      }
       return {
         ...rec,
-        mentor
+        mentor: {
+          id: mentor.id,
+          name: mentor.name,
+          title: mentor.title,
+          expertise: mentor.expertise,
+          category: mentor.category,
+          experience: mentor.experience,
+          bio: mentor.bio,
+          price: mentor.price,
+          rating: mentor.rating,
+          image_url: mentor.image_url
+        }
       };
-    });
+    }).filter(Boolean);
+
+    console.log(`[RECOMMEND-MENTORS] Returning ${enrichedRecommendations.length} recommendations`);
 
     return new Response(
       JSON.stringify({ recommendations: enrichedRecommendations }),
