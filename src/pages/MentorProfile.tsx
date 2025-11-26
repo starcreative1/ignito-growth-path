@@ -12,6 +12,7 @@ import Footer from "@/components/Footer";
 import ReviewCard from "@/components/ReviewCard";
 import CourseCard from "@/components/CourseCard";
 import TimeSlotSelector from "@/components/TimeSlotSelector";
+import { QuestionSubmissionForm } from "@/components/QuestionSubmissionForm";
 import type { Mentor, Review, Course } from "@/data/mentors";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
@@ -361,11 +362,12 @@ const MentorProfile = () => {
             {/* Content Area */}
             <div className="lg:col-span-2">
               <Tabs defaultValue="overview" className="space-y-8">
-                <TabsList className="grid w-full grid-cols-4">
+                <TabsList className="grid w-full grid-cols-5">
                   <TabsTrigger value="overview">Overview</TabsTrigger>
                   <TabsTrigger value="reviews">Reviews ({mentorReviews.length})</TabsTrigger>
                   <TabsTrigger value="courses">Courses ({mentorCourses.length})</TabsTrigger>
                   <TabsTrigger value="booking" id="booking-tab">Book Session</TabsTrigger>
+                  <TabsTrigger value="question">Ask Question</TabsTrigger>
                 </TabsList>
 
                 {/* Overview Tab */}
@@ -500,6 +502,14 @@ const MentorProfile = () => {
                       )}
                     </CardContent>
                   </Card>
+                </TabsContent>
+
+                {/* Question Tab */}
+                <TabsContent value="question" className="space-y-6">
+                  <QuestionSubmissionForm
+                    mentorId={id!}
+                    mentorName={mentor.name}
+                  />
                 </TabsContent>
               </Tabs>
             </div>
