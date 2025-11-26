@@ -20,8 +20,11 @@ export type Database = {
           booking_time: string
           created_at: string | null
           id: string
+          meeting_link: string | null
+          meeting_platform: string | null
           mentor_id: string
           mentor_name: string
+          notes: string | null
           price: number
           status: string
           stripe_payment_intent_id: string | null
@@ -35,8 +38,11 @@ export type Database = {
           booking_time: string
           created_at?: string | null
           id?: string
+          meeting_link?: string | null
+          meeting_platform?: string | null
           mentor_id: string
           mentor_name: string
+          notes?: string | null
           price: number
           status?: string
           stripe_payment_intent_id?: string | null
@@ -50,8 +56,11 @@ export type Database = {
           booking_time?: string
           created_at?: string | null
           id?: string
+          meeting_link?: string | null
+          meeting_platform?: string | null
           mentor_id?: string
           mentor_name?: string
+          notes?: string | null
           price?: number
           status?: string
           stripe_payment_intent_id?: string | null
@@ -236,6 +245,44 @@ export type Database = {
         }
         Relationships: []
       }
+      mentor_questions: {
+        Row: {
+          created_at: string
+          id: string
+          mentor_id: string
+          question_text: string
+          status: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          mentor_id: string
+          question_text: string
+          status?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          mentor_id?: string
+          question_text?: string
+          status?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "mentor_questions_mentor_id_fkey"
+            columns: ["mentor_id"]
+            isOneToOne: false
+            referencedRelation: "mentor_profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       mentor_reviews: {
         Row: {
           comment: string
@@ -324,6 +371,41 @@ export type Database = {
             columns: ["mentor_id"]
             isOneToOne: false
             referencedRelation: "mentor_profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      mentor_video_answers: {
+        Row: {
+          created_at: string
+          duration_seconds: number | null
+          id: string
+          question_id: string
+          video_file_name: string | null
+          video_url: string
+        }
+        Insert: {
+          created_at?: string
+          duration_seconds?: number | null
+          id?: string
+          question_id: string
+          video_file_name?: string | null
+          video_url: string
+        }
+        Update: {
+          created_at?: string
+          duration_seconds?: number | null
+          id?: string
+          question_id?: string
+          video_file_name?: string | null
+          video_url?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "mentor_video_answers_question_id_fkey"
+            columns: ["question_id"]
+            isOneToOne: true
+            referencedRelation: "mentor_questions"
             referencedColumns: ["id"]
           },
         ]

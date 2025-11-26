@@ -12,6 +12,8 @@ import Dashboard from "./pages/Dashboard";
 import Messages from "./pages/Messages";
 import AdminMentors from "./pages/AdminMentors";
 import MentorCabinet from "./pages/MentorCabinet";
+import MentorQuestions from "./pages/MentorQuestions";
+import MyQuestions from "./pages/MyQuestions";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -32,6 +34,8 @@ const App = () => (
           <Route path="/messages/:conversationId" element={<Messages />} />
           <Route path="/admin/mentors" element={<AdminMentors />} />
           <Route path="/mentor-cabinet" element={<MentorCabinet />} />
+          <Route path="/mentor-questions" element={<MentorQuestions />} />
+          <Route path="/my-questions" element={<MyQuestions />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>
