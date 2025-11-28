@@ -8,9 +8,11 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "sonner";
-import { Plus, Edit, Trash2 } from "lucide-react";
+import { Plus, Edit, Trash2, ShieldAlert } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import Navbar from "@/components/Navbar";
+import { useUserRole } from "@/hooks/useUserRole";
 
 interface MentorProfile {
   id: string;
@@ -29,6 +31,7 @@ const AdminMentors = () => {
   const [showDialog, setShowDialog] = useState(false);
   const [editingMentor, setEditingMentor] = useState<MentorProfile | null>(null);
   const navigate = useNavigate();
+  const { isAdmin, loading: roleLoading } = useUserRole();
 
   const [formData, setFormData] = useState({
     name: "",
@@ -60,6 +63,14 @@ const AdminMentors = () => {
     }
     setUser(session.user);
   };
+
+  // Redirect if not admin
+  useEffect(() => {
+    if (!roleLoading && !isAdmin && user) {
+      toast.error("Access denied. Admin privileges required.");
+      navigate("/");
+    }
+  }, [isAdmin, roleLoading, user, navigate]);
 
   const fetchMentors = async () => {
     setLoading(true);
@@ -199,12 +210,30 @@ const AdminMentors = () => {
     });
   };
 
-  if (loading) {
+  if (loading || roleLoading) {
     return (
       <div className="min-h-screen bg-background">
         <Navbar />
         <div className="container mx-auto px-4 py-32">
           <p>Loading...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Show access denied if not admin
+  if (!isAdmin) {
+    return (
+      <div className="min-h-screen bg-background">
+        <Navbar />
+        <div className="container mx-auto px-4 py-32">
+          <Alert variant="destructive">
+            <ShieldAlert className="h-4 w-4" />
+            <AlertTitle>Access Denied</AlertTitle>
+            <AlertDescription>
+              You do not have permission to access this page. Admin privileges are required.
+            </AlertDescription>
+          </Alert>
         </div>
       </div>
     );
