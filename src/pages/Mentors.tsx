@@ -2,6 +2,7 @@ import { useState, useMemo, useEffect } from "react";
 import { Search, SlidersHorizontal } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import MentorCard from "@/components/MentorCard";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
@@ -123,21 +124,21 @@ const Mentors = () => {
       {/* Filters Section */}
       <section className="py-8 border-b border-border sticky top-16 bg-background/95 backdrop-blur-sm z-40">
         <div className="container mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex flex-col md:flex-row gap-4 items-center justify-between">
-            {/* Category Filters */}
-            <div className="flex flex-wrap gap-2">
-              {categories.map((category) => (
-                <Button
-                  key={category}
-                  variant={selectedCategory === category ? "hero" : "outline"}
-                  size="sm"
-                  onClick={() => setSelectedCategory(category)}
-                  className="transition-all duration-300"
-                >
-                  {category}
-                </Button>
-              ))}
-            </div>
+          <div className="flex flex-col md:flex-row gap-6 items-center justify-between">
+            {/* Category Tabs */}
+            <Tabs value={selectedCategory} onValueChange={(value) => setSelectedCategory(value as CategoryFilter)} className="w-full md:w-auto">
+              <TabsList className="grid w-full md:w-auto grid-cols-4 gap-2">
+                {categories.map((category) => (
+                  <TabsTrigger
+                    key={category}
+                    value={category}
+                    className="text-base px-6"
+                  >
+                    {category}
+                  </TabsTrigger>
+                ))}
+              </TabsList>
+            </Tabs>
 
             {/* Sort Options */}
             <div className="flex items-center gap-2">
