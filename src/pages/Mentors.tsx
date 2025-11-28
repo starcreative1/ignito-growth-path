@@ -88,7 +88,7 @@ const Mentors = () => {
     });
 
     return filtered;
-  }, [searchQuery, selectedCategory, sortBy]);
+  }, [mentors, searchQuery, selectedCategory, sortBy]);
 
   return (
     <div className="min-h-screen bg-background">
