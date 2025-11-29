@@ -14,6 +14,80 @@ export type Database = {
   }
   public: {
     Tables: {
+      avatar_conversations: {
+        Row: {
+          avatar_id: string
+          created_at: string
+          id: string
+          updated_at: string
+          user_id: string | null
+        }
+        Insert: {
+          avatar_id: string
+          created_at?: string
+          id?: string
+          updated_at?: string
+          user_id?: string | null
+        }
+        Update: {
+          avatar_id?: string
+          created_at?: string
+          id?: string
+          updated_at?: string
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "avatar_conversations_avatar_id_fkey"
+            columns: ["avatar_id"]
+            isOneToOne: false
+            referencedRelation: "mentor_avatars"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "avatar_conversations_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      avatar_messages: {
+        Row: {
+          content: string
+          conversation_id: string
+          created_at: string
+          id: string
+          metadata: Json | null
+          role: string
+        }
+        Insert: {
+          content: string
+          conversation_id: string
+          created_at?: string
+          id?: string
+          metadata?: Json | null
+          role: string
+        }
+        Update: {
+          content?: string
+          conversation_id?: string
+          created_at?: string
+          id?: string
+          metadata?: Json | null
+          role?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "avatar_messages_conversation_id_fkey"
+            columns: ["conversation_id"]
+            isOneToOne: false
+            referencedRelation: "avatar_conversations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       bookings: {
         Row: {
           booking_date: string
@@ -119,6 +193,100 @@ export type Database = {
             columns: ["user_id"]
             isOneToOne: false
             referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      mentor_avatar_knowledge: {
+        Row: {
+          avatar_id: string
+          content: string
+          content_type: string
+          created_at: string
+          embedding: string | null
+          id: string
+          metadata: Json | null
+        }
+        Insert: {
+          avatar_id: string
+          content: string
+          content_type: string
+          created_at?: string
+          embedding?: string | null
+          id?: string
+          metadata?: Json | null
+        }
+        Update: {
+          avatar_id?: string
+          content?: string
+          content_type?: string
+          created_at?: string
+          embedding?: string | null
+          id?: string
+          metadata?: Json | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "mentor_avatar_knowledge_avatar_id_fkey"
+            columns: ["avatar_id"]
+            isOneToOne: false
+            referencedRelation: "mentor_avatars"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      mentor_avatars: {
+        Row: {
+          avatar_name: string | null
+          bio_summary: string | null
+          created_at: string
+          expertise_areas: string[] | null
+          id: string
+          last_trained_at: string | null
+          mentor_id: string
+          personality_traits: string[] | null
+          photo_urls: string[] | null
+          status: string
+          training_completed_at: string | null
+          updated_at: string
+          voice_sample_url: string | null
+        }
+        Insert: {
+          avatar_name?: string | null
+          bio_summary?: string | null
+          created_at?: string
+          expertise_areas?: string[] | null
+          id?: string
+          last_trained_at?: string | null
+          mentor_id: string
+          personality_traits?: string[] | null
+          photo_urls?: string[] | null
+          status?: string
+          training_completed_at?: string | null
+          updated_at?: string
+          voice_sample_url?: string | null
+        }
+        Update: {
+          avatar_name?: string | null
+          bio_summary?: string | null
+          created_at?: string
+          expertise_areas?: string[] | null
+          id?: string
+          last_trained_at?: string | null
+          mentor_id?: string
+          personality_traits?: string[] | null
+          photo_urls?: string[] | null
+          status?: string
+          training_completed_at?: string | null
+          updated_at?: string
+          voice_sample_url?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "mentor_avatars_mentor_id_fkey"
+            columns: ["mentor_id"]
+            isOneToOne: false
+            referencedRelation: "mentor_profiles"
             referencedColumns: ["id"]
           },
         ]
