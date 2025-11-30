@@ -1,6 +1,6 @@
 import { useParams, useNavigate } from "react-router-dom";
 import { useState, useEffect } from "react";
-import { ArrowLeft, Star, MapPin, Globe, Award, Calendar, MessageSquare } from "lucide-react";
+import { ArrowLeft, Star, MapPin, Globe, Award, Calendar, MessageSquare, Bot } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -37,6 +37,7 @@ const MentorProfile = () => {
   const [isBooking, setIsBooking] = useState(false);
   const [user, setUser] = useState<any>(null);
   const [loading, setLoading] = useState(true);
+  const [avatar, setAvatar] = useState<any>(null);
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
@@ -144,6 +145,18 @@ const MentorProfile = () => {
         time: s.time,
         is_available: s.is_available,
       })));
+    }
+
+    // Fetch avatar if available
+    const { data: avatarData } = await supabase
+      .from('mentor_avatars')
+      .select('*')
+      .eq('mentor_id', id)
+      .eq('status', 'ready')
+      .maybeSingle();
+
+    if (avatarData) {
+      setAvatar(avatarData);
     }
 
     setLoading(false);
@@ -372,6 +385,32 @@ const MentorProfile = () => {
 
                 {/* Overview Tab */}
                 <TabsContent value="overview" className="space-y-6">
+                  {avatar && (
+                    <Card className="border-accent/20 bg-gradient-to-br from-accent/5 to-primary/5">
+                      <CardHeader>
+                        <div className="flex items-center gap-3">
+                          <Bot className="text-accent" size={24} />
+                          <div>
+                            <CardTitle>Chat with AI Avatar</CardTitle>
+                            <p className="text-sm text-muted-foreground mt-1">
+                              Get instant answers 24/7 from {mentor.name}'s AI assistant
+                            </p>
+                          </div>
+                        </div>
+                      </CardHeader>
+                      <CardContent>
+                        <Button 
+                          variant="hero" 
+                          onClick={() => navigate(`/avatar-chat/${avatar.id}`)}
+                          className="w-full"
+                        >
+                          <Bot className="mr-2" size={18} />
+                          Start AI Chat
+                        </Button>
+                      </CardContent>
+                    </Card>
+                  )}
+
                   <Card>
                     <CardHeader>
                       <CardTitle>About {mentor.name}</CardTitle>

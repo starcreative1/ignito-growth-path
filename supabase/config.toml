@@ -2,3 +2,9 @@ project_id = "tpwjhrurjiqefojvmrlj"
 
 [functions.translate-message]
 verify_jwt = false
+
+[functions.train-avatar]
+verify_jwt = true
+
+[functions.chat-with-avatar]
+verify_jwt = true

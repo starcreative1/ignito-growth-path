@@ -11,6 +11,7 @@ import { MentorProfileEditor } from "@/components/MentorProfileEditor";
 import { MentorAvailabilityManager } from "@/components/MentorAvailabilityManager";
 import { ConversationsList } from "@/components/ConversationsList";
 import { NotificationSettings } from "@/components/NotificationSettings";
+import { AvatarManagementTab } from "@/components/AvatarManagementTab";
 import { User } from "@supabase/supabase-js";
 import { LogOut, Settings } from "lucide-react";
 
@@ -240,6 +241,7 @@ const MentorCabinet = () => {
           <TabsList>
             {mentorProfile && <TabsTrigger value="overview">Overview</TabsTrigger>}
             <TabsTrigger value="profile">Profile</TabsTrigger>
+            {mentorProfile && <TabsTrigger value="avatar">AI Avatar</TabsTrigger>}
             {mentorProfile && <TabsTrigger value="availability">Availability</TabsTrigger>}
             {mentorProfile && <TabsTrigger value="sessions">Sessions</TabsTrigger>}
             {mentorProfile && <TabsTrigger value="messages">Messages</TabsTrigger>}
@@ -261,6 +263,12 @@ const MentorCabinet = () => {
               onSubmit={handleProfileSubmit}
             />
           </TabsContent>
+
+          {mentorProfile && (
+            <TabsContent value="avatar">
+              <AvatarManagementTab mentorId={mentorProfile.id} />
+            </TabsContent>
+          )}
 
           {mentorProfile && (
             <>
