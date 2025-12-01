@@ -44,34 +44,6 @@ const Hero = () => {
             personalized guidance, and book live sessions when you need them.
           </p>
 
-          {/* AI Avatar Feature Highlight */}
-          <div className="max-w-3xl mx-auto p-6 bg-gradient-to-r from-accent/10 to-primary/10 rounded-2xl border border-accent/20 animate-fade-in-up animation-delay-300">
-            <div className="flex items-center gap-3 mb-3">
-              <div className="w-10 h-10 bg-accent rounded-full flex items-center justify-center">
-                <Bot className="text-accent-foreground" size={20} />
-              </div>
-              <h3 className="text-xl font-semibold">NEW: AI Mentor Avatars</h3>
-            </div>
-            <p className="text-muted-foreground mb-4">
-              Chat with AI-powered versions of your favorite mentors. Get instant answers, 
-              recommendations, and seamless booking — available 24/7.
-            </p>
-            <div className="flex flex-wrap gap-3 text-sm">
-              <Badge variant="secondary" className="flex items-center gap-1">
-                <Sparkles size={14} />
-                Instant Responses
-              </Badge>
-              <Badge variant="secondary" className="flex items-center gap-1">
-                <Calendar size={14} />
-                Book Live Sessions
-              </Badge>
-              <Badge variant="secondary" className="flex items-center gap-1">
-                <Video size={14} />
-                Access Video Content
-              </Badge>
-            </div>
-          </div>
-
           {/* Stats Row */}
           <div className="grid grid-cols-3 gap-8 max-w-3xl mx-auto py-8 animate-fade-in-up animation-delay-400">
             <div>
