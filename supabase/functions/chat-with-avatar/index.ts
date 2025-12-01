@@ -76,13 +76,13 @@ serve(async (req) => {
         content: message
       });
 
-    // Generate embedding for user query
-    const LOVABLE_API_KEY = Deno.env.get('LOVABLE_API_KEY');
+    // Generate embedding for user query using OpenAI
+    const OPENAI_API_KEY = Deno.env.get('OPENAI_API_KEY');
     
-    const embeddingResponse = await fetch('https://ai.gateway.lovable.dev/v1/embeddings', {
+    const embeddingResponse = await fetch('https://api.openai.com/v1/embeddings', {
       method: 'POST',
       headers: {
-        'Authorization': `Bearer ${LOVABLE_API_KEY}`,
+        'Authorization': `Bearer ${OPENAI_API_KEY}`,
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
@@ -90,6 +90,15 @@ serve(async (req) => {
         input: message,
       }),
     });
+
+    if (!embeddingResponse.ok) {
+      const errorText = await embeddingResponse.text();
+      console.error('OpenAI embeddings error:', embeddingResponse.status, errorText);
+      return new Response(JSON.stringify({ error: 'Failed to process query' }), {
+        status: 500,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
 
     const embeddingData = await embeddingResponse.json();
     const queryEmbedding = embeddingData.data[0].embedding;
@@ -124,6 +133,7 @@ serve(async (req) => {
     })) || [];
 
     // Generate response using Lovable AI
+    const LOVABLE_API_KEY = Deno.env.get('LOVABLE_API_KEY');
     const systemPrompt = `You are an AI avatar representing ${avatar.mentor_profiles.name}, a ${avatar.mentor_profiles.title}.
 
 Your personality: ${avatar.personality_traits?.join(', ') || 'professional, helpful, knowledgeable'}
@@ -156,7 +166,6 @@ ${context}`;
           ...conversationHistory,
           { role: 'user', content: message }
         ],
-        temperature: 0.7,
       }),
     });
 
