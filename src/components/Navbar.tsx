@@ -23,14 +23,11 @@ const Navbar = () => {
             <Link to="/mentors" className="text-foreground hover:text-accent transition-colors">
               Find Mentors
             </Link>
-            <a href="/#courses" className="text-foreground hover:text-accent transition-colors">
-              Courses
-            </a>
+            <Link to="/profile" className="text-foreground hover:text-accent transition-colors">
+              Profile
+            </Link>
             <a href="/#how-it-works" className="text-foreground hover:text-accent transition-colors">
               How It Works
-            </a>
-            <a href="/#pricing" className="text-foreground hover:text-accent transition-colors">
-              Pricing
             </a>
           </div>
 
@@ -63,26 +60,19 @@ const Navbar = () => {
             >
               Find Mentors
             </Link>
-            <a
-              href="/#courses"
+            <Link
+              to="/profile"
               className="block text-foreground hover:text-accent transition-colors"
               onClick={() => setIsOpen(false)}
             >
-              Courses
-            </a>
+              Profile
+            </Link>
             <a
               href="/#how-it-works"
               className="block text-foreground hover:text-accent transition-colors"
               onClick={() => setIsOpen(false)}
             >
               How It Works
-            </a>
-            <a
-              href="/#pricing"
-              className="block text-foreground hover:text-accent transition-colors"
-              onClick={() => setIsOpen(false)}
-            >
-              Pricing
             </a>
             <div className="pt-4 space-y-2">
               <Button 

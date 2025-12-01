@@ -4,6 +4,8 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { ProfilePhotoUpload } from "@/components/ProfilePhotoUpload";
+import { useState } from "react";
 
 interface MentorProfile {
   id: string;
@@ -25,9 +27,19 @@ interface MentorProfile {
 interface MentorProfileEditorProps {
   profile: MentorProfile | null;
   onSubmit: (e: React.FormEvent<HTMLFormElement>) => void;
+  userId: string;
 }
 
-export const MentorProfileEditor = ({ profile, onSubmit }: MentorProfileEditorProps) => {
+export const MentorProfileEditor = ({ profile, onSubmit, userId }: MentorProfileEditorProps) => {
+  const [imageUrl, setImageUrl] = useState(profile?.image_url || "");
+
+  const handleFormSubmit = (e: React.FormEvent<HTMLFormElement>) => {
+    // Add image_url to form data
+    const formData = new FormData(e.currentTarget);
+    formData.set('image_url', imageUrl);
+    onSubmit(e);
+  };
+
   return (
     <Card>
       <CardHeader>
@@ -35,7 +47,19 @@ export const MentorProfileEditor = ({ profile, onSubmit }: MentorProfileEditorPr
         <CardDescription>Update your mentor profile information</CardDescription>
       </CardHeader>
       <CardContent>
-        <form onSubmit={onSubmit} className="space-y-4">
+        <form onSubmit={handleFormSubmit} className="space-y-6">
+          {/* Profile Photo Upload */}
+          <div className="flex justify-center pb-6 border-b">
+            <ProfilePhotoUpload
+              currentPhotoUrl={imageUrl}
+              onPhotoUpdate={setImageUrl}
+              userId={userId}
+              fallbackText={profile?.name?.charAt(0).toUpperCase() || "M"}
+            />
+          </div>
+          
+          <input type="hidden" name="image_url" value={imageUrl} />
+
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label htmlFor="name">Full Name*</Label>

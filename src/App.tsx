@@ -15,7 +15,7 @@ import MentorCabinet from "./pages/MentorCabinet";
 import MentorQuestions from "./pages/MentorQuestions";
 import MyQuestions from "./pages/MyQuestions";
 import NotFound from "./pages/NotFound";
-
+import Profile from "./pages/Profile";
 import AvatarChat from "./pages/AvatarChat";
 
 const queryClient = new QueryClient();
@@ -34,6 +34,7 @@ const App = () => (
           <Route path="/booking-success" element={<BookingSuccess />} />
           <Route path="/auth" element={<Auth />} />
           <Route path="/dashboard" element={<Dashboard />} />
+          <Route path="/profile" element={<Profile />} />
           <Route path="/messages/:conversationId" element={<Messages />} />
           <Route path="/admin/mentors" element={<AdminMentors />} />
           <Route path="/mentor-cabinet" element={<MentorCabinet />} />
