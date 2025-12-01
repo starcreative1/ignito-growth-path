@@ -112,14 +112,14 @@ serve(async (req) => {
       });
     }
 
-    // Generate embeddings for each entry using Lovable AI
-    const LOVABLE_API_KEY = Deno.env.get('LOVABLE_API_KEY');
+    // Generate embeddings for each entry using OpenAI
+    const OPENAI_API_KEY = Deno.env.get('OPENAI_API_KEY');
     const embeddingsPromises = knowledgeEntries.map(async (entry) => {
       try {
-        const response = await fetch('https://ai.gateway.lovable.dev/v1/embeddings', {
+        const response = await fetch('https://api.openai.com/v1/embeddings', {
           method: 'POST',
           headers: {
-            'Authorization': `Bearer ${LOVABLE_API_KEY}`,
+            'Authorization': `Bearer ${OPENAI_API_KEY}`,
             'Content-Type': 'application/json',
           },
           body: JSON.stringify({
@@ -130,8 +130,8 @@ serve(async (req) => {
 
         if (!response.ok) {
           const errorText = await response.text();
-          console.error('Embeddings API error:', response.status, errorText);
-          throw new Error(`Embeddings API failed: ${response.status} - ${errorText}`);
+          console.error('OpenAI embeddings API error:', response.status, errorText);
+          throw new Error(`OpenAI embeddings API failed: ${response.status} - ${errorText}`);
         }
 
         const data = await response.json();
@@ -143,7 +143,7 @@ serve(async (req) => {
 
         return {
           ...entry,
-          embedding: data.data[0].embedding,
+          embedding: JSON.stringify(data.data[0].embedding),
           avatar_id: avatarId
         };
       } catch (error) {
