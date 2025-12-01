@@ -261,6 +261,7 @@ const MentorCabinet = () => {
             <MentorProfileEditor 
               profile={mentorProfile}
               onSubmit={handleProfileSubmit}
+              userId={user?.id || ""}
             />
           </TabsContent>
 
