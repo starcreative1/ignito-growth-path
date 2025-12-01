@@ -115,24 +115,41 @@ serve(async (req) => {
     // Generate embeddings for each entry using Lovable AI
     const LOVABLE_API_KEY = Deno.env.get('LOVABLE_API_KEY');
     const embeddingsPromises = knowledgeEntries.map(async (entry) => {
-      const response = await fetch('https://ai.gateway.lovable.dev/v1/embeddings', {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${LOVABLE_API_KEY}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          model: 'text-embedding-3-small',
-          input: entry.content,
-        }),
-      });
+      try {
+        const response = await fetch('https://ai.gateway.lovable.dev/v1/embeddings', {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${LOVABLE_API_KEY}`,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            model: 'text-embedding-3-small',
+            input: entry.content,
+          }),
+        });
 
-      const data = await response.json();
-      return {
-        ...entry,
-        embedding: data.data[0].embedding,
-        avatar_id: avatarId
-      };
+        if (!response.ok) {
+          const errorText = await response.text();
+          console.error('Embeddings API error:', response.status, errorText);
+          throw new Error(`Embeddings API failed: ${response.status} - ${errorText}`);
+        }
+
+        const data = await response.json();
+        
+        if (!data || !data.data || !Array.isArray(data.data) || data.data.length === 0) {
+          console.error('Invalid embeddings response:', data);
+          throw new Error('Invalid embeddings response format');
+        }
+
+        return {
+          ...entry,
+          embedding: data.data[0].embedding,
+          avatar_id: avatarId
+        };
+      } catch (error) {
+        console.error('Error generating embedding for entry:', entry.content_type, error);
+        throw error;
+      }
     });
 
     const entriesWithEmbeddings = await Promise.all(embeddingsPromises);
