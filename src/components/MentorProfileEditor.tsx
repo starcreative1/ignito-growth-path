@@ -22,6 +22,7 @@ interface MentorProfile {
   education: string;
   certifications: string[];
   image_url: string | null;
+  username: string | null;
 }
 
 interface MentorProfileEditorProps {
@@ -73,6 +74,23 @@ export const MentorProfileEditor = ({ profile, onSubmit, userId }: MentorProfile
             </div>
             
             <div className="space-y-2">
+              <Label htmlFor="username">Username (for shop URL)</Label>
+              <Input
+                id="username"
+                name="username"
+                defaultValue={profile?.username || ""}
+                placeholder="johndoe"
+                pattern="^[a-z0-9_-]+$"
+                title="Only lowercase letters, numbers, hyphens and underscores"
+              />
+              <p className="text-xs text-muted-foreground">
+                Your shop URL: {window.location.origin}/shop/{profile?.username || "your-username"}
+              </p>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="space-y-2">
               <Label htmlFor="title">Professional Title*</Label>
               <Input
                 id="title"
@@ -82,9 +100,7 @@ export const MentorProfileEditor = ({ profile, onSubmit, userId }: MentorProfile
                 required
               />
             </div>
-          </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label htmlFor="category">Category*</Label>
               <Select name="category" defaultValue={profile?.category || ""} required>
@@ -98,20 +114,20 @@ export const MentorProfileEditor = ({ profile, onSubmit, userId }: MentorProfile
                 </SelectContent>
               </Select>
             </div>
+          </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="price">Hourly Rate ($)*</Label>
-              <Input
-                id="price"
-                name="price"
-                type="number"
-                min="0"
-                step="0.01"
-                defaultValue={profile?.price || ""}
-                placeholder="100"
-                required
-              />
-            </div>
+          <div className="space-y-2">
+            <Label htmlFor="price">Hourly Rate ($)*</Label>
+            <Input
+              id="price"
+              name="price"
+              type="number"
+              min="0"
+              step="0.01"
+              defaultValue={profile?.price || ""}
+              placeholder="100"
+              required
+            />
           </div>
 
           <div className="space-y-2">
