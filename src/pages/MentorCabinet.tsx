@@ -12,8 +12,9 @@ import { MentorAvailabilityManager } from "@/components/MentorAvailabilityManage
 import { ConversationsList } from "@/components/ConversationsList";
 import { NotificationSettings } from "@/components/NotificationSettings";
 import { AvatarManagementTab } from "@/components/AvatarManagementTab";
+import { MentorProductsTab } from "@/components/MentorProductsTab";
 import { User } from "@supabase/supabase-js";
-import { LogOut, Settings } from "lucide-react";
+import { LogOut, Settings, ShoppingBag } from "lucide-react";
 
 interface MentorProfile {
   id: string;
@@ -33,6 +34,7 @@ interface MentorProfile {
   image_url: string | null;
   rating: number | null;
   review_count: number | null;
+  username: string | null;
 }
 
 interface Booking {
@@ -140,6 +142,7 @@ const MentorCabinet = () => {
       education: formData.get("education")?.toString() || "",
       certifications,
       image_url: formData.get("image_url")?.toString() || null,
+      username: formData.get("username")?.toString().toLowerCase().replace(/[^a-z0-9_-]/g, "") || null,
     };
 
     if (mentorProfile) {
@@ -242,6 +245,12 @@ const MentorCabinet = () => {
             {mentorProfile && <TabsTrigger value="overview">Overview</TabsTrigger>}
             <TabsTrigger value="profile">Profile</TabsTrigger>
             {mentorProfile && <TabsTrigger value="avatar">AI Avatar</TabsTrigger>}
+            {mentorProfile && (
+              <TabsTrigger value="shop">
+                <ShoppingBag className="h-4 w-4 mr-2" />
+                Shop
+              </TabsTrigger>
+            )}
             {mentorProfile && <TabsTrigger value="availability">Availability</TabsTrigger>}
             {mentorProfile && <TabsTrigger value="sessions">Sessions</TabsTrigger>}
             {mentorProfile && <TabsTrigger value="messages">Messages</TabsTrigger>}
@@ -268,6 +277,16 @@ const MentorCabinet = () => {
           {mentorProfile && (
             <TabsContent value="avatar">
               <AvatarManagementTab mentorId={mentorProfile.id} />
+            </TabsContent>
+          )}
+
+          {mentorProfile && (
+            <TabsContent value="shop">
+              <MentorProductsTab
+                mentorId={mentorProfile.id}
+                mentorUsername={mentorProfile.username}
+                mentorName={mentorProfile.name}
+              />
             </TabsContent>
           )}
 

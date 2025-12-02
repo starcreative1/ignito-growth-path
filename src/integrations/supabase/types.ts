@@ -344,6 +344,65 @@ export type Database = {
           },
         ]
       }
+      mentor_products: {
+        Row: {
+          created_at: string
+          description: string
+          file_name: string
+          file_type: string
+          file_url: string
+          id: string
+          is_active: boolean
+          mentor_id: string
+          preview_image_url: string | null
+          price: number
+          sales_count: number
+          title: string
+          total_earnings: number
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          description: string
+          file_name: string
+          file_type: string
+          file_url: string
+          id?: string
+          is_active?: boolean
+          mentor_id: string
+          preview_image_url?: string | null
+          price: number
+          sales_count?: number
+          title: string
+          total_earnings?: number
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          description?: string
+          file_name?: string
+          file_type?: string
+          file_url?: string
+          id?: string
+          is_active?: boolean
+          mentor_id?: string
+          preview_image_url?: string | null
+          price?: number
+          sales_count?: number
+          title?: string
+          total_earnings?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "mentor_products_mentor_id_fkey"
+            columns: ["mentor_id"]
+            isOneToOne: false
+            referencedRelation: "mentor_profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       mentor_profiles: {
         Row: {
           availability: string
@@ -366,6 +425,7 @@ export type Database = {
           title: string
           updated_at: string
           user_id: string | null
+          username: string | null
         }
         Insert: {
           availability: string
@@ -388,6 +448,7 @@ export type Database = {
           title: string
           updated_at?: string
           user_id?: string | null
+          username?: string | null
         }
         Update: {
           availability?: string
@@ -410,6 +471,7 @@ export type Database = {
           title?: string
           updated_at?: string
           user_id?: string | null
+          username?: string | null
         }
         Relationships: []
       }
@@ -853,6 +915,50 @@ export type Database = {
             columns: ["sender_id"]
             isOneToOne: false
             referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      product_purchases: {
+        Row: {
+          amount: number
+          buyer_email: string
+          buyer_id: string
+          created_at: string
+          id: string
+          product_id: string
+          status: string
+          stripe_payment_intent_id: string | null
+          stripe_session_id: string | null
+        }
+        Insert: {
+          amount: number
+          buyer_email: string
+          buyer_id: string
+          created_at?: string
+          id?: string
+          product_id: string
+          status?: string
+          stripe_payment_intent_id?: string | null
+          stripe_session_id?: string | null
+        }
+        Update: {
+          amount?: number
+          buyer_email?: string
+          buyer_id?: string
+          created_at?: string
+          id?: string
+          product_id?: string
+          status?: string
+          stripe_payment_intent_id?: string | null
+          stripe_session_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "product_purchases_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "mentor_products"
             referencedColumns: ["id"]
           },
         ]

@@ -17,6 +17,8 @@ import MyQuestions from "./pages/MyQuestions";
 import NotFound from "./pages/NotFound";
 import Profile from "./pages/Profile";
 import AvatarChat from "./pages/AvatarChat";
+import MentorShop from "./pages/MentorShop";
+import PurchaseSuccess from "./pages/PurchaseSuccess";
 
 const queryClient = new QueryClient();
 
@@ -40,6 +42,8 @@ const App = () => (
           <Route path="/mentor-cabinet" element={<MentorCabinet />} />
           <Route path="/mentor-questions" element={<MentorQuestions />} />
           <Route path="/my-questions" element={<MyQuestions />} />
+          <Route path="/shop/:username" element={<MentorShop />} />
+          <Route path="/purchase-success" element={<PurchaseSuccess />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>
