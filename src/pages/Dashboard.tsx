@@ -13,8 +13,9 @@ import Navbar from "@/components/Navbar";
 import { RecommendationsCard } from "@/components/RecommendationsCard";
 import { ConversationsList } from "@/components/ConversationsList";
 import { NotificationSettings } from "@/components/NotificationSettings";
+import { PurchasedProductCard } from "@/components/PurchasedProductCard";
 import { User, Session } from "@supabase/supabase-js";
-import { Calendar, Clock, LogOut, Settings } from "lucide-react";
+import { Calendar, Clock, LogOut, Settings, ShoppingBag } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 
 interface Profile {
@@ -35,11 +36,27 @@ interface Booking {
   price: number;
 }
 
+interface Purchase {
+  id: string;
+  amount: number;
+  status: string;
+  created_at: string;
+  product: {
+    id: string;
+    title: string;
+    description: string;
+    file_type: string;
+    preview_image_url: string | null;
+    mentor_id: string;
+  } | null;
+}
+
 const Dashboard = () => {
   const [user, setUser] = useState<User | null>(null);
   const [session, setSession] = useState<Session | null>(null);
   const [profile, setProfile] = useState<Profile | null>(null);
   const [bookings, setBookings] = useState<Booking[]>([]);
+  const [purchases, setPurchases] = useState<Purchase[]>([]);
   const [recommendations, setRecommendations] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [recommendationsLoading, setRecommendationsLoading] = useState(false);
@@ -94,6 +111,28 @@ const Dashboard = () => {
       .order("booking_date", { ascending: false });
     
     setBookings(bookingsData || []);
+
+    // Load purchases
+    const { data: purchasesData } = await supabase
+      .from("product_purchases")
+      .select(`
+        id,
+        amount,
+        status,
+        created_at,
+        product:mentor_products(
+          id,
+          title,
+          description,
+          file_type,
+          preview_image_url,
+          mentor_id
+        )
+      `)
+      .eq("buyer_id", userId)
+      .order("created_at", { ascending: false });
+    
+    setPurchases((purchasesData as unknown as Purchase[]) || []);
     setLoading(false);
 
     // Load recommendations if profile is complete
@@ -207,9 +246,13 @@ const Dashboard = () => {
         </div>
 
         <Tabs defaultValue="recommendations" className="space-y-6">
-          <TabsList>
+          <TabsList className="flex-wrap">
             <TabsTrigger value="recommendations">Recommendations</TabsTrigger>
             <TabsTrigger value="sessions">My Sessions</TabsTrigger>
+            <TabsTrigger value="purchases">
+              <ShoppingBag className="h-4 w-4 mr-2" />
+              My Purchases
+            </TabsTrigger>
             <TabsTrigger value="messages">Messages</TabsTrigger>
             <TabsTrigger value="profile" id="profile-tab">Profile</TabsTrigger>
             <TabsTrigger value="settings">
@@ -223,6 +266,32 @@ const Dashboard = () => {
               recommendations={recommendations}
               loading={recommendationsLoading}
             />
+          </TabsContent>
+
+          <TabsContent value="purchases" className="space-y-6">
+            <Card>
+              <CardHeader>
+                <CardTitle>My Purchases</CardTitle>
+                <CardDescription>Download your purchased digital products</CardDescription>
+              </CardHeader>
+              <CardContent>
+                {purchases.length === 0 ? (
+                  <div className="text-center py-8 text-muted-foreground">
+                    <ShoppingBag className="mx-auto h-12 w-12 mb-4 opacity-50" />
+                    <p>No purchases yet</p>
+                    <Button className="mt-4" onClick={() => navigate("/mentors")}>
+                      Browse Products
+                    </Button>
+                  </div>
+                ) : (
+                  <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+                    {purchases.map((purchase) => (
+                      <PurchasedProductCard key={purchase.id} purchase={purchase} />
+                    ))}
+                  </div>
+                )}
+              </CardContent>
+            </Card>
           </TabsContent>
 
           <TabsContent value="messages" className="space-y-6">
