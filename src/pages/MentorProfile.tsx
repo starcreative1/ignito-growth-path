@@ -1,22 +1,19 @@
 import { useParams, useNavigate } from "react-router-dom";
 import { useState, useEffect } from "react";
-import { ArrowLeft, Star, MapPin, Globe, Award, Calendar, MessageSquare, Bot } from "lucide-react";
+import { ArrowLeft, Star, Globe, Award, Calendar, MessageSquare, Bot, ShoppingBag } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import ReviewCard from "@/components/ReviewCard";
-import CourseCard from "@/components/CourseCard";
+import ShopProductCard from "@/components/ShopProductCard";
 import TimeSlotSelector from "@/components/TimeSlotSelector";
 import { QuestionSubmissionForm } from "@/components/QuestionSubmissionForm";
-import type { Mentor, Review, Course } from "@/data/mentors";
+import type { Mentor, Review } from "@/data/mentors";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-
 interface TimeSlot {
   id: string;
   mentor_id: string;
@@ -25,15 +22,23 @@ interface TimeSlot {
   is_available: boolean;
 }
 
+interface Product {
+  id: string;
+  title: string;
+  description: string;
+  price: number;
+  file_type: string;
+  preview_image_url: string | null;
+}
+
 const MentorProfile = () => {
   const { id } = useParams();
   const navigate = useNavigate();
   const [mentor, setMentor] = useState<Mentor | null>(null);
   const [reviews, setReviews] = useState<Review[]>([]);
-  const [courses, setCourses] = useState<Course[]>([]);
+  const [products, setProducts] = useState<Product[]>([]);
   const [timeSlots, setTimeSlots] = useState<TimeSlot[]>([]);
   const [selectedSlot, setSelectedSlot] = useState<TimeSlot | null>(null);
-  const [userEmail, setUserEmail] = useState("");
   const [isBooking, setIsBooking] = useState(false);
   const [user, setUser] = useState<any>(null);
   const [loading, setLoading] = useState(true);
@@ -106,24 +111,21 @@ const MentorProfile = () => {
       })));
     }
 
-    // Fetch courses
-    const { data: coursesData } = await supabase
-      .from("mentor_courses")
+    // Fetch products
+    const { data: productsData } = await supabase
+      .from("mentor_products")
       .select("*")
       .eq("mentor_id", id)
       .eq("is_active", true);
 
-    if (coursesData) {
-      setCourses(coursesData.map(c => ({
-        id: c.id,
-        mentorId: c.mentor_id,
-        title: c.title,
-        description: c.description,
-        price: parseFloat(c.price.toString()),
-        duration: c.duration,
-        lessons: c.lessons,
-        level: c.level as "Beginner" | "Intermediate" | "Advanced",
-        thumbnail: c.thumbnail_url || "/placeholder.svg",
+    if (productsData) {
+      setProducts(productsData.map(p => ({
+        id: p.id,
+        title: p.title,
+        description: p.description,
+        price: parseFloat(p.price.toString()),
+        file_type: p.file_type,
+        preview_image_url: p.preview_image_url,
       })));
     }
 
@@ -174,7 +176,7 @@ const MentorProfile = () => {
   }
 
   const mentorReviews = reviews;
-  const mentorCourses = courses;
+  const mentorProducts = products;
 
   if (!mentor) {
     return (
@@ -378,7 +380,10 @@ const MentorProfile = () => {
                 <TabsList className="grid w-full grid-cols-5">
                   <TabsTrigger value="overview">Overview</TabsTrigger>
                   <TabsTrigger value="reviews">Reviews ({mentorReviews.length})</TabsTrigger>
-                  <TabsTrigger value="courses">Courses ({mentorCourses.length})</TabsTrigger>
+                  <TabsTrigger value="shop">
+                    <ShoppingBag size={16} className="mr-1" />
+                    Shop ({mentorProducts.length})
+                  </TabsTrigger>
                   <TabsTrigger value="booking" id="booking-tab">Book Session</TabsTrigger>
                   <TabsTrigger value="question">Ask Question</TabsTrigger>
                 </TabsList>
@@ -478,17 +483,33 @@ const MentorProfile = () => {
                   </div>
                 </TabsContent>
 
-                {/* Courses Tab */}
-                <TabsContent value="courses" className="space-y-6">
+                {/* Shop Tab */}
+                <TabsContent value="shop" className="space-y-6">
+                  <Card>
+                    <CardHeader>
+                      <CardTitle className="flex items-center gap-2">
+                        <ShoppingBag size={20} />
+                        Digital Products by {mentor.name}
+                      </CardTitle>
+                      <p className="text-muted-foreground text-sm">
+                        Exclusive digital resources, templates, and guides
+                      </p>
+                    </CardHeader>
+                  </Card>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    {mentorCourses.length > 0 ? (
-                      mentorCourses.map((course) => (
-                        <CourseCard key={course.id} course={course} />
+                    {mentorProducts.length > 0 ? (
+                      mentorProducts.map((product) => (
+                        <ShopProductCard 
+                          key={product.id} 
+                          product={product} 
+                          mentorName={mentor.name}
+                        />
                       ))
                     ) : (
                       <Card className="col-span-2">
                         <CardContent className="p-12 text-center">
-                          <p className="text-muted-foreground">No courses available yet</p>
+                          <ShoppingBag size={48} className="mx-auto text-muted-foreground/50 mb-4" />
+                          <p className="text-muted-foreground">No products available yet</p>
                         </CardContent>
                       </Card>
                     )}
