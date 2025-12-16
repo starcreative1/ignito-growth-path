@@ -21,8 +21,61 @@ serve(async (req) => {
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? ""
     );
 
-    const { sessionId } = await req.json();
+    // Get auth user for re-download requests
+    const authHeader = req.headers.get("Authorization");
+    let authUserId: string | null = null;
+    
+    if (authHeader) {
+      const { data: { user } } = await supabaseClient.auth.getUser(
+        authHeader.replace("Bearer ", "")
+      );
+      authUserId = user?.id || null;
+    }
 
+    const { sessionId, productId: redownloadProductId, redownload } = await req.json();
+
+    // Handle re-download request
+    if (redownload && redownloadProductId && authUserId) {
+      console.log("[VERIFY-PRODUCT-PURCHASE] Re-download request for product:", redownloadProductId);
+      
+      // Verify the user has purchased this product
+      const { data: purchase, error: purchaseError } = await supabaseClient
+        .from("product_purchases")
+        .select("*, mentor_products(*)")
+        .eq("product_id", redownloadProductId)
+        .eq("buyer_id", authUserId)
+        .eq("status", "completed")
+        .maybeSingle();
+
+      if (purchaseError || !purchase) {
+        throw new Error("Purchase not found or not completed");
+      }
+
+      const product = purchase.mentor_products;
+      
+      // Generate signed URL for download
+      const filePath = product.file_url.includes("/product-files/") 
+        ? product.file_url.split("/product-files/")[1]
+        : product.file_url;
+        
+      const { data: signedUrlData } = await supabaseClient.storage
+        .from("product-files")
+        .createSignedUrl(filePath, 86400);
+
+      return new Response(
+        JSON.stringify({
+          success: true,
+          productTitle: product.title,
+          downloadUrl: signedUrlData?.signedUrl || product.file_url,
+        }),
+        {
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+          status: 200,
+        }
+      );
+    }
+
+    // Original flow: verify new purchase via Stripe session
     if (!sessionId) {
       throw new Error("Session ID is required");
     }
@@ -49,7 +102,6 @@ serve(async (req) => {
 
     const productId = session.metadata?.product_id;
     const buyerId = session.metadata?.buyer_id;
-    const mentorId = session.metadata?.mentor_id;
 
     if (!productId || !buyerId) {
       throw new Error("Invalid session metadata");
