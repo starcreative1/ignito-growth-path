@@ -38,13 +38,17 @@ serve(async (req) => {
     console.log("[CREATE-PRODUCT-CHECKOUT] User authenticated:", user.id);
 
     // Parse request body
-    const { productId, successUrl, cancelUrl } = await req.json();
+    const { productId } = await req.json();
     
     if (!productId) {
       throw new Error("Product ID is required");
     }
 
     console.log("[CREATE-PRODUCT-CHECKOUT] Product ID:", productId);
+
+    // Get origin for redirect URLs
+    const origin = req.headers.get("origin") || Deno.env.get("SUPABASE_URL")?.replace('.supabase.co', '.lovable.app') || "https://localhost:3000";
+    console.log("[CREATE-PRODUCT-CHECKOUT] Origin:", origin);
 
     // Fetch product details
     const { data: product, error: productError } = await supabaseClient
@@ -104,8 +108,8 @@ serve(async (req) => {
         },
       ],
       mode: "payment",
-      success_url: `${successUrl}?session_id={CHECKOUT_SESSION_ID}`,
-      cancel_url: cancelUrl,
+      success_url: `${origin}/purchase-success?session_id={CHECKOUT_SESSION_ID}`,
+      cancel_url: `${origin}/mentors`,
       metadata: {
         product_id: productId,
         buyer_id: user.id,
