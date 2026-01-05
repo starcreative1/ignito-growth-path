@@ -379,9 +379,8 @@ const MentorProfile = () => {
             {/* Content Area */}
             <div className="lg:col-span-2">
               <Tabs defaultValue="overview" className="space-y-8">
-                <TabsList className="grid w-full grid-cols-5">
+                <TabsList className="grid w-full grid-cols-4">
                   <TabsTrigger value="overview">Overview</TabsTrigger>
-                  <TabsTrigger value="reviews">Reviews ({mentorReviews.length})</TabsTrigger>
                   <TabsTrigger value="shop">
                     <ShoppingBag size={16} className="mr-1" />
                     Shop ({mentorProducts.length})
@@ -466,24 +465,29 @@ const MentorProfile = () => {
                       </div>
                     </CardContent>
                   </Card>
+
+                  {/* Reviews Section */}
+                  <Card>
+                    <CardHeader>
+                      <CardTitle className="flex items-center gap-2">
+                        <Star size={20} className="text-accent" />
+                        Reviews ({mentorReviews.length})
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="space-y-4">
+                        {mentorReviews.length > 0 ? (
+                          mentorReviews.map((review) => (
+                            <ReviewCard key={review.id} review={review} />
+                          ))
+                        ) : (
+                          <p className="text-muted-foreground text-center py-4">No reviews yet</p>
+                        )}
+                      </div>
+                    </CardContent>
+                  </Card>
                 </TabsContent>
 
-                {/* Reviews Tab */}
-                <TabsContent value="reviews" className="space-y-6">
-                  <div className="grid gap-6">
-                    {mentorReviews.length > 0 ? (
-                      mentorReviews.map((review) => (
-                        <ReviewCard key={review.id} review={review} />
-                      ))
-                    ) : (
-                      <Card>
-                        <CardContent className="p-12 text-center">
-                          <p className="text-muted-foreground">No reviews yet</p>
-                        </CardContent>
-                      </Card>
-                    )}
-                  </div>
-                </TabsContent>
 
                 {/* Shop Tab */}
                 <TabsContent value="shop" className="space-y-6">
