@@ -46,8 +46,8 @@ serve(async (req) => {
 
     console.log("[CREATE-PRODUCT-CHECKOUT] Product ID:", productId);
 
-    // Get origin for redirect URLs
-    const origin = req.headers.get("origin") || Deno.env.get("SUPABASE_URL")?.replace('.supabase.co', '.lovable.app') || "https://localhost:3000";
+    // Get origin for redirect URLs - prefer request origin, fallback to production URL
+    const origin = req.headers.get("origin") || "https://gcreators.me";
     console.log("[CREATE-PRODUCT-CHECKOUT] Origin:", origin);
 
     // Fetch product details
@@ -109,7 +109,7 @@ serve(async (req) => {
       ],
       mode: "payment",
       success_url: `${origin}/purchase-success?session_id={CHECKOUT_SESSION_ID}`,
-      cancel_url: `${origin}/mentors`,
+      cancel_url: `${origin}/mentors/${product.mentor_id}`,
       metadata: {
         product_id: productId,
         buyer_id: user.id,

@@ -1,10 +1,11 @@
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { FileText, Download, ShoppingCart } from "lucide-react";
+import { FileText, ShoppingCart, Loader2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 
 interface Product {
   id: string;
@@ -22,6 +23,7 @@ interface ShopProductCardProps {
 
 const ShopProductCard = ({ product, mentorName }: ShopProductCardProps) => {
   const [isPurchasing, setIsPurchasing] = useState(false);
+  const navigate = useNavigate();
 
   const getFileTypeLabel = (fileType: string) => {
     const types: Record<string, string> = {
@@ -39,7 +41,12 @@ const ShopProductCard = ({ product, mentorName }: ShopProductCardProps) => {
     const { data: { session } } = await supabase.auth.getSession();
     
     if (!session) {
-      toast.error("Please sign in to purchase products");
+      toast.error("Please sign in to purchase products", {
+        action: {
+          label: "Sign In",
+          onClick: () => navigate("/auth"),
+        },
+      });
       return;
     }
 
@@ -48,19 +55,28 @@ const ShopProductCard = ({ product, mentorName }: ShopProductCardProps) => {
       const { data, error } = await supabase.functions.invoke("create-product-checkout", {
         body: {
           productId: product.id,
-          buyerEmail: session.user.email,
-          buyerId: session.user.id,
         },
       });
 
-      if (error) throw error;
+      if (error) {
+        console.error("Checkout error:", error);
+        throw new Error(error.message || "Failed to create checkout session");
+      }
 
-      if (data?.sessionUrl) {
-        window.open(data.sessionUrl, '_blank');
+      if (data?.url) {
+        // Open Stripe checkout in new tab
+        window.open(data.url, '_blank');
+        toast.success("Checkout opened in new tab", {
+          description: "Complete your payment in the new tab",
+        });
+      } else {
+        throw new Error("No checkout URL received");
       }
     } catch (error) {
       console.error("Purchase error:", error);
-      toast.error("Failed to start checkout");
+      toast.error("Failed to start checkout", {
+        description: error instanceof Error ? error.message : "Please try again",
+      });
     } finally {
       setIsPurchasing(false);
     }
@@ -96,7 +112,7 @@ const ShopProductCard = ({ product, mentorName }: ShopProductCardProps) => {
         
         <div className="flex items-center justify-between pt-3 border-t border-border">
           <div className="text-xl font-display font-bold gradient-text">
-            ${product.price}
+            ${product.price.toFixed(2)}
           </div>
           <Button 
             size="sm" 
@@ -104,8 +120,17 @@ const ShopProductCard = ({ product, mentorName }: ShopProductCardProps) => {
             onClick={handlePurchase}
             disabled={isPurchasing}
           >
-            <ShoppingCart size={16} className="mr-1" />
-            {isPurchasing ? "..." : "Buy Now"}
+            {isPurchasing ? (
+              <>
+                <Loader2 size={16} className="mr-1 animate-spin" />
+                Processing...
+              </>
+            ) : (
+              <>
+                <ShoppingCart size={16} className="mr-1" />
+                Buy Now
+              </>
+            )}
           </Button>
         </div>
       </CardContent>

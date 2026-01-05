@@ -1,6 +1,7 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import Stripe from "https://esm.sh/stripe@18.5.0";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.57.2";
+import { Resend } from "https://esm.sh/resend@4.0.0";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -23,6 +24,10 @@ serve(async (req) => {
       Deno.env.get("SUPABASE_URL") ?? "",
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? ""
     );
+
+    // Initialize Resend for email notifications
+    const resendKey = Deno.env.get("RESEND_API_KEY");
+    const resend = resendKey ? new Resend(resendKey) : null;
 
     // Get auth user for re-download requests
     const authHeader = req.headers.get("Authorization");
@@ -110,16 +115,69 @@ serve(async (req) => {
       throw new Error("Invalid session metadata");
     }
 
-    // Get product details
+    // Check if this purchase was already verified (idempotency)
+    const { data: existingPurchase } = await supabaseClient
+      .from("product_purchases")
+      .select("*")
+      .eq("stripe_session_id", sessionId)
+      .eq("status", "completed")
+      .maybeSingle();
+
+    if (existingPurchase) {
+      console.log("[VERIFY-PRODUCT-PURCHASE] Purchase already verified, returning existing data");
+      
+      // Get product for download URL
+      const { data: product } = await supabaseClient
+        .from("mentor_products")
+        .select("*")
+        .eq("id", productId)
+        .single();
+
+      if (product) {
+        const filePath = product.file_url.includes("/product-files/") 
+          ? product.file_url.split("/product-files/")[1]
+          : product.file_url;
+          
+        const { data: signedUrlData } = await supabaseClient.storage
+          .from("product-files")
+          .createSignedUrl(filePath, SIGNED_URL_EXPIRATION);
+
+        return new Response(
+          JSON.stringify({
+            success: true,
+            productTitle: product.title,
+            downloadUrl: signedUrlData?.signedUrl || product.file_url,
+          }),
+          {
+            headers: { ...corsHeaders, "Content-Type": "application/json" },
+            status: 200,
+          }
+        );
+      }
+    }
+
+    // Get product details with mentor info
     const { data: product, error: productError } = await supabaseClient
       .from("mentor_products")
-      .select("*")
+      .select(`
+        *,
+        mentor_profiles!inner(name, user_id)
+      `)
       .eq("id", productId)
       .single();
 
     if (productError || !product) {
       throw new Error("Product not found");
     }
+
+    // Get buyer email from purchase record
+    const { data: purchaseRecord } = await supabaseClient
+      .from("product_purchases")
+      .select("buyer_email")
+      .eq("stripe_session_id", sessionId)
+      .maybeSingle();
+
+    const buyerEmail = purchaseRecord?.buyer_email || session.customer_email;
 
     // Update purchase record
     const { error: updateError } = await supabaseClient
@@ -150,9 +208,139 @@ serve(async (req) => {
     console.log("[VERIFY-PRODUCT-PURCHASE] Purchase verified successfully");
 
     // Generate signed URL for download with 1 hour expiration
+    const filePath = product.file_url.includes("/product-files/") 
+      ? product.file_url.split("/product-files/")[1]
+      : product.file_url;
+      
     const { data: signedUrlData } = await supabaseClient.storage
       .from("product-files")
-      .createSignedUrl(product.file_url.split("/product-files/")[1], SIGNED_URL_EXPIRATION);
+      .createSignedUrl(filePath, SIGNED_URL_EXPIRATION);
+
+    // Send notification emails
+    if (resend && buyerEmail) {
+      // Send buyer confirmation email
+      try {
+        const buyerHtml = `
+          <!DOCTYPE html>
+          <html>
+          <head>
+            <meta charset="utf-8">
+            <title>Purchase Confirmation</title>
+          </head>
+          <body style="margin: 0; padding: 20px; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background-color: #f6f9fc;">
+            <div style="max-width: 600px; margin: 0 auto; background-color: #ffffff; border-radius: 8px; padding: 40px;">
+              <h1 style="color: #0A0A0A; font-size: 28px; text-align: center; margin: 0 0 24px;">
+                Thank You for Your Purchase! 🎉
+              </h1>
+              
+              <p style="color: #333; font-size: 16px; line-height: 24px;">
+                Your digital product is now available for download.
+              </p>
+
+              <div style="background-color: #f0f9ff; border-radius: 8px; padding: 24px; margin: 24px 0;">
+                <h2 style="color: #0A0A0A; font-size: 20px; margin: 0 0 16px;">Order Details</h2>
+                
+                <p style="color: #333; font-size: 16px; margin: 8px 0;">
+                  <strong>Product:</strong> ${product.title}
+                </p>
+                
+                <p style="color: #333; font-size: 16px; margin: 8px 0;">
+                  <strong>Seller:</strong> ${product.mentor_profiles.name}
+                </p>
+                
+                <p style="color: #333; font-size: 16px; margin: 8px 0;">
+                  <strong>Amount:</strong> $${Number(product.price).toFixed(2)}
+                </p>
+              </div>
+
+              <p style="color: #333; font-size: 16px; line-height: 24px;">
+                You can download your product anytime from your dashboard at G.Creators.
+              </p>
+
+              <p style="color: #898989; font-size: 12px; text-align: center; margin-top: 32px;">
+                G.Creators - Empowering personal and professional growth
+              </p>
+            </div>
+          </body>
+          </html>
+        `;
+
+        await resend.emails.send({
+          from: 'G.Creators <onboarding@resend.dev>',
+          to: [buyerEmail],
+          subject: `Purchase Confirmed: ${product.title}`,
+          html: buyerHtml,
+        });
+        console.log("[VERIFY-PRODUCT-PURCHASE] Buyer confirmation email sent");
+      } catch (emailError) {
+        console.error("[VERIFY-PRODUCT-PURCHASE] Buyer email error:", emailError);
+      }
+
+      // Send mentor notification email
+      try {
+        // Get mentor's email from auth.users via their user_id
+        const { data: mentorAuth } = await supabaseClient.auth.admin.getUserById(
+          product.mentor_profiles.user_id
+        );
+
+        if (mentorAuth?.user?.email) {
+          const mentorHtml = `
+            <!DOCTYPE html>
+            <html>
+            <head>
+              <meta charset="utf-8">
+              <title>New Sale Notification</title>
+            </head>
+            <body style="margin: 0; padding: 20px; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background-color: #f6f9fc;">
+              <div style="max-width: 600px; margin: 0 auto; background-color: #ffffff; border-radius: 8px; padding: 40px;">
+                <h1 style="color: #0A0A0A; font-size: 28px; text-align: center; margin: 0 0 24px;">
+                  You Made a Sale! 💰
+                </h1>
+                
+                <p style="color: #333; font-size: 16px; line-height: 24px;">
+                  Great news! Someone just purchased your digital product.
+                </p>
+
+                <div style="background-color: #ecfdf5; border-radius: 8px; padding: 24px; margin: 24px 0;">
+                  <h2 style="color: #0A0A0A; font-size: 20px; margin: 0 0 16px;">Sale Details</h2>
+                  
+                  <p style="color: #333; font-size: 16px; margin: 8px 0;">
+                    <strong>Product:</strong> ${product.title}
+                  </p>
+                  
+                  <p style="color: #333; font-size: 16px; margin: 8px 0;">
+                    <strong>Amount Earned:</strong> $${Number(product.price).toFixed(2)}
+                  </p>
+                  
+                  <p style="color: #333; font-size: 16px; margin: 8px 0;">
+                    <strong>Total Sales:</strong> ${product.sales_count + 1}
+                  </p>
+                </div>
+
+                <p style="color: #333; font-size: 16px; line-height: 24px;">
+                  View all your sales and earnings in your Mentor Cabinet.
+                </p>
+
+                <p style="color: #898989; font-size: 12px; text-align: center; margin-top: 32px;">
+                  G.Creators - Empowering personal and professional growth
+                </p>
+              </div>
+            </body>
+            </html>
+          `;
+
+          await resend.emails.send({
+            from: 'G.Creators <onboarding@resend.dev>',
+            to: [mentorAuth.user.email],
+            subject: `New Sale: ${product.title}`,
+            html: mentorHtml,
+          });
+          console.log("[VERIFY-PRODUCT-PURCHASE] Mentor notification email sent");
+        }
+      } catch (emailError) {
+        console.error("[VERIFY-PRODUCT-PURCHASE] Mentor email error:", emailError);
+      }
+    }
 
     return new Response(
       JSON.stringify({
@@ -168,7 +356,7 @@ serve(async (req) => {
   } catch (error: unknown) {
     const errorMessage = error instanceof Error ? error.message : "An error occurred";
     console.error("[VERIFY-PRODUCT-PURCHASE] Error:", error);
-    return new Response(JSON.stringify({ error: errorMessage }), {
+    return new Response(JSON.stringify({ error: errorMessage, success: false }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
       status: 500,
     });
