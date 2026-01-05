@@ -92,11 +92,11 @@ const ShopProductCard = ({ product, mentorName }: ShopProductCardProps) => {
   return (
     <Card className="overflow-hidden hover:shadow-strong transition-all duration-300 group">
       {product.preview_image_url ? (
-        <div className="h-40 overflow-hidden bg-muted">
+        <div className="h-40 overflow-hidden bg-muted flex items-center justify-center">
           <img
             src={product.preview_image_url}
             alt={product.title}
-            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+            className="max-w-full max-h-full object-contain group-hover:scale-105 transition-transform duration-300"
           />
         </div>
       ) : (
