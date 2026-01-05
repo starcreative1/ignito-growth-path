@@ -346,6 +346,7 @@ export type Database = {
       }
       mentor_products: {
         Row: {
+          average_rating: number | null
           created_at: string
           description: string
           file_name: string
@@ -356,12 +357,14 @@ export type Database = {
           mentor_id: string
           preview_image_url: string | null
           price: number
+          review_count: number | null
           sales_count: number
           title: string
           total_earnings: number
           updated_at: string
         }
         Insert: {
+          average_rating?: number | null
           created_at?: string
           description: string
           file_name: string
@@ -372,12 +375,14 @@ export type Database = {
           mentor_id: string
           preview_image_url?: string | null
           price: number
+          review_count?: number | null
           sales_count?: number
           title: string
           total_earnings?: number
           updated_at?: string
         }
         Update: {
+          average_rating?: number | null
           created_at?: string
           description?: string
           file_name?: string
@@ -388,6 +393,7 @@ export type Database = {
           mentor_id?: string
           preview_image_url?: string | null
           price?: number
+          review_count?: number | null
           sales_count?: number
           title?: string
           total_earnings?: number
@@ -956,6 +962,50 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "product_purchases_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "mentor_products"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      product_reviews: {
+        Row: {
+          comment: string | null
+          created_at: string
+          id: string
+          product_id: string
+          rating: number
+          updated_at: string
+          user_avatar: string | null
+          user_id: string
+          user_name: string
+        }
+        Insert: {
+          comment?: string | null
+          created_at?: string
+          id?: string
+          product_id: string
+          rating: number
+          updated_at?: string
+          user_avatar?: string | null
+          user_id: string
+          user_name: string
+        }
+        Update: {
+          comment?: string | null
+          created_at?: string
+          id?: string
+          product_id?: string
+          rating?: number
+          updated_at?: string
+          user_avatar?: string | null
+          user_id?: string
+          user_name?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "product_reviews_product_id_fkey"
             columns: ["product_id"]
             isOneToOne: false
             referencedRelation: "mentor_products"

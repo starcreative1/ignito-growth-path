@@ -1,11 +1,13 @@
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { FileText, ShoppingCart, Loader2 } from "lucide-react";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { FileText, ShoppingCart, Loader2, Star, MessageSquare } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import ProductReviewsSection from "./ProductReviewsSection";
 
 interface Product {
   id: string;
@@ -14,6 +16,8 @@ interface Product {
   price: number;
   file_type: string;
   preview_image_url: string | null;
+  average_rating?: number;
+  review_count?: number;
 }
 
 interface ShopProductCardProps {
@@ -23,6 +27,7 @@ interface ShopProductCardProps {
 
 const ShopProductCard = ({ product, mentorName }: ShopProductCardProps) => {
   const [isPurchasing, setIsPurchasing] = useState(false);
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
   const navigate = useNavigate();
 
   const getFileTypeLabel = (fileType: string) => {
@@ -64,7 +69,6 @@ const ShopProductCard = ({ product, mentorName }: ShopProductCardProps) => {
       }
 
       if (data?.url) {
-        // Open Stripe checkout in new tab
         window.open(data.url, '_blank');
         toast.success("Checkout opened in new tab", {
           description: "Complete your payment in the new tab",
@@ -81,6 +85,9 @@ const ShopProductCard = ({ product, mentorName }: ShopProductCardProps) => {
       setIsPurchasing(false);
     }
   };
+
+  const averageRating = product.average_rating || 0;
+  const reviewCount = product.review_count || 0;
 
   return (
     <Card className="overflow-hidden hover:shadow-strong transition-all duration-300 group">
@@ -105,6 +112,43 @@ const ShopProductCard = ({ product, mentorName }: ShopProductCardProps) => {
             {getFileTypeLabel(product.file_type)}
           </Badge>
         </div>
+        
+        {/* Rating Display */}
+        <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+          <DialogTrigger asChild>
+            <button className="flex items-center gap-2 text-sm hover:text-accent transition-colors">
+              <div className="flex items-center gap-0.5">
+                {[...Array(5)].map((_, i) => (
+                  <Star
+                    key={i}
+                    size={12}
+                    className={
+                      i < Math.round(averageRating)
+                        ? "text-accent fill-accent"
+                        : "text-muted"
+                    }
+                  />
+                ))}
+              </div>
+              <span className="text-muted-foreground">
+                {averageRating > 0 ? averageRating.toFixed(1) : "No ratings"} 
+                {reviewCount > 0 && ` (${reviewCount})`}
+              </span>
+              <MessageSquare size={12} className="text-muted-foreground" />
+            </button>
+          </DialogTrigger>
+          <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle>{product.title}</DialogTitle>
+            </DialogHeader>
+            <ProductReviewsSection
+              productId={product.id}
+              productTitle={product.title}
+              averageRating={averageRating}
+              reviewCount={reviewCount}
+            />
+          </DialogContent>
+        </Dialog>
         
         <p className="text-sm text-muted-foreground line-clamp-2">
           {product.description}
