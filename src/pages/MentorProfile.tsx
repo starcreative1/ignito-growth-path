@@ -45,6 +45,7 @@ const MentorProfile = () => {
   const [user, setUser] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [avatar, setAvatar] = useState<any>(null);
+  const [activeTab, setActiveTab] = useState("overview");
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
@@ -358,7 +359,7 @@ const MentorProfile = () => {
                       variant="hero" 
                       size="lg" 
                       className="w-full"
-                      onClick={() => document.getElementById('booking-tab')?.click()}
+                      onClick={() => setActiveTab("booking")}
                     >
                       Book a Session
                     </Button>
@@ -378,14 +379,14 @@ const MentorProfile = () => {
 
             {/* Content Area */}
             <div className="lg:col-span-2">
-              <Tabs defaultValue="overview" className="space-y-8">
+              <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-8">
                 <TabsList className="grid w-full grid-cols-4">
                   <TabsTrigger value="overview">Overview</TabsTrigger>
                   <TabsTrigger value="shop">
                     <ShoppingBag size={16} className="mr-1" />
                     Shop ({mentorProducts.length})
                   </TabsTrigger>
-                  <TabsTrigger value="booking" id="booking-tab">Book Session</TabsTrigger>
+                  <TabsTrigger value="booking">Book Session</TabsTrigger>
                   <TabsTrigger value="question">Ask Question</TabsTrigger>
                 </TabsList>
 
