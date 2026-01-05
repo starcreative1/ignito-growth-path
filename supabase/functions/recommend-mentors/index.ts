@@ -28,11 +28,26 @@ serve(async (req) => {
       .from("profiles")
       .select("*")
       .eq("id", userId)
-      .single();
+      .maybeSingle();
 
     if (profileError) {
       console.error("[RECOMMEND-MENTORS] Profile error:", profileError);
       throw new Error("Failed to fetch user profile");
+    }
+
+    // Handle case when profile doesn't exist yet
+    if (!profile) {
+      console.log("[RECOMMEND-MENTORS] No profile found for user, returning empty recommendations");
+      return new Response(
+        JSON.stringify({ 
+          recommendations: [],
+          message: "Complete your profile to get personalized mentor recommendations"
+        }),
+        {
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+          status: 200,
+        }
+      );
     }
 
     console.log("[RECOMMEND-MENTORS] Profile loaded:", profile);
