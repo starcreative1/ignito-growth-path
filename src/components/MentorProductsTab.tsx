@@ -3,7 +3,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
-import { Plus, Edit, Trash2, Eye, Share2, DollarSign, ShoppingBag } from "lucide-react";
+import { Plus, Edit, Trash2, Eye, Share2, DollarSign, ShoppingBag, Star, MessageSquare } from "lucide-react";
 import { ProductForm } from "./ProductForm";
 import { ShareShopDialog } from "./ShareShopDialog";
 import { Badge } from "@/components/ui/badge";
@@ -31,6 +31,8 @@ interface Product {
   total_earnings: number;
   is_active: boolean;
   created_at: string;
+  average_rating: number;
+  review_count: number;
 }
 
 interface MentorProductsTabProps {
@@ -263,6 +265,14 @@ export const MentorProductsTab = ({ mentorId, mentorUsername, mentorName }: Ment
                       <span>{product.sales_count} sales</span>
                       <span>${Number(product.total_earnings).toFixed(2)} earned</span>
                       <span>{product.file_type.toUpperCase()}</span>
+                      <div className="flex items-center gap-1">
+                        <Star size={14} className={product.average_rating > 0 ? "text-accent fill-accent" : "text-muted"} />
+                        <span>
+                          {product.average_rating > 0 
+                            ? `${Number(product.average_rating).toFixed(1)} (${product.review_count} reviews)`
+                            : "No reviews"}
+                        </span>
+                      </div>
                     </div>
 
                     <div className="flex flex-wrap gap-2 mt-4">
