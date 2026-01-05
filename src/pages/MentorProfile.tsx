@@ -29,6 +29,8 @@ interface Product {
   price: number;
   file_type: string;
   preview_image_url: string | null;
+  average_rating: number;
+  review_count: number;
 }
 
 const MentorProfile = () => {
@@ -126,6 +128,8 @@ const MentorProfile = () => {
         price: parseFloat(p.price.toString()),
         file_type: p.file_type,
         preview_image_url: p.preview_image_url,
+        average_rating: parseFloat(p.average_rating?.toString() || "0"),
+        review_count: p.review_count || 0,
       })));
     }
 
