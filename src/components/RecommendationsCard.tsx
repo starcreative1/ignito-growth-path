@@ -145,7 +145,7 @@ export const RecommendationsCard = ({ recommendations, loading }: Recommendation
 
                 <Button 
                   className="w-full mt-4" 
-                  onClick={() => navigate(`/mentor/${rec.mentor.id}`)}
+                  onClick={() => navigate(`/mentors/${rec.mentor.id}`)}
                 >
                   View Profile
                   <ArrowRight className="ml-2 h-4 w-4" />
