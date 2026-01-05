@@ -253,8 +253,6 @@ const MentorProfile = () => {
           bookingDate: selectedSlot.date,
           bookingTime: selectedSlot.time,
           price: mentor.price,
-          userEmail: session.user.email,
-          userId: session.user.id,
         },
       });
 

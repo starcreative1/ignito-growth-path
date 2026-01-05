@@ -13,11 +13,49 @@ serve(async (req) => {
   }
 
   try {
-    const { mentorId, mentorName, bookingDate, bookingTime, price, userEmail, userId } = await req.json();
+    // Authenticate user from Authorization header
+    const authHeader = req.headers.get("Authorization");
+    if (!authHeader) {
+      return new Response(
+        JSON.stringify({ error: "Authentication required" }),
+        { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 401 }
+      );
+    }
 
-    console.log("[CREATE-BOOKING] Creating booking for:", { mentorName, bookingDate, bookingTime });
+    // Create Supabase client with user's auth context
+    const supabaseClient = createClient(
+      Deno.env.get("SUPABASE_URL") ?? "",
+      Deno.env.get("SUPABASE_ANON_KEY") ?? "",
+      { global: { headers: { Authorization: authHeader } } }
+    );
 
-    if (!mentorId || !mentorName || !bookingDate || !bookingTime || !price || !userEmail || !userId) {
+    // Verify and get authenticated user
+    const { data: { user }, error: authError } = await supabaseClient.auth.getUser();
+    if (authError || !user) {
+      console.error("[CREATE-BOOKING] Auth error:", authError);
+      return new Response(
+        JSON.stringify({ error: "Authentication required" }),
+        { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 401 }
+      );
+    }
+
+    // Use verified user data instead of client-provided values
+    const userEmail = user.email;
+    const userId = user.id;
+
+    if (!userEmail) {
+      return new Response(
+        JSON.stringify({ error: "User email not available" }),
+        { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 400 }
+      );
+    }
+
+    // Only accept booking details from client (not userId/userEmail)
+    const { mentorId, mentorName, bookingDate, bookingTime, price } = await req.json();
+
+    console.log("[CREATE-BOOKING] Creating booking for user:", userId, { mentorName, bookingDate, bookingTime });
+
+    if (!mentorId || !mentorName || !bookingDate || !bookingTime || !price) {
       throw new Error("Missing required booking information");
     }
 
@@ -25,14 +63,14 @@ serve(async (req) => {
       apiVersion: "2025-08-27.basil",
     });
 
-    // Create Supabase client
-    const supabaseClient = createClient(
+    // Use service role client for database operations
+    const serviceClient = createClient(
       Deno.env.get("SUPABASE_URL") ?? "",
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? ""
     );
 
-    // Create a booking record first
-    const { data: booking, error: bookingError } = await supabaseClient
+    // Create a booking record with verified user data
+    const { data: booking, error: bookingError } = await serviceClient
       .from("bookings")
       .insert({
         user_email: userEmail,
@@ -49,7 +87,7 @@ serve(async (req) => {
 
     if (bookingError) {
       console.error("[CREATE-BOOKING] Error creating booking:", bookingError);
-      throw new Error(`Failed to create booking: ${bookingError.message}`);
+      throw new Error("Failed to create booking");
     }
 
     console.log("[CREATE-BOOKING] Booking created:", booking.id);
@@ -87,13 +125,14 @@ serve(async (req) => {
       metadata: {
         booking_id: booking.id,
         mentor_id: mentorId,
+        user_id: userId,
       },
     });
 
     console.log("[CREATE-BOOKING] Stripe session created:", session.id);
 
     // Update booking with Stripe session ID
-    await supabaseClient
+    await serviceClient
       .from("bookings")
       .update({ stripe_session_id: session.id })
       .eq("id", booking.id);
@@ -112,7 +151,7 @@ serve(async (req) => {
     console.error("[CREATE-BOOKING] Error:", error);
     return new Response(
       JSON.stringify({
-        error: error instanceof Error ? error.message : "An error occurred",
+        error: "An error occurred while creating the booking",
       }),
       {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
