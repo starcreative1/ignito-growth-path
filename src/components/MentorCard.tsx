@@ -21,7 +21,7 @@ const MentorCard = ({ mentor }: MentorCardProps) => {
         <img
           src={mentor.image}
           alt={mentor.name}
-          className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300"
+          className="w-full h-full object-cover object-top group-hover:scale-105 transition-transform duration-300"
         />
         <div className="absolute top-4 right-4">
           <Badge className="bg-accent text-accent-foreground shadow-medium">
