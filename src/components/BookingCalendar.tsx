@@ -80,12 +80,10 @@ export const BookingCalendar = ({
         body: {
           mentorId,
           mentorName,
-          userEmail: email,
           bookingDate: selectedSlot.date,
           bookingTime: selectedSlot.time,
           price: mentorPrice,
           timeSlotId: selectedSlot.id,
-          userId: user?.id,
           meetingPlatform,
           notes: `Topic: ${topic}\nName: ${name}`,
         },

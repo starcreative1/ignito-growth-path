@@ -7,6 +7,9 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
+// Signed URL expiration: 1 hour (3600 seconds)
+const SIGNED_URL_EXPIRATION = 3600;
+
 serve(async (req) => {
   // Handle CORS preflight requests
   if (req.method === "OPTIONS") {
@@ -53,14 +56,14 @@ serve(async (req) => {
 
       const product = purchase.mentor_products;
       
-      // Generate signed URL for download
+      // Generate signed URL for download with 1 hour expiration
       const filePath = product.file_url.includes("/product-files/") 
         ? product.file_url.split("/product-files/")[1]
         : product.file_url;
         
       const { data: signedUrlData } = await supabaseClient.storage
         .from("product-files")
-        .createSignedUrl(filePath, 86400);
+        .createSignedUrl(filePath, SIGNED_URL_EXPIRATION);
 
       return new Response(
         JSON.stringify({
@@ -146,10 +149,10 @@ serve(async (req) => {
 
     console.log("[VERIFY-PRODUCT-PURCHASE] Purchase verified successfully");
 
-    // Generate signed URL for download (valid for 24 hours)
+    // Generate signed URL for download with 1 hour expiration
     const { data: signedUrlData } = await supabaseClient.storage
       .from("product-files")
-      .createSignedUrl(product.file_url.split("/product-files/")[1], 86400);
+      .createSignedUrl(product.file_url.split("/product-files/")[1], SIGNED_URL_EXPIRATION);
 
     return new Response(
       JSON.stringify({
