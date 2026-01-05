@@ -1,7 +1,9 @@
 import { Button } from "@/components/ui/button";
 import { ArrowRight, Sparkles } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 
 const CTA = () => {
+  const navigate = useNavigate();
   return (
     <section className="py-24 relative overflow-hidden">
       {/* Background Gradient */}
@@ -33,11 +35,21 @@ const CTA = () => {
 
           {/* CTAs */}
           <div className="flex flex-col sm:flex-row gap-4 justify-center pt-4">
-            <Button variant="hero" size="lg" className="text-lg px-8 py-6">
+            <Button 
+              variant="hero" 
+              size="lg" 
+              className="text-lg px-8 py-6"
+              onClick={() => navigate('/auth')}
+            >
               Get Started for Free
               <ArrowRight className="ml-2" size={20} />
             </Button>
-            <Button variant="outline" size="lg" className="text-lg px-8 py-6">
+            <Button 
+              variant="outline" 
+              size="lg" 
+              className="text-lg px-8 py-6"
+              onClick={() => navigate('/mentors')}
+            >
               Explore Mentors
             </Button>
           </div>
