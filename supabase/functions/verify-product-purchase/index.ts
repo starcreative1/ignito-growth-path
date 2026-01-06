@@ -216,9 +216,13 @@ serve(async (req) => {
       .from("product-files")
       .createSignedUrl(filePath, SIGNED_URL_EXPIRATION);
 
+    // Get origin for dashboard link
+    const origin = req.headers.get("origin") || "https://gcreators.me";
+    const downloadUrl = signedUrlData?.signedUrl || product.file_url;
+
     // Send notification emails
     if (resend && buyerEmail) {
-      // Send buyer confirmation email
+      // Send buyer confirmation email with download link
       try {
         const buyerHtml = `
           <!DOCTYPE html>
@@ -253,8 +257,16 @@ serve(async (req) => {
                 </p>
               </div>
 
-              <p style="color: #333; font-size: 16px; line-height: 24px;">
-                You can download your product anytime from your dashboard at G.Creators.
+              <div style="text-align: center; margin: 32px 0;">
+                <a href="${downloadUrl}" 
+                   style="display: inline-block; background-color: #0A0A0A; color: #ffffff; padding: 16px 32px; text-decoration: none; border-radius: 8px; font-size: 16px; font-weight: 600;">
+                  📥 Download Your Product
+                </a>
+              </div>
+
+              <p style="color: #666; font-size: 14px; line-height: 22px; text-align: center;">
+                This download link expires in 1 hour. You can always download again from your 
+                <a href="${origin}/dashboard" style="color: #0066cc;">dashboard</a>.
               </p>
 
               <p style="color: #898989; font-size: 12px; text-align: center; margin-top: 32px;">
@@ -268,10 +280,10 @@ serve(async (req) => {
         await resend.emails.send({
           from: 'G.Creators <onboarding@resend.dev>',
           to: [buyerEmail],
-          subject: `Purchase Confirmed: ${product.title}`,
+          subject: `Purchase Confirmed: ${product.title} - Download Inside`,
           html: buyerHtml,
         });
-        console.log("[VERIFY-PRODUCT-PURCHASE] Buyer confirmation email sent");
+        console.log("[VERIFY-PRODUCT-PURCHASE] Buyer confirmation email sent with download link");
       } catch (emailError) {
         console.error("[VERIFY-PRODUCT-PURCHASE] Buyer email error:", emailError);
       }
