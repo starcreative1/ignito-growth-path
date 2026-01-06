@@ -153,6 +153,18 @@ export const VideoAnswerUploader = ({ questionId, questionText, onSuccess }: Vid
     return `${mins}:${secs.toString().padStart(2, "0")}`;
   };
 
+  const sendNotification = async (mentorName: string) => {
+    try {
+      await supabase.functions.invoke("notify-video-answer", {
+        body: { questionId, mentorName },
+      });
+      console.log("Notification sent successfully");
+    } catch (error) {
+      console.error("Error sending notification:", error);
+      // Don't throw - notification failure shouldn't block the upload success
+    }
+  };
+
   const handleUpload = async () => {
     const fileToUpload = selectedFile || (recordedBlob ? new File([recordedBlob], `recording-${Date.now()}.webm`, { type: "video/webm" }) : null);
     
@@ -164,6 +176,15 @@ export const VideoAnswerUploader = ({ questionId, questionText, onSuccess }: Vid
     try {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error("Not authenticated");
+
+      // Get mentor name for notification
+      const { data: mentorProfile } = await supabase
+        .from("mentor_profiles")
+        .select("name")
+        .eq("user_id", user.id)
+        .single();
+
+      const mentorName = mentorProfile?.name || "Your mentor";
 
       const fileExt = fileToUpload.name.split(".").pop();
       const fileName = `${questionId}-${Date.now()}.${fileExt}`;
@@ -207,6 +228,9 @@ export const VideoAnswerUploader = ({ questionId, questionText, onSuccess }: Vid
 
         if (updateError) throw updateError;
 
+        // Send notification to user
+        await sendNotification(mentorName);
+
         toast({
           title: "Video Uploaded!",
           description: "Your video answer has been sent to the user.",
@@ -222,7 +246,7 @@ export const VideoAnswerUploader = ({ questionId, questionText, onSuccess }: Vid
 
       video.onerror = () => {
         // Fallback if we can't get duration
-        handleSaveWithDuration(recordingTime || 0, publicUrl, fileName);
+        handleSaveWithDuration(recordingTime || 0, publicUrl, fileName, mentorName);
       };
 
       video.src = URL.createObjectURL(fileToUpload);
@@ -238,7 +262,7 @@ export const VideoAnswerUploader = ({ questionId, questionText, onSuccess }: Vid
     }
   };
 
-  const handleSaveWithDuration = async (duration: number, publicUrl: string, fileName: string) => {
+  const handleSaveWithDuration = async (duration: number, publicUrl: string, fileName: string, mentorName: string) => {
     try {
       const { error: dbError } = await supabase
         .from("mentor_video_answers")
@@ -257,6 +281,9 @@ export const VideoAnswerUploader = ({ questionId, questionText, onSuccess }: Vid
         .eq("id", questionId);
 
       if (updateError) throw updateError;
+
+      // Send notification to user
+      await sendNotification(mentorName);
 
       toast({
         title: "Video Uploaded!",
