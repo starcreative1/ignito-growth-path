@@ -68,6 +68,20 @@ serve(async (req) => {
 
     console.log("[CREATE-PRODUCT-CHECKOUT] Product found:", product.title);
 
+    // Check if user already purchased this product (prevent duplicates)
+    const { data: existingPurchase } = await supabaseClient
+      .from("product_purchases")
+      .select("id, status")
+      .eq("product_id", productId)
+      .eq("buyer_id", user.id)
+      .eq("status", "completed")
+      .maybeSingle();
+
+    if (existingPurchase) {
+      console.log("[CREATE-PRODUCT-CHECKOUT] User already purchased this product");
+      throw new Error("You have already purchased this product. Check your dashboard to download it.");
+    }
+
     // Initialize Stripe
     const stripeKey = Deno.env.get("STRIPE_SECRET_KEY");
     if (!stripeKey) {

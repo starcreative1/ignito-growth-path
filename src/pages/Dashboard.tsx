@@ -49,6 +49,10 @@ interface Purchase {
     file_type: string;
     preview_image_url: string | null;
     mentor_id: string;
+    mentor_profiles: {
+      name: string;
+      image_url: string | null;
+    } | null;
   } | null;
 }
 
@@ -113,7 +117,7 @@ const Dashboard = () => {
     
     setBookings(bookingsData || []);
 
-    // Load purchases
+    // Load purchases with mentor info
     const { data: purchasesData } = await supabase
       .from("product_purchases")
       .select(`
@@ -127,10 +131,15 @@ const Dashboard = () => {
           description,
           file_type,
           preview_image_url,
-          mentor_id
+          mentor_id,
+          mentor_profiles(
+            name,
+            image_url
+          )
         )
       `)
       .eq("buyer_id", userId)
+      .eq("status", "completed")
       .order("created_at", { ascending: false });
     
     setPurchases((purchasesData as unknown as Purchase[]) || []);
@@ -257,6 +266,9 @@ const Dashboard = () => {
             <TabsTrigger value="purchases">
               <ShoppingBag className="h-4 w-4 mr-2" />
               My Purchases
+              {purchases.length > 0 && (
+                <Badge variant="secondary" className="ml-2">{purchases.length}</Badge>
+              )}
             </TabsTrigger>
             <TabsTrigger value="messages">Messages</TabsTrigger>
             <TabsTrigger value="profile" id="profile-tab">Profile</TabsTrigger>
