@@ -170,26 +170,47 @@ serve(async (req) => {
       throw new Error("Product not found");
     }
 
-    // Get buyer email from purchase record
+    // Get buyer email from purchase record or session
     const { data: purchaseRecord } = await supabaseClient
       .from("product_purchases")
-      .select("buyer_email")
+      .select("id, buyer_email")
       .eq("stripe_session_id", sessionId)
       .maybeSingle();
 
     const buyerEmail = purchaseRecord?.buyer_email || session.customer_email;
 
-    // Update purchase record
-    const { error: updateError } = await supabaseClient
-      .from("product_purchases")
-      .update({
-        status: "completed",
-        stripe_payment_intent_id: session.payment_intent as string,
-      })
-      .eq("stripe_session_id", sessionId);
+    // Update or create purchase record
+    if (purchaseRecord) {
+      // Update existing record
+      const { error: updateError } = await supabaseClient
+        .from("product_purchases")
+        .update({
+          status: "completed",
+          stripe_payment_intent_id: session.payment_intent as string,
+        })
+        .eq("stripe_session_id", sessionId);
 
-    if (updateError) {
-      console.error("[VERIFY-PRODUCT-PURCHASE] Update error:", updateError);
+      if (updateError) {
+        console.error("[VERIFY-PRODUCT-PURCHASE] Update error:", updateError);
+      }
+    } else {
+      // Create the purchase record if it doesn't exist (fallback for edge cases)
+      console.log("[VERIFY-PRODUCT-PURCHASE] No pending purchase found, creating record");
+      const { error: insertError } = await supabaseClient
+        .from("product_purchases")
+        .insert({
+          product_id: productId,
+          buyer_id: buyerId,
+          buyer_email: session.customer_email || "",
+          amount: product.price,
+          stripe_session_id: sessionId,
+          stripe_payment_intent_id: session.payment_intent as string,
+          status: "completed",
+        });
+
+      if (insertError) {
+        console.error("[VERIFY-PRODUCT-PURCHASE] Insert error:", insertError);
+      }
     }
 
     // Update product sales count and earnings
