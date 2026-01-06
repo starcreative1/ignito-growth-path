@@ -6,9 +6,9 @@ import Navbar from "@/components/Navbar";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
-import { Loader2, Clock, CheckCircle2 } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Loader2, Clock, CheckCircle2, Download } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
-
 interface Question {
   id: string;
   question_text: string;
@@ -217,13 +217,28 @@ const MyQuestions = () => {
                       <p className="text-sm text-muted-foreground">{question.question_text}</p>
                     </div>
                     {question.mentor_video_answers?.[0] && (
-                      <div>
-                        <p className="text-sm font-medium mb-2">Video Answer:</p>
+                      <div className="space-y-3">
+                        <p className="text-sm font-medium">Video Answer:</p>
                         <video
                           controls
                           className="w-full rounded-lg"
                           src={question.mentor_video_answers[0].video_url}
                         />
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          asChild
+                        >
+                          <a
+                            href={question.mentor_video_answers[0].video_url}
+                            download={`answer-${question.id}.mp4`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                          >
+                            <Download className="h-4 w-4 mr-2" />
+                            Download Video
+                          </a>
+                        </Button>
                       </div>
                     )}
                   </CardContent>
