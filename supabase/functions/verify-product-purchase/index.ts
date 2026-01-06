@@ -20,23 +20,43 @@ serve(async (req) => {
   try {
     console.log("[VERIFY-PRODUCT-PURCHASE] Starting verification");
 
-    const supabaseClient = createClient(
-      Deno.env.get("SUPABASE_URL") ?? "",
-      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? ""
-    );
+    const supabaseUrl = Deno.env.get("SUPABASE_URL") ?? "";
+    const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "";
+    const anonKey = Deno.env.get("SUPABASE_ANON_KEY") ?? "";
+
+    // Prefer service role for server-side writes (bypasses RLS). If not available, fall back to
+    // an anon client that forwards the user's JWT (RLS enforced).
+    const supabaseAdmin = serviceRoleKey
+      ? createClient(supabaseUrl, serviceRoleKey)
+      : null;
+
+    const authHeader = req.headers.get("Authorization") ?? "";
+    const supabaseUser = createClient(supabaseUrl, anonKey, {
+      global: {
+        headers: authHeader ? { Authorization: authHeader } : {},
+      },
+    });
+
+    const db = supabaseAdmin ?? supabaseUser;
+
+    console.log("[VERIFY-PRODUCT-PURCHASE] Admin key present:", Boolean(serviceRoleKey));
 
     // Initialize Resend for email notifications
     const resendKey = Deno.env.get("RESEND_API_KEY");
     const resend = resendKey ? new Resend(resendKey) : null;
 
     // Get auth user for re-download requests
-    const authHeader = req.headers.get("Authorization");
     let authUserId: string | null = null;
-    
+
     if (authHeader) {
-      const { data: { user } } = await supabaseClient.auth.getUser(
+      const { data: { user }, error: authError } = await supabaseUser.auth.getUser(
         authHeader.replace("Bearer ", "")
       );
+
+      if (authError) {
+        console.error("[VERIFY-PRODUCT-PURCHASE] Auth error:", authError);
+      }
+
       authUserId = user?.id || null;
     }
 
@@ -47,7 +67,7 @@ serve(async (req) => {
       console.log("[VERIFY-PRODUCT-PURCHASE] Re-download request for product:", redownloadProductId);
       
       // Verify the user has purchased this product
-      const { data: purchase, error: purchaseError } = await supabaseClient
+      const { data: purchase, error: purchaseError } = await db
         .from("product_purchases")
         .select("*, mentor_products(*)")
         .eq("product_id", redownloadProductId)
@@ -66,7 +86,7 @@ serve(async (req) => {
         ? product.file_url.split("/product-files/")[1]
         : product.file_url;
         
-      const { data: signedUrlData } = await supabaseClient.storage
+      const { data: signedUrlData } = await db.storage
         .from("product-files")
         .createSignedUrl(filePath, SIGNED_URL_EXPIRATION);
 
@@ -116,7 +136,7 @@ serve(async (req) => {
     }
 
     // Check if this purchase was already verified (idempotency)
-    const { data: existingPurchase } = await supabaseClient
+    const { data: existingPurchase } = await db
       .from("product_purchases")
       .select("*")
       .eq("stripe_session_id", sessionId)
@@ -127,7 +147,7 @@ serve(async (req) => {
       console.log("[VERIFY-PRODUCT-PURCHASE] Purchase already verified, returning existing data");
       
       // Get product for download URL
-      const { data: product } = await supabaseClient
+      const { data: product } = await db
         .from("mentor_products")
         .select("*")
         .eq("id", productId)
@@ -138,7 +158,7 @@ serve(async (req) => {
           ? product.file_url.split("/product-files/")[1]
           : product.file_url;
           
-        const { data: signedUrlData } = await supabaseClient.storage
+        const { data: signedUrlData } = await db.storage
           .from("product-files")
           .createSignedUrl(filePath, SIGNED_URL_EXPIRATION);
 
@@ -157,7 +177,7 @@ serve(async (req) => {
     }
 
     // Get product details with mentor info
-    const { data: product, error: productError } = await supabaseClient
+    const { data: product, error: productError } = await db
       .from("mentor_products")
       .select(`
         *,
@@ -171,7 +191,7 @@ serve(async (req) => {
     }
 
     // Get buyer email from purchase record or session
-    const { data: purchaseRecord } = await supabaseClient
+    const { data: purchaseRecord } = await db
       .from("product_purchases")
       .select("id, buyer_email")
       .eq("stripe_session_id", sessionId)
@@ -182,7 +202,7 @@ serve(async (req) => {
     // Update or create purchase record
     if (purchaseRecord) {
       // Update existing record
-      const { error: updateError } = await supabaseClient
+      const { error: updateError } = await db
         .from("product_purchases")
         .update({
           status: "completed",
@@ -196,7 +216,7 @@ serve(async (req) => {
     } else {
       // Create the purchase record if it doesn't exist (fallback for edge cases)
       console.log("[VERIFY-PRODUCT-PURCHASE] No pending purchase found, creating record");
-      const { error: insertError } = await supabaseClient
+      const { error: insertError } = await db
         .from("product_purchases")
         .insert({
           product_id: productId,
@@ -210,11 +230,12 @@ serve(async (req) => {
 
       if (insertError) {
         console.error("[VERIFY-PRODUCT-PURCHASE] Insert error:", insertError);
+        throw new Error("Could not record the purchase. Please contact support.");
       }
     }
 
     // Update product sales count and earnings
-    const { error: productUpdateError } = await supabaseClient
+    const { error: productUpdateError } = await db
       .from("mentor_products")
       .update({
         sales_count: product.sales_count + 1,
@@ -233,7 +254,7 @@ serve(async (req) => {
       ? product.file_url.split("/product-files/")[1]
       : product.file_url;
       
-    const { data: signedUrlData } = await supabaseClient.storage
+    const { data: signedUrlData } = await db.storage
       .from("product-files")
       .createSignedUrl(filePath, SIGNED_URL_EXPIRATION);
 
@@ -312,9 +333,9 @@ serve(async (req) => {
       // Send mentor notification email
       try {
         // Get mentor's email from auth.users via their user_id
-        const { data: mentorAuth } = await supabaseClient.auth.admin.getUserById(
-          product.mentor_profiles.user_id
-        );
+         const { data: mentorAuth } = supabaseAdmin
+            ? await supabaseAdmin.auth.admin.getUserById(product.mentor_profiles.user_id)
+            : { data: null };
 
         if (mentorAuth?.user?.email) {
           const mentorHtml = `
