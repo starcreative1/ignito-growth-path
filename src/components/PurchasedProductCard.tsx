@@ -2,9 +2,11 @@ import { useState } from "react";
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Download, FileText, FileImage, FileVideo, File, Loader2 } from "lucide-react";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Download, FileText, FileImage, FileVideo, File, Loader2, Eye, Calendar } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import { formatDistanceToNow } from "date-fns";
 
 interface Purchase {
   id: string;
@@ -18,6 +20,10 @@ interface Purchase {
     file_type: string;
     preview_image_url: string | null;
     mentor_id: string;
+    mentor_profiles?: {
+      name: string;
+      image_url: string | null;
+    } | null;
   } | null;
 }
 
@@ -32,20 +38,20 @@ export const PurchasedProductCard = ({ purchase }: PurchasedProductCardProps) =>
   const getFileTypeIcon = (fileType: string) => {
     switch (fileType) {
       case "pdf":
-        return <FileText className="h-5 w-5" />;
+        return <FileText className="h-8 w-8 text-muted-foreground" />;
       case "image":
-        return <FileImage className="h-5 w-5" />;
+        return <FileImage className="h-8 w-8 text-muted-foreground" />;
       case "video":
-        return <FileVideo className="h-5 w-5" />;
+        return <FileVideo className="h-8 w-8 text-muted-foreground" />;
       default:
-        return <File className="h-5 w-5" />;
+        return <File className="h-8 w-8 text-muted-foreground" />;
     }
   };
 
   const getFileTypeLabel = (fileType: string) => {
     switch (fileType) {
       case "pdf":
-        return "PDF Document";
+        return "PDF";
       case "image":
         return "Image";
       case "video":
@@ -98,8 +104,11 @@ export const PurchasedProductCard = ({ purchase }: PurchasedProductCardProps) =>
     return null;
   }
 
+  const mentorName = purchase.product.mentor_profiles?.name || "Unknown Mentor";
+  const mentorImage = purchase.product.mentor_profiles?.image_url;
+
   return (
-    <Card className="overflow-hidden">
+    <Card className="overflow-hidden hover:shadow-lg transition-shadow">
       <div className="aspect-video relative bg-muted">
         {purchase.product.preview_image_url ? (
           <img
@@ -108,7 +117,7 @@ export const PurchasedProductCard = ({ purchase }: PurchasedProductCardProps) =>
             className="w-full h-full object-cover"
           />
         ) : (
-          <div className="w-full h-full flex items-center justify-center">
+          <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-muted to-muted/50">
             {getFileTypeIcon(purchase.product.file_type)}
           </div>
         )}
@@ -116,25 +125,35 @@ export const PurchasedProductCard = ({ purchase }: PurchasedProductCardProps) =>
           {getFileTypeLabel(purchase.product.file_type)}
         </Badge>
       </div>
+      
       <CardHeader className="pb-2">
         <CardTitle className="text-lg line-clamp-1">{purchase.product.title}</CardTitle>
+        <div className="flex items-center gap-2 mt-2">
+          <Avatar className="h-6 w-6">
+            <AvatarImage src={mentorImage || undefined} alt={mentorName} />
+            <AvatarFallback className="text-xs">
+              {mentorName.split(" ").map(n => n[0]).join("").slice(0, 2)}
+            </AvatarFallback>
+          </Avatar>
+          <span className="text-sm text-muted-foreground">{mentorName}</span>
+        </div>
       </CardHeader>
+      
       <CardContent className="pb-2">
         <p className="text-sm text-muted-foreground line-clamp-2">
           {purchase.product.description}
         </p>
-        <div className="flex items-center justify-between mt-3 text-sm">
-          <span className="text-muted-foreground">
-            Purchased {new Date(purchase.created_at).toLocaleDateString()}
-          </span>
-          <span className="font-semibold">${purchase.amount}</span>
+        <div className="flex items-center gap-2 mt-3 text-sm text-muted-foreground">
+          <Calendar className="h-4 w-4" />
+          <span>Purchased {formatDistanceToNow(new Date(purchase.created_at), { addSuffix: true })}</span>
         </div>
       </CardContent>
-      <CardFooter>
+      
+      <CardFooter className="gap-2">
         <Button 
           onClick={handleDownload} 
           disabled={downloading || purchase.status !== "completed"}
-          className="w-full"
+          className="flex-1"
         >
           {downloading ? (
             <>
