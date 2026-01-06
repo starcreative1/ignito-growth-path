@@ -14,8 +14,9 @@ import { RecommendationsCard } from "@/components/RecommendationsCard";
 import { ConversationsList } from "@/components/ConversationsList";
 import { NotificationSettings } from "@/components/NotificationSettings";
 import { PurchasedProductCard } from "@/components/PurchasedProductCard";
+import { DashboardQuestionsTab } from "@/components/DashboardQuestionsTab";
 import { User, Session } from "@supabase/supabase-js";
-import { Calendar, Clock, LogOut, Settings, ShoppingBag } from "lucide-react";
+import { Calendar, Clock, LogOut, Settings, ShoppingBag, MessageCircle } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 
 interface Profile {
@@ -249,6 +250,10 @@ const Dashboard = () => {
           <TabsList className="flex-wrap">
             <TabsTrigger value="recommendations">Recommendations</TabsTrigger>
             <TabsTrigger value="sessions">My Sessions</TabsTrigger>
+            <TabsTrigger value="questions">
+              <MessageCircle className="h-4 w-4 mr-2" />
+              My Questions
+            </TabsTrigger>
             <TabsTrigger value="purchases">
               <ShoppingBag className="h-4 w-4 mr-2" />
               My Purchases
@@ -266,6 +271,10 @@ const Dashboard = () => {
               recommendations={recommendations}
               loading={recommendationsLoading}
             />
+          </TabsContent>
+
+          <TabsContent value="questions" className="space-y-6">
+            <DashboardQuestionsTab userId={user?.id || ""} />
           </TabsContent>
 
           <TabsContent value="purchases" className="space-y-6">
