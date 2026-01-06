@@ -83,9 +83,14 @@ const MyQuestions = () => {
 
       const transformedQuestions = (data || []).map(q => ({
         ...q,
-        mentor_video_answers: Array.isArray(q.mentor_video_answers) ? q.mentor_video_answers : []
+        mentor_video_answers: Array.isArray(q.mentor_video_answers) 
+          ? q.mentor_video_answers 
+          : q.mentor_video_answers 
+            ? [q.mentor_video_answers] 
+            : []
       }));
 
+      console.log("Loaded questions:", transformedQuestions);
       setQuestions(transformedQuestions);
     } catch (error) {
       console.error("Error loading questions:", error);
