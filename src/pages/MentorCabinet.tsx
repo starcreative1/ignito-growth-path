@@ -14,8 +14,9 @@ import { NotificationSettings } from "@/components/NotificationSettings";
 import { AvatarManagementTab } from "@/components/AvatarManagementTab";
 import { MentorProductsTab } from "@/components/MentorProductsTab";
 import { MentorSalesTab } from "@/components/MentorSalesTab";
+import { MentorQuestionsTab } from "@/components/MentorQuestionsTab";
 import { User } from "@supabase/supabase-js";
-import { LogOut, Settings, ShoppingBag, Receipt } from "lucide-react";
+import { LogOut, Settings, ShoppingBag, Receipt, MessageCircle } from "lucide-react";
 
 interface MentorProfile {
   id: string;
@@ -259,6 +260,12 @@ const MentorCabinet = () => {
               </TabsTrigger>
             )}
             {mentorProfile && <TabsTrigger value="availability">Availability</TabsTrigger>}
+            {mentorProfile && (
+              <TabsTrigger value="questions">
+                <MessageCircle className="h-4 w-4 mr-2" />
+                Questions
+              </TabsTrigger>
+            )}
             {mentorProfile && <TabsTrigger value="sessions">Sessions</TabsTrigger>}
             {mentorProfile && <TabsTrigger value="messages">Messages</TabsTrigger>}
             <TabsTrigger value="settings">
@@ -311,6 +318,10 @@ const MentorCabinet = () => {
                   timeSlots={timeSlots}
                   onUpdate={() => loadMentorData(user?.id || "")}
                 />
+              </TabsContent>
+
+              <TabsContent value="questions">
+                <MentorQuestionsTab mentorId={mentorProfile.id} />
               </TabsContent>
 
               <TabsContent value="sessions" className="space-y-6">
