@@ -16,6 +16,13 @@ serve(async (req) => {
   try {
     console.log("[CREATE-PRODUCT-CHECKOUT] Starting checkout process");
 
+    // Use service role key for server-side operations
+    const supabaseAdmin = createClient(
+      Deno.env.get("SUPABASE_URL") ?? "",
+      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? ""
+    );
+
+    // Use anon key with auth context for user verification
     const supabaseClient = createClient(
       Deno.env.get("SUPABASE_URL") ?? "",
       Deno.env.get("SUPABASE_ANON_KEY") ?? ""
@@ -68,8 +75,8 @@ serve(async (req) => {
 
     console.log("[CREATE-PRODUCT-CHECKOUT] Product found:", product.title);
 
-    // Check if user already purchased this product (prevent duplicates)
-    const { data: existingPurchase } = await supabaseClient
+    // Check if user already purchased this product (prevent duplicates) - use admin to bypass RLS
+    const { data: existingPurchase } = await supabaseAdmin
       .from("product_purchases")
       .select("id, status")
       .eq("product_id", productId)
@@ -133,8 +140,8 @@ serve(async (req) => {
 
     console.log("[CREATE-PRODUCT-CHECKOUT] Checkout session created:", session.id);
 
-    // Create pending purchase record
-    const { error: purchaseError } = await supabaseClient
+    // Create pending purchase record using admin client to bypass RLS
+    const { error: purchaseError } = await supabaseAdmin
       .from("product_purchases")
       .insert({
         product_id: productId,
@@ -147,6 +154,9 @@ serve(async (req) => {
 
     if (purchaseError) {
       console.error("[CREATE-PRODUCT-CHECKOUT] Purchase record error:", purchaseError);
+      // Don't fail the request - the purchase can still be verified via Stripe webhook
+    } else {
+      console.log("[CREATE-PRODUCT-CHECKOUT] Pending purchase record created");
     }
 
     return new Response(JSON.stringify({ url: session.url }), {
