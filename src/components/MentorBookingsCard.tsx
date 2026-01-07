@@ -24,42 +24,47 @@ export const MentorBookingsCard = ({ bookings, type }: MentorBookingsCardProps) 
 
   return (
     <Card>
-      <CardHeader>
-        <CardTitle>{title}</CardTitle>
-        <CardDescription>{description}</CardDescription>
+      <CardHeader className="p-4 sm:p-6">
+        <CardTitle className="text-lg sm:text-xl">{title}</CardTitle>
+        <CardDescription className="text-sm">{description}</CardDescription>
       </CardHeader>
-      <CardContent>
+      <CardContent className="p-4 sm:p-6 pt-0 sm:pt-0">
         {bookings.length === 0 ? (
-          <p className="text-center py-8 text-muted-foreground">
+          <p className="text-center py-6 sm:py-8 text-muted-foreground text-sm">
             No {type} sessions
           </p>
         ) : (
-          <div className="space-y-4">
+          <div className="space-y-3 sm:space-y-4">
             {bookings.map((booking) => (
               <div 
                 key={booking.id} 
-                className={`flex items-center justify-between p-4 border rounded-lg ${
+                className={`flex flex-col sm:flex-row sm:items-center justify-between p-3 sm:p-4 border rounded-lg gap-3 ${
                   type === "past" ? "opacity-60" : ""
                 }`}
               >
-                <div className="space-y-1 flex-1">
-                  <p className="font-semibold">{booking.user_email}</p>
-                  <div className="flex gap-4 text-sm text-muted-foreground">
+                <div className="space-y-2 sm:space-y-1 flex-1 min-w-0">
+                  <div className="flex items-center justify-between sm:justify-start gap-2">
+                    <p className="font-semibold text-sm sm:text-base truncate">{booking.user_email}</p>
+                    <Badge variant={type === "past" ? "secondary" : "default"} className="sm:hidden shrink-0">
+                      {booking.status}
+                    </Badge>
+                  </div>
+                  <div className="flex flex-wrap gap-2 sm:gap-4 text-xs sm:text-sm text-muted-foreground">
                     <span className="flex items-center gap-1">
-                      <Calendar className="h-4 w-4" />
+                      <Calendar className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
                       {new Date(booking.booking_date).toLocaleDateString()}
                     </span>
                     <span className="flex items-center gap-1">
-                      <Clock className="h-4 w-4" />
+                      <Clock className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
                       {booking.booking_time}
                     </span>
                     <span className="flex items-center gap-1">
-                      <DollarSign className="h-4 w-4" />
+                      <DollarSign className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
                       ${booking.price}
                     </span>
                   </div>
                 </div>
-                <Badge variant={type === "past" ? "secondary" : "default"}>
+                <Badge variant={type === "past" ? "secondary" : "default"} className="hidden sm:inline-flex shrink-0">
                   {booking.status}
                 </Badge>
               </div>

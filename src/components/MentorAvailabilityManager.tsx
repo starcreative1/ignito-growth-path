@@ -78,15 +78,15 @@ export const MentorAvailabilityManager = ({ mentorId, timeSlots, onUpdate }: Men
 
   return (
     <Card>
-      <CardHeader>
-        <CardTitle>Availability Management</CardTitle>
-        <CardDescription>Manage your available time slots for bookings</CardDescription>
+      <CardHeader className="p-4 sm:p-6">
+        <CardTitle className="text-lg sm:text-xl">Availability Management</CardTitle>
+        <CardDescription className="text-sm">Manage your available time slots for bookings</CardDescription>
       </CardHeader>
-      <CardContent className="space-y-6">
-        <form onSubmit={handleAddTimeSlot} className="space-y-4">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div className="space-y-2 md:col-span-1">
-              <Label htmlFor="date">Date</Label>
+      <CardContent className="p-4 sm:p-6 pt-0 sm:pt-0 space-y-4 sm:space-y-6">
+        <form onSubmit={handleAddTimeSlot} className="space-y-3 sm:space-y-4">
+          <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 sm:gap-4">
+            <div className="space-y-1.5 sm:space-y-2">
+              <Label htmlFor="date" className="text-xs sm:text-sm">Date</Label>
               <Input
                 id="date"
                 type="date"
@@ -94,31 +94,33 @@ export const MentorAvailabilityManager = ({ mentorId, timeSlots, onUpdate }: Men
                 onChange={(e) => setDate(e.target.value)}
                 min={new Date().toISOString().split('T')[0]}
                 required
+                className="h-9 sm:h-10 text-sm"
               />
             </div>
-            <div className="space-y-2 md:col-span-1">
-              <Label htmlFor="time">Time</Label>
+            <div className="space-y-1.5 sm:space-y-2">
+              <Label htmlFor="time" className="text-xs sm:text-sm">Time</Label>
               <Input
                 id="time"
                 type="time"
                 value={time}
                 onChange={(e) => setTime(e.target.value)}
                 required
+                className="h-9 sm:h-10 text-sm"
               />
             </div>
-            <div className="flex items-end">
-              <Button type="submit" className="w-full">
-                <Plus className="mr-2 h-4 w-4" />
-                Add Time Slot
+            <div className="flex items-end col-span-2 sm:col-span-1">
+              <Button type="submit" className="w-full h-9 sm:h-10 text-sm">
+                <Plus className="mr-1.5 sm:mr-2 h-4 w-4" />
+                Add Slot
               </Button>
             </div>
           </div>
         </form>
 
-        <div className="space-y-4">
-          <h3 className="text-sm font-semibold">Available Time Slots</h3>
+        <div className="space-y-3 sm:space-y-4">
+          <h3 className="text-xs sm:text-sm font-semibold">Available Time Slots</h3>
           {timeSlots.length === 0 ? (
-            <p className="text-sm text-muted-foreground text-center py-4">
+            <p className="text-xs sm:text-sm text-muted-foreground text-center py-4">
               No time slots configured yet
             </p>
           ) : (
@@ -126,18 +128,18 @@ export const MentorAvailabilityManager = ({ mentorId, timeSlots, onUpdate }: Men
               {timeSlots.map((slot) => (
                 <div 
                   key={slot.id} 
-                  className="flex items-center justify-between p-3 border rounded-lg"
+                  className="flex items-center justify-between p-2.5 sm:p-3 border rounded-lg gap-2"
                 >
-                  <div className="flex items-center gap-4">
-                    <div className="flex items-center gap-2 text-sm">
-                      <Calendar className="h-4 w-4 text-muted-foreground" />
-                      <span>{new Date(slot.date).toLocaleDateString()}</span>
+                  <div className="flex flex-wrap items-center gap-2 sm:gap-4 flex-1 min-w-0">
+                    <div className="flex items-center gap-1.5 sm:gap-2 text-xs sm:text-sm">
+                      <Calendar className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-muted-foreground shrink-0" />
+                      <span className="truncate">{new Date(slot.date).toLocaleDateString()}</span>
                     </div>
-                    <div className="flex items-center gap-2 text-sm">
-                      <Clock className="h-4 w-4 text-muted-foreground" />
+                    <div className="flex items-center gap-1.5 sm:gap-2 text-xs sm:text-sm">
+                      <Clock className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-muted-foreground shrink-0" />
                       <span>{slot.time}</span>
                     </div>
-                    <Badge variant={slot.is_available ? "default" : "secondary"}>
+                    <Badge variant={slot.is_available ? "default" : "secondary"} className="text-[10px] sm:text-xs">
                       {slot.is_available ? "Available" : "Booked"}
                     </Badge>
                   </div>
@@ -146,6 +148,7 @@ export const MentorAvailabilityManager = ({ mentorId, timeSlots, onUpdate }: Men
                       variant="ghost"
                       size="sm"
                       onClick={() => handleDeleteTimeSlot(slot.id)}
+                      className="h-8 w-8 p-0 shrink-0"
                     >
                       <Trash2 className="h-4 w-4 text-destructive" />
                     </Button>

@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
 import { useToast } from "@/hooks/use-toast";
 import Navbar from "@/components/Navbar";
 import { MentorStatsCard } from "@/components/MentorStatsCard";
@@ -16,7 +17,7 @@ import { MentorProductsTab } from "@/components/MentorProductsTab";
 import { MentorSalesTab } from "@/components/MentorSalesTab";
 import { MentorQuestionsTab } from "@/components/MentorQuestionsTab";
 import { User } from "@supabase/supabase-js";
-import { LogOut, Settings, ShoppingBag, Receipt, MessageCircle } from "lucide-react";
+import { LogOut, Settings, ShoppingBag, Receipt, MessageCircle, LayoutDashboard, User as UserIcon, Bot, CalendarClock, HelpCircle, CalendarDays, MessageSquare } from "lucide-react";
 
 interface MentorProfile {
   id: string;
@@ -217,22 +218,23 @@ const MentorCabinet = () => {
   return (
     <div className="min-h-screen bg-background">
       <Navbar />
-      <div className="container pt-32 px-4 pb-16">
-        <div className="flex justify-between items-center mb-8">
-          <div>
-            <h1 className="text-4xl font-bold mb-2">Mentor Cabinet</h1>
-            <p className="text-muted-foreground">
+      <div className="container pt-24 sm:pt-32 px-3 sm:px-4 pb-16">
+        {/* Mobile-friendly header */}
+        <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4 mb-6 sm:mb-8">
+          <div className="min-w-0">
+            <h1 className="text-2xl sm:text-4xl font-bold mb-1 sm:mb-2 truncate">Mentor Cabinet</h1>
+            <p className="text-sm sm:text-base text-muted-foreground truncate">
               Welcome back, {mentorProfile?.name || user?.email}
             </p>
           </div>
-          <Button onClick={handleSignOut} variant="outline">
+          <Button onClick={handleSignOut} variant="outline" size="sm" className="self-start sm:self-auto shrink-0">
             <LogOut className="mr-2 h-4 w-4" />
             Sign Out
           </Button>
         </div>
 
         {mentorProfile && (
-          <div className="mb-6">
+          <div className="mb-4 sm:mb-6">
             <MentorStatsCard
               totalEarnings={totalEarnings}
               totalStudents={uniqueStudents}
@@ -242,37 +244,74 @@ const MentorCabinet = () => {
           </div>
         )}
 
-        <Tabs defaultValue={mentorProfile ? "overview" : "profile"} className="space-y-6">
-          <TabsList>
-            {mentorProfile && <TabsTrigger value="overview">Overview</TabsTrigger>}
-            <TabsTrigger value="profile">Profile</TabsTrigger>
-            {mentorProfile && <TabsTrigger value="avatar">AI Avatar</TabsTrigger>}
-            {mentorProfile && (
-              <TabsTrigger value="shop">
-                <ShoppingBag className="h-4 w-4 mr-2" />
-                Shop
+        <Tabs defaultValue={mentorProfile ? "overview" : "profile"} className="space-y-4 sm:space-y-6">
+          {/* Scrollable tabs for mobile */}
+          <ScrollArea className="w-full whitespace-nowrap">
+            <TabsList className="inline-flex h-auto p-1 w-max min-w-full sm:w-auto sm:flex-wrap gap-1">
+              {mentorProfile && (
+                <TabsTrigger value="overview" className="px-3 py-2 text-xs sm:text-sm">
+                  <LayoutDashboard className="h-4 w-4 mr-1.5 sm:mr-2" />
+                  <span className="hidden xs:inline">Overview</span>
+                  <span className="xs:hidden">Home</span>
+                </TabsTrigger>
+              )}
+              <TabsTrigger value="profile" className="px-3 py-2 text-xs sm:text-sm">
+                <UserIcon className="h-4 w-4 mr-1.5 sm:mr-2" />
+                Profile
               </TabsTrigger>
-            )}
-            {mentorProfile && (
-              <TabsTrigger value="sales">
-                <Receipt className="h-4 w-4 mr-2" />
-                Sales
+              {mentorProfile && (
+                <TabsTrigger value="avatar" className="px-3 py-2 text-xs sm:text-sm">
+                  <Bot className="h-4 w-4 mr-1.5 sm:mr-2" />
+                  <span className="hidden sm:inline">AI Avatar</span>
+                  <span className="sm:hidden">Avatar</span>
+                </TabsTrigger>
+              )}
+              {mentorProfile && (
+                <TabsTrigger value="shop" className="px-3 py-2 text-xs sm:text-sm">
+                  <ShoppingBag className="h-4 w-4 mr-1.5 sm:mr-2" />
+                  Shop
+                </TabsTrigger>
+              )}
+              {mentorProfile && (
+                <TabsTrigger value="sales" className="px-3 py-2 text-xs sm:text-sm">
+                  <Receipt className="h-4 w-4 mr-1.5 sm:mr-2" />
+                  Sales
+                </TabsTrigger>
+              )}
+              {mentorProfile && (
+                <TabsTrigger value="availability" className="px-3 py-2 text-xs sm:text-sm">
+                  <CalendarClock className="h-4 w-4 mr-1.5 sm:mr-2" />
+                  <span className="hidden sm:inline">Availability</span>
+                  <span className="sm:hidden">Slots</span>
+                </TabsTrigger>
+              )}
+              {mentorProfile && (
+                <TabsTrigger value="questions" className="px-3 py-2 text-xs sm:text-sm">
+                  <HelpCircle className="h-4 w-4 mr-1.5 sm:mr-2" />
+                  <span className="hidden sm:inline">Questions</span>
+                  <span className="sm:hidden">Q&A</span>
+                </TabsTrigger>
+              )}
+              {mentorProfile && (
+                <TabsTrigger value="sessions" className="px-3 py-2 text-xs sm:text-sm">
+                  <CalendarDays className="h-4 w-4 mr-1.5 sm:mr-2" />
+                  Sessions
+                </TabsTrigger>
+              )}
+              {mentorProfile && (
+                <TabsTrigger value="messages" className="px-3 py-2 text-xs sm:text-sm">
+                  <MessageSquare className="h-4 w-4 mr-1.5 sm:mr-2" />
+                  <span className="hidden sm:inline">Messages</span>
+                  <span className="sm:hidden">Chat</span>
+                </TabsTrigger>
+              )}
+              <TabsTrigger value="settings" className="px-3 py-2 text-xs sm:text-sm">
+                <Settings className="h-4 w-4 mr-1.5 sm:mr-2" />
+                Settings
               </TabsTrigger>
-            )}
-            {mentorProfile && <TabsTrigger value="availability">Availability</TabsTrigger>}
-            {mentorProfile && (
-              <TabsTrigger value="questions">
-                <MessageCircle className="h-4 w-4 mr-2" />
-                Questions
-              </TabsTrigger>
-            )}
-            {mentorProfile && <TabsTrigger value="sessions">Sessions</TabsTrigger>}
-            {mentorProfile && <TabsTrigger value="messages">Messages</TabsTrigger>}
-            <TabsTrigger value="settings">
-              <Settings className="h-4 w-4 mr-2" />
-              Settings
-            </TabsTrigger>
-          </TabsList>
+            </TabsList>
+            <ScrollBar orientation="horizontal" className="invisible" />
+          </ScrollArea>
 
           {mentorProfile && (
             <TabsContent value="overview" className="space-y-6">
