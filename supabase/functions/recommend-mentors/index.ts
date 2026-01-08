@@ -12,18 +12,38 @@ serve(async (req) => {
   }
 
   try {
-    const { userId } = await req.json();
-
-    if (!userId) {
-      throw new Error("User ID is required");
+    // Require authentication
+    const authHeader = req.headers.get("Authorization");
+    if (!authHeader?.startsWith("Bearer ")) {
+      return new Response(
+        JSON.stringify({ error: "Authentication required" }),
+        { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
     }
 
+    // Create client with user's auth context
     const supabaseClient = createClient(
       Deno.env.get("SUPABASE_URL") ?? "",
-      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? ""
+      Deno.env.get("SUPABASE_ANON_KEY") ?? "",
+      { global: { headers: { Authorization: authHeader } } }
     );
 
-    // Get user profile
+    // Verify authentication using getClaims
+    const token = authHeader.replace("Bearer ", "");
+    const { data: claimsData, error: claimsError } = await supabaseClient.auth.getClaims(token);
+    
+    if (claimsError || !claimsData?.claims) {
+      console.error("[RECOMMEND-MENTORS] Auth error:", claimsError);
+      return new Response(
+        JSON.stringify({ error: "Authentication required" }),
+        { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    const userId = claimsData.claims.sub;
+    console.log("[RECOMMEND-MENTORS] Authenticated user:", userId);
+
+    // Get user profile using their own auth context (respects RLS)
     const { data: profile, error: profileError } = await supabaseClient
       .from("profiles")
       .select("*")
@@ -50,9 +70,9 @@ serve(async (req) => {
       );
     }
 
-    console.log("[RECOMMEND-MENTORS] Profile loaded:", profile);
+    console.log("[RECOMMEND-MENTORS] Profile loaded for user:", userId);
 
-    // Fetch real mentors from database
+    // Fetch real mentors from database (mentor_profiles are publicly readable)
     const { data: mentors, error: mentorsError } = await supabaseClient
       .from("mentor_profiles")
       .select("*")
