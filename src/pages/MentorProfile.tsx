@@ -284,80 +284,81 @@ const MentorProfile = () => {
       <Navbar />
 
       {/* Hero Section */}
-      <section className="pt-32 pb-16 bg-gradient-accent">
+      <section className="pt-24 sm:pt-32 pb-8 sm:pb-16 bg-gradient-accent">
         <div className="container mx-auto px-4 sm:px-6 lg:px-8">
           <Button
             variant="ghost"
             onClick={() => navigate("/mentors")}
-            className="mb-6"
+            className="mb-4 sm:mb-6 -ml-2"
+            size="sm"
           >
-            <ArrowLeft size={20} className="mr-2" />
-            Back to Mentors
+            <ArrowLeft size={18} className="mr-1.5" />
+            Back
           </Button>
 
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 sm:gap-8">
             {/* Profile Card */}
             <div className="lg:col-span-1">
-              <Card className="sticky top-24">
-                <CardContent className="p-6 space-y-6">
+              <Card className="lg:sticky lg:top-24">
+                <CardContent className="p-4 sm:p-6 space-y-4 sm:space-y-6">
                   {/* Image */}
                   <div className="relative">
                     <img
                       src={mentor.image}
                       alt={mentor.name}
-                      className="w-full aspect-square object-cover rounded-lg"
+                      className="w-full aspect-square object-cover rounded-lg max-w-[200px] sm:max-w-none mx-auto"
                     />
-                    <Badge className="absolute top-4 right-4 bg-accent text-accent-foreground shadow-medium">
+                    <Badge className="absolute top-3 right-3 sm:top-4 sm:right-4 bg-accent text-accent-foreground shadow-medium text-xs sm:text-sm">
                       {mentor.category}
                     </Badge>
                   </div>
 
                   {/* Name & Title */}
                   <div className="text-center">
-                    <h1 className="text-3xl font-display font-bold mb-2">
+                    <h1 className="text-2xl sm:text-3xl font-display font-bold mb-1 sm:mb-2">
                       {mentor.name}
                     </h1>
-                    <p className="text-muted-foreground mb-4">{mentor.title}</p>
+                    <p className="text-sm sm:text-base text-muted-foreground mb-3 sm:mb-4">{mentor.title}</p>
 
                     {/* Rating */}
-                    <div className="flex items-center justify-center gap-2 mb-4">
+                    <div className="flex items-center justify-center gap-2 mb-3 sm:mb-4">
                       <div className="flex items-center gap-1">
-                        <Star className="text-accent fill-accent" size={20} />
-                        <span className="text-xl font-semibold">{mentor.rating}</span>
+                        <Star className="text-accent fill-accent" size={18} />
+                        <span className="text-lg sm:text-xl font-semibold">{mentor.rating}</span>
                       </div>
-                      <span className="text-muted-foreground">
+                      <span className="text-sm text-muted-foreground">
                         ({mentor.reviewCount} reviews)
                       </span>
                     </div>
                   </div>
 
                   {/* Quick Stats */}
-                  <div className="space-y-3 pt-4 border-t border-border">
-                    <div className="flex items-center gap-2 text-sm">
-                      <Globe size={16} className="text-muted-foreground" />
-                      <span>{mentor.languages.join(", ")}</span>
+                  <div className="space-y-2 sm:space-y-3 pt-3 sm:pt-4 border-t border-border">
+                    <div className="flex items-center gap-2 text-xs sm:text-sm">
+                      <Globe size={14} className="text-muted-foreground shrink-0" />
+                      <span className="truncate">{mentor.languages.join(", ")}</span>
                     </div>
-                    <div className="flex items-center gap-2 text-sm">
-                      <Calendar size={16} className="text-muted-foreground" />
+                    <div className="flex items-center gap-2 text-xs sm:text-sm">
+                      <Calendar size={14} className="text-muted-foreground shrink-0" />
                       <span>{mentor.availability}</span>
                     </div>
-                    <div className="flex items-center gap-2 text-sm">
-                      <Award size={16} className="text-muted-foreground" />
+                    <div className="flex items-center gap-2 text-xs sm:text-sm">
+                      <Award size={14} className="text-muted-foreground shrink-0" />
                       <span>{mentor.experience}</span>
                     </div>
                   </div>
 
                   {/* Price & CTA */}
-                  <div className="pt-4 border-t border-border space-y-4">
+                  <div className="pt-3 sm:pt-4 border-t border-border space-y-3 sm:space-y-4">
                     <div className="text-center">
-                      <div className="text-4xl font-display font-bold gradient-text mb-1">
+                      <div className="text-3xl sm:text-4xl font-display font-bold gradient-text mb-1">
                         ${mentor.price}
                       </div>
-                      <div className="text-sm text-muted-foreground">per session (60 min)</div>
+                      <div className="text-xs sm:text-sm text-muted-foreground">per session (60 min)</div>
                     </div>
                     <Button 
                       variant="hero" 
-                      size="lg" 
+                      size="default"
                       className="w-full"
                       onClick={() => setActiveTab("booking")}
                     >
@@ -365,11 +366,11 @@ const MentorProfile = () => {
                     </Button>
                     <Button 
                       variant="outline" 
-                      size="lg" 
+                      size="default"
                       className="w-full"
                       onClick={handleStartConversation}
                     >
-                      <MessageSquare size={18} className="mr-2" />
+                      <MessageSquare size={16} className="mr-2" />
                       Send Message
                     </Button>
                   </div>
@@ -379,16 +380,25 @@ const MentorProfile = () => {
 
             {/* Content Area */}
             <div className="lg:col-span-2">
-              <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-8">
-                <TabsList className="grid w-full grid-cols-4">
-                  <TabsTrigger value="overview">Overview</TabsTrigger>
-                  <TabsTrigger value="shop">
-                    <ShoppingBag size={16} className="mr-1" />
-                    Shop ({mentorProducts.length})
-                  </TabsTrigger>
-                  <TabsTrigger value="booking">Book Session</TabsTrigger>
-                  <TabsTrigger value="question">Ask Question</TabsTrigger>
-                </TabsList>
+              <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6 sm:space-y-8">
+                {/* Scrollable tabs for mobile */}
+                <div className="overflow-x-auto -mx-4 px-4 sm:mx-0 sm:px-0">
+                  <TabsList className="inline-flex w-max sm:grid sm:w-full sm:grid-cols-4 gap-1">
+                    <TabsTrigger value="overview" className="text-xs sm:text-sm whitespace-nowrap px-3 sm:px-4">
+                      Overview
+                    </TabsTrigger>
+                    <TabsTrigger value="shop" className="text-xs sm:text-sm whitespace-nowrap px-3 sm:px-4">
+                      <ShoppingBag size={14} className="mr-1 sm:mr-1.5" />
+                      Shop ({mentorProducts.length})
+                    </TabsTrigger>
+                    <TabsTrigger value="booking" className="text-xs sm:text-sm whitespace-nowrap px-3 sm:px-4">
+                      Book Session
+                    </TabsTrigger>
+                    <TabsTrigger value="question" className="text-xs sm:text-sm whitespace-nowrap px-3 sm:px-4">
+                      Ask Question
+                    </TabsTrigger>
+                  </TabsList>
+                </div>
 
                 {/* Overview Tab */}
                 <TabsContent value="overview" className="space-y-6">

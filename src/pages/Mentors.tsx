@@ -95,26 +95,26 @@ const Mentors = () => {
       <Navbar />
       
       {/* Hero Section */}
-      <section className="pt-32 pb-16 bg-gradient-accent">
+      <section className="pt-24 sm:pt-32 pb-8 sm:pb-16 bg-gradient-accent">
         <div className="container mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="max-w-4xl mx-auto text-center space-y-6">
-            <h1 className="text-5xl sm:text-6xl font-display font-bold">
+          <div className="max-w-4xl mx-auto text-center space-y-4 sm:space-y-6">
+            <h1 className="text-3xl sm:text-5xl lg:text-6xl font-display font-bold">
               Find Your Perfect{" "}
               <span className="gradient-text">Mentor</span>
             </h1>
-            <p className="text-xl text-muted-foreground">
+            <p className="text-base sm:text-xl text-muted-foreground px-2">
               Connect with industry experts in Business, Tech, and Creator industries
             </p>
 
             {/* Search Bar */}
             <div className="relative max-w-2xl mx-auto">
-              <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground" size={20} />
+              <Search className="absolute left-3 sm:left-4 top-1/2 -translate-y-1/2 text-muted-foreground" size={18} />
               <Input
                 type="text"
-                placeholder="Search by name, skill, or expertise..."
+                placeholder="Search mentors..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="pl-12 pr-4 py-6 text-lg"
+                className="pl-10 sm:pl-12 pr-4 py-5 sm:py-6 text-base sm:text-lg"
               />
             </div>
           </div>
@@ -122,32 +122,35 @@ const Mentors = () => {
       </section>
 
       {/* Filters Section */}
-      <section className="py-8 border-b border-border sticky top-16 bg-background/95 backdrop-blur-sm z-40">
+      <section className="py-4 sm:py-8 border-b border-border sticky top-16 bg-background/95 backdrop-blur-sm z-40">
         <div className="container mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex flex-col md:flex-row gap-6 items-center justify-between">
-            {/* Category Tabs */}
-            <Tabs value={selectedCategory} onValueChange={(value) => setSelectedCategory(value as CategoryFilter)} className="w-full md:w-auto">
-              <TabsList className="grid w-full md:w-auto grid-cols-4 gap-2">
-                {categories.map((category) => (
-                  <TabsTrigger
-                    key={category}
-                    value={category}
-                    className="text-base px-6"
-                  >
-                    {category}
-                  </TabsTrigger>
-                ))}
-              </TabsList>
-            </Tabs>
+          <div className="flex flex-col gap-4 sm:gap-6 sm:flex-row sm:items-center sm:justify-between">
+            {/* Category Tabs - Scrollable on mobile */}
+            <div className="overflow-x-auto -mx-4 px-4 sm:mx-0 sm:px-0">
+              <Tabs value={selectedCategory} onValueChange={(value) => setSelectedCategory(value as CategoryFilter)} className="w-max sm:w-auto">
+                <TabsList className="inline-flex gap-1 sm:gap-2">
+                  {categories.map((category) => (
+                    <TabsTrigger
+                      key={category}
+                      value={category}
+                      className="text-sm sm:text-base px-3 sm:px-6 whitespace-nowrap"
+                    >
+                      {category}
+                    </TabsTrigger>
+                  ))}
+                </TabsList>
+              </Tabs>
+            </div>
 
             {/* Sort Options */}
-            <div className="flex items-center gap-2">
-              <SlidersHorizontal size={16} className="text-muted-foreground" />
-              <span className="text-sm text-muted-foreground">Sort by:</span>
+            <div className="flex items-center gap-2 justify-center sm:justify-end">
+              <SlidersHorizontal size={14} className="text-muted-foreground" />
+              <span className="text-xs sm:text-sm text-muted-foreground">Sort:</span>
               <Button
                 variant={sortBy === "rating" ? "hero" : "ghost"}
                 size="sm"
                 onClick={() => setSortBy("rating")}
+                className="text-xs sm:text-sm h-8 px-2 sm:px-3"
               >
                 Rating
               </Button>
@@ -155,6 +158,7 @@ const Mentors = () => {
                 variant={sortBy === "price" ? "hero" : "ghost"}
                 size="sm"
                 onClick={() => setSortBy("price")}
+                className="text-xs sm:text-sm h-8 px-2 sm:px-3"
               >
                 Price
               </Button>

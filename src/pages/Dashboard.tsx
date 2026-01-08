@@ -243,40 +243,52 @@ const Dashboard = () => {
   return (
     <div className="min-h-screen bg-background">
       <Navbar />
-      <div className="container pt-32 px-4 pb-16">
-        <div className="flex justify-between items-center mb-8">
-          <div>
-            <h1 className="text-4xl font-bold mb-2">My Dashboard</h1>
-            <p className="text-muted-foreground">Welcome back, {profile?.full_name || user?.email}</p>
+      <div className="container pt-24 sm:pt-32 px-4 pb-16">
+        {/* Mobile-optimized header */}
+        <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4 mb-6 sm:mb-8">
+          <div className="min-w-0">
+            <h1 className="text-2xl sm:text-4xl font-bold mb-1 sm:mb-2 truncate">My Dashboard</h1>
+            <p className="text-sm sm:text-base text-muted-foreground truncate">Welcome back, {profile?.full_name || user?.email}</p>
           </div>
-          <Button onClick={handleSignOut} variant="outline">
+          <Button onClick={handleSignOut} variant="outline" size="sm" className="w-fit">
             <LogOut className="mr-2 h-4 w-4" />
             Sign Out
           </Button>
         </div>
 
-        <Tabs defaultValue="recommendations" className="space-y-6">
-          <TabsList className="flex-wrap">
-            <TabsTrigger value="recommendations">Recommendations</TabsTrigger>
-            <TabsTrigger value="sessions">My Sessions</TabsTrigger>
-            <TabsTrigger value="questions">
-              <MessageCircle className="h-4 w-4 mr-2" />
-              My Questions
-            </TabsTrigger>
-            <TabsTrigger value="purchases">
-              <ShoppingBag className="h-4 w-4 mr-2" />
-              My Purchases
-              {purchases.length > 0 && (
-                <Badge variant="secondary" className="ml-2">{purchases.length}</Badge>
-              )}
-            </TabsTrigger>
-            <TabsTrigger value="messages">Messages</TabsTrigger>
-            <TabsTrigger value="profile" id="profile-tab">Profile</TabsTrigger>
-            <TabsTrigger value="settings">
-              <Settings className="h-4 w-4 mr-2" />
-              Settings
-            </TabsTrigger>
-          </TabsList>
+        <Tabs defaultValue="recommendations" className="space-y-4 sm:space-y-6">
+          {/* Horizontally scrollable tabs for mobile */}
+          <div className="overflow-x-auto -mx-4 px-4 pb-2">
+            <TabsList className="inline-flex w-max min-w-full sm:w-auto sm:flex-wrap gap-1">
+              <TabsTrigger value="recommendations" className="text-xs sm:text-sm whitespace-nowrap">
+                Recommendations
+              </TabsTrigger>
+              <TabsTrigger value="sessions" className="text-xs sm:text-sm whitespace-nowrap">
+                Sessions
+              </TabsTrigger>
+              <TabsTrigger value="questions" className="text-xs sm:text-sm whitespace-nowrap">
+                <MessageCircle className="h-3.5 w-3.5 sm:h-4 sm:w-4 mr-1 sm:mr-2" />
+                Questions
+              </TabsTrigger>
+              <TabsTrigger value="purchases" className="text-xs sm:text-sm whitespace-nowrap">
+                <ShoppingBag className="h-3.5 w-3.5 sm:h-4 sm:w-4 mr-1 sm:mr-2" />
+                Purchases
+                {purchases.length > 0 && (
+                  <Badge variant="secondary" className="ml-1 sm:ml-2 text-xs">{purchases.length}</Badge>
+                )}
+              </TabsTrigger>
+              <TabsTrigger value="messages" className="text-xs sm:text-sm whitespace-nowrap">
+                Messages
+              </TabsTrigger>
+              <TabsTrigger value="profile" id="profile-tab" className="text-xs sm:text-sm whitespace-nowrap">
+                Profile
+              </TabsTrigger>
+              <TabsTrigger value="settings" className="text-xs sm:text-sm whitespace-nowrap">
+                <Settings className="h-3.5 w-3.5 sm:h-4 sm:w-4 mr-1 sm:mr-2" />
+                Settings
+              </TabsTrigger>
+            </TabsList>
+          </div>
 
           <TabsContent value="recommendations" className="space-y-6">
             <RecommendationsCard 
@@ -334,23 +346,26 @@ const Dashboard = () => {
                     </Button>
                   </div>
                 ) : (
-                  <div className="space-y-4">
+                  <div className="space-y-3 sm:space-y-4">
                     {upcomingSessions.map((booking) => (
-                      <div key={booking.id} className="flex items-center justify-between p-4 border rounded-lg">
-                        <div className="space-y-1">
-                          <p className="font-semibold">{booking.mentor_name}</p>
-                          <div className="flex gap-4 text-sm text-muted-foreground">
+                      <div key={booking.id} className="flex flex-col sm:flex-row sm:items-center justify-between p-3 sm:p-4 border rounded-lg gap-2 sm:gap-4">
+                        <div className="space-y-1 min-w-0 flex-1">
+                          <div className="flex items-center justify-between sm:justify-start gap-2">
+                            <p className="font-semibold text-sm sm:text-base truncate">{booking.mentor_name}</p>
+                            <Badge className="sm:hidden shrink-0">{booking.status}</Badge>
+                          </div>
+                          <div className="flex flex-wrap gap-2 sm:gap-4 text-xs sm:text-sm text-muted-foreground">
                             <span className="flex items-center gap-1">
-                              <Calendar className="h-4 w-4" />
+                              <Calendar className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
                               {new Date(booking.booking_date).toLocaleDateString()}
                             </span>
                             <span className="flex items-center gap-1">
-                              <Clock className="h-4 w-4" />
+                              <Clock className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
                               {booking.booking_time}
                             </span>
                           </div>
                         </div>
-                        <Badge>{booking.status}</Badge>
+                        <Badge className="hidden sm:inline-flex shrink-0">{booking.status}</Badge>
                       </div>
                     ))}
                   </div>
@@ -367,23 +382,26 @@ const Dashboard = () => {
                 {pastSessions.length === 0 ? (
                   <p className="text-center py-4 text-muted-foreground">No past sessions</p>
                 ) : (
-                  <div className="space-y-4">
+                  <div className="space-y-3 sm:space-y-4">
                     {pastSessions.map((booking) => (
-                      <div key={booking.id} className="flex items-center justify-between p-4 border rounded-lg opacity-60">
-                        <div className="space-y-1">
-                          <p className="font-semibold">{booking.mentor_name}</p>
-                          <div className="flex gap-4 text-sm text-muted-foreground">
+                      <div key={booking.id} className="flex flex-col sm:flex-row sm:items-center justify-between p-3 sm:p-4 border rounded-lg opacity-60 gap-2 sm:gap-4">
+                        <div className="space-y-1 min-w-0 flex-1">
+                          <div className="flex items-center justify-between sm:justify-start gap-2">
+                            <p className="font-semibold text-sm sm:text-base truncate">{booking.mentor_name}</p>
+                            <Badge variant="secondary" className="sm:hidden shrink-0">{booking.status}</Badge>
+                          </div>
+                          <div className="flex flex-wrap gap-2 sm:gap-4 text-xs sm:text-sm text-muted-foreground">
                             <span className="flex items-center gap-1">
-                              <Calendar className="h-4 w-4" />
+                              <Calendar className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
                               {new Date(booking.booking_date).toLocaleDateString()}
                             </span>
                             <span className="flex items-center gap-1">
-                              <Clock className="h-4 w-4" />
+                              <Clock className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
                               {booking.booking_time}
                             </span>
                           </div>
                         </div>
-                        <Badge variant="secondary">{booking.status}</Badge>
+                        <Badge variant="secondary" className="hidden sm:inline-flex shrink-0">{booking.status}</Badge>
                       </div>
                     ))}
                   </div>
