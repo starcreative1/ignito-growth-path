@@ -36,28 +36,48 @@ const handler = async (req: Request): Promise<Response> => {
 
     console.log("Sending notification for message:", messageId);
 
-    // Get recipient's email from profiles
-    const { data: profile, error: profileError } = await supabaseClient
+    // Get recipient's name from profiles (use maybeSingle to handle missing profiles)
+    const { data: profile } = await supabaseClient
       .from("profiles")
       .select("full_name")
       .eq("id", recipientId)
-      .single();
+      .maybeSingle();
 
-    if (profileError) {
-      console.error("Error fetching recipient profile:", profileError);
-      throw new Error("Failed to fetch recipient profile");
+    // If no profile found, try to get name from mentor_profiles
+    let recipientName = profile?.full_name;
+    if (!recipientName) {
+      const { data: mentorProfile } = await supabaseClient
+        .from("mentor_profiles")
+        .select("name")
+        .eq("user_id", recipientId)
+        .maybeSingle();
+      recipientName = mentorProfile?.name;
     }
+    recipientName = recipientName || "there";
 
-    // Get recipient's email from auth.users
-    const { data: { user }, error: userError } = await supabaseClient.auth.admin.getUserById(recipientId);
+    // Get recipient's email from auth.users using service role
+    const supabaseAdmin = createClient(
+      Deno.env.get("SUPABASE_URL") ?? "",
+      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "",
+      {
+        auth: {
+          persistSession: false,
+        },
+      }
+    );
+    
+    const { data: { user }, error: userError } = await supabaseAdmin.auth.admin.getUserById(recipientId);
 
     if (userError || !user?.email) {
       console.error("Error fetching recipient email:", userError);
-      throw new Error("Failed to fetch recipient email");
+      // Don't throw - just log and return success to not block message sending
+      return new Response(JSON.stringify({ success: false, error: "Could not send email notification" }), {
+        status: 200,
+        headers: { "Content-Type": "application/json", ...corsHeaders },
+      });
     }
 
     const recipientEmail = user.email;
-    const recipientName = profile?.full_name || "there";
 
     // Send email notification
     const emailResponse = await resend.emails.send({
