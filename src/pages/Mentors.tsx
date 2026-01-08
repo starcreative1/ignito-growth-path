@@ -81,9 +81,9 @@ const Mentors = () => {
     // Sort
     filtered = [...filtered].sort((a, b) => {
       if (sortBy === "rating") {
-        return b.rating - a.rating;
+        return (Number(b.rating) || 0) - (Number(a.rating) || 0);
       } else {
-        return a.price - b.price;
+        return (Number(a.price) || 0) - (Number(b.price) || 0);
       }
     });
 
