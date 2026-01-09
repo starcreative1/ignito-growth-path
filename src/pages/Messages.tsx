@@ -196,6 +196,24 @@ const Messages = () => {
     markMessagesAsRead();
     createReadReceiptsForExistingMessages();
 
+    // Reload messages when tab becomes visible (catch missed messages)
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible') {
+        console.log('Tab became visible, reloading messages');
+        loadMessages();
+        markMessagesAsRead();
+      }
+    };
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+
+    // Also reload on window focus
+    const handleFocus = () => {
+      console.log('Window focused, reloading messages');
+      loadMessages();
+      markMessagesAsRead();
+    };
+    window.addEventListener('focus', handleFocus);
+
     // Set up presence channel for typing indicators
     const channel = supabase.channel(`presence-${conversationId}`, {
       config: {
@@ -226,9 +244,9 @@ const Messages = () => {
 
     setPresenceChannel(channel);
 
-    // Subscribe to message updates
+    // Subscribe to message updates with unique channel name
     const messagesChannel = supabase
-      .channel('messages-channel')
+      .channel(`messages-${conversationId}-${user.id}`)
       .on(
         'postgres_changes',
         {
@@ -240,7 +258,13 @@ const Messages = () => {
         (payload) => {
           console.log('New message received:', payload);
           const newMessage = payload.new as Message;
-          setMessages(prev => [...prev, newMessage]);
+          
+          // Prevent duplicate messages by checking if message already exists
+          setMessages(prev => {
+            const exists = prev.some(msg => msg.id === newMessage.id);
+            if (exists) return prev;
+            return [...prev, newMessage];
+          });
           scrollToBottom();
           
           // Mark message as delivered when received
@@ -287,7 +311,7 @@ const Messages = () => {
           const updatedMessage = payload.new as Message;
           setMessages(prev => 
             prev.map(msg => 
-              msg.id === updatedMessage.id ? updatedMessage : msg
+              msg.id === updatedMessage.id ? { ...msg, ...updatedMessage } : msg
             )
           );
         }
@@ -306,9 +330,18 @@ const Messages = () => {
           loadReadReceiptsForMessage(receipt.message_id);
         }
       )
-      .subscribe();
+      .subscribe((status) => {
+        console.log('Messages channel status:', status);
+        if (status === 'CHANNEL_ERROR') {
+          console.error('Error subscribing to messages channel');
+          // Attempt to reload messages as fallback
+          loadMessages();
+        }
+      });
 
     return () => {
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+      window.removeEventListener('focus', handleFocus);
       supabase.removeChannel(channel);
       supabase.removeChannel(messagesChannel);
     };
@@ -1958,6 +1991,14 @@ const Messages = () => {
       setSending(false);
       return;
     }
+
+    // Optimistically add message to UI immediately (prevents duplicate from realtime)
+    setMessages(prev => {
+      const exists = prev.some(msg => msg.id === messageData.id);
+      if (exists) return prev;
+      return [...prev, messageData as Message];
+    });
+    scrollToBottom();
 
     // Stop typing indicator
     if (presenceChannel) {
