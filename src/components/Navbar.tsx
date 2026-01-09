@@ -75,6 +75,13 @@ const Navbar = () => {
         {isOpen && (
           <div className="md:hidden py-4 space-y-4">
             <Link
+              to="/mentor-cabinet"
+              className="block text-foreground hover:text-accent transition-colors"
+              onClick={() => setIsOpen(false)}
+            >
+              Become a Mentor
+            </Link>
+            <Link
               to="/mentors"
               className="block text-foreground hover:text-accent transition-colors"
               onClick={() => setIsOpen(false)}
