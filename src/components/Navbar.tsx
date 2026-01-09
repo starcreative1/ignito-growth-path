@@ -1,11 +1,27 @@
 import { Button } from "@/components/ui/button";
 import { Menu, X } from "lucide-react";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
+import { supabase } from "@/integrations/supabase/client";
 
 const Navbar = () => {
   const [isOpen, setIsOpen] = useState(false);
+  const [user, setUser] = useState<any>(null);
   const navigate = useNavigate();
+
+  useEffect(() => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      (event, session) => {
+        setUser(session?.user ?? null);
+      }
+    );
+
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setUser(session?.user ?? null);
+    });
+
+    return () => subscription.unsubscribe();
+  }, []);
 
   return (
     <nav className="fixed top-0 w-full z-50 glass-effect border-b border-border">
@@ -33,7 +49,9 @@ const Navbar = () => {
 
           {/* CTA Buttons */}
           <div className="hidden md:flex items-center space-x-4">
-            <Button variant="ghost" onClick={() => navigate('/auth')}>Sign In</Button>
+            {!user && (
+              <Button variant="ghost" onClick={() => navigate('/auth')}>Sign In</Button>
+            )}
             <Button variant="hero" onClick={() => navigate('/dashboard')}>
               Dashboard
             </Button>
@@ -75,16 +93,18 @@ const Navbar = () => {
               How It Works
             </a>
             <div className="pt-4 space-y-2">
-              <Button 
-                variant="ghost" 
-                className="w-full"
-                onClick={() => {
-                  setIsOpen(false);
-                  navigate('/auth');
-                }}
-              >
-                Sign In
-              </Button>
+              {!user && (
+                <Button 
+                  variant="ghost" 
+                  className="w-full"
+                  onClick={() => {
+                    setIsOpen(false);
+                    navigate('/auth');
+                  }}
+                >
+                  Sign In
+                </Button>
+              )}
               <Button 
                 variant="hero" 
                 className="w-full"
