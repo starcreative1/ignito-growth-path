@@ -1,21 +1,21 @@
 import { Check, CheckCheck } from "lucide-react";
 import { format } from "date-fns";
 import { cn } from "@/lib/utils";
-import type { Message } from "@/hooks/useMessages";
+import type { ChatMessage } from "@/hooks/useChat";
 
-interface MessageBubbleProps {
-  message: Message;
+interface ChatBubbleProps {
+  message: ChatMessage;
   isOwn: boolean;
 }
 
-export function MessageBubble({ message, isOwn }: MessageBubbleProps) {
+export function ChatBubble({ message, isOwn }: ChatBubbleProps) {
   const formattedTime = format(new Date(message.created_at), "HH:mm");
 
   return (
     <div className={cn("flex", isOwn ? "justify-end" : "justify-start")}>
       <div
         className={cn(
-          "max-w-[75%] rounded-2xl px-4 py-2 shadow-sm",
+          "max-w-[80%] sm:max-w-[70%] rounded-2xl px-4 py-2.5 shadow-sm",
           isOwn
             ? "bg-primary text-primary-foreground rounded-br-md"
             : "bg-muted text-foreground rounded-bl-md"
@@ -26,8 +26,8 @@ export function MessageBubble({ message, isOwn }: MessageBubbleProps) {
             {message.sender_name}
           </p>
         )}
-        
-        <p className="text-sm whitespace-pre-wrap break-words">
+
+        <p className="text-sm whitespace-pre-wrap break-words leading-relaxed">
           {message.content}
         </p>
 
@@ -37,7 +37,7 @@ export function MessageBubble({ message, isOwn }: MessageBubbleProps) {
             target="_blank"
             rel="noopener noreferrer"
             className={cn(
-              "text-xs underline mt-1 block",
+              "text-xs underline mt-2 block",
               isOwn ? "text-primary-foreground/80" : "text-foreground/80"
             )}
           >
@@ -45,22 +45,22 @@ export function MessageBubble({ message, isOwn }: MessageBubbleProps) {
           </a>
         )}
 
-        <div className={cn(
-          "flex items-center gap-1 mt-1",
-          isOwn ? "justify-end" : "justify-start"
-        )}>
-          <span className="text-[10px] opacity-60">
-            {formattedTime}
-          </span>
-          
+        <div
+          className={cn(
+            "flex items-center gap-1.5 mt-1.5",
+            isOwn ? "justify-end" : "justify-start"
+          )}
+        >
+          <span className="text-[10px] opacity-60">{formattedTime}</span>
+
           {isOwn && (
             <span className="opacity-60">
               {message.is_read ? (
-                <CheckCheck className="h-3 w-3" />
+                <CheckCheck className="h-3.5 w-3.5 text-blue-400" />
               ) : message.delivered_at ? (
-                <CheckCheck className="h-3 w-3 opacity-50" />
+                <CheckCheck className="h-3.5 w-3.5" />
               ) : (
-                <Check className="h-3 w-3" />
+                <Check className="h-3.5 w-3.5" />
               )}
             </span>
           )}
