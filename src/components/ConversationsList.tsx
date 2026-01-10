@@ -26,12 +26,16 @@ import {
 
 interface Conversation {
   id: string;
+  user_id: string;
   mentor_id: string;
   mentor_name: string;
+  user_name?: string;
   last_message_at: string;
   unread_count: number;
   archived: boolean;
   archived_at: string | null;
+  display_name: string;
+  is_mentor_view: boolean;
 }
 
 export const ConversationsList = ({ userId }: { userId: string }) => {
@@ -49,10 +53,11 @@ export const ConversationsList = ({ userId }: { userId: string }) => {
     const fetchConversations = async () => {
       setLoading(true);
       
+      // Fetch conversations where user is either the user or the mentor
       const { data: conversationsData, error } = await supabase
         .from("conversations")
         .select("*")
-        .eq("user_id", userId)
+        .or(`user_id.eq.${userId},mentor_id.eq.${userId}`)
         .order("last_message_at", { ascending: false });
 
       if (error) {
@@ -61,7 +66,7 @@ export const ConversationsList = ({ userId }: { userId: string }) => {
         return;
       }
 
-      // Fetch unread message counts for each conversation
+      // Fetch unread message counts and user names for each conversation
       const conversationsWithCounts = await Promise.all(
         (conversationsData || []).map(async (conv) => {
           const { count } = await supabase
@@ -71,9 +76,26 @@ export const ConversationsList = ({ userId }: { userId: string }) => {
             .eq("is_read", false)
             .neq("sender_id", userId);
 
+          // Fetch user name if this is a mentor viewing the conversation
+          let userName = "User";
+          if (conv.mentor_id === userId && conv.user_id) {
+            const { data: profileData } = await supabase
+              .from("profiles")
+              .select("full_name")
+              .eq("id", conv.user_id)
+              .maybeSingle();
+            userName = profileData?.full_name || "User";
+          }
+          
+          // Determine the display name based on current user's role in conversation
+          const isMentor = conv.mentor_id === userId;
+          const displayName = isMentor ? userName : conv.mentor_name;
+          
           return {
             ...conv,
             unread_count: count || 0,
+            display_name: displayName,
+            is_mentor_view: isMentor,
           };
         })
       );
@@ -330,9 +352,9 @@ export const ConversationsList = ({ userId }: { userId: string }) => {
                       className="flex-1 cursor-pointer"
                       onClick={() => navigate(`/messages/${conversation.id}`)}
                     >
-                      <p className="font-semibold">{conversation.mentor_name}</p>
+                      <p className="font-semibold">{conversation.display_name}</p>
                       <p className="text-sm text-muted-foreground">
-                        Last message: {new Date(conversation.last_message_at).toLocaleDateString()}
+                        {conversation.is_mentor_view ? "Student" : "Mentor"} • Last message: {new Date(conversation.last_message_at).toLocaleDateString()}
                       </p>
                     </div>
                     <div className="flex items-center gap-2">
@@ -391,9 +413,9 @@ export const ConversationsList = ({ userId }: { userId: string }) => {
                       className="flex-1 cursor-pointer"
                       onClick={() => navigate(`/messages/${conversation.id}`)}
                     >
-                      <p className="font-semibold">{conversation.mentor_name}</p>
+                      <p className="font-semibold">{conversation.display_name}</p>
                       <p className="text-sm text-muted-foreground">
-                        Archived: {conversation.archived_at ? new Date(conversation.archived_at).toLocaleDateString() : 'Unknown'}
+                        {conversation.is_mentor_view ? "Student" : "Mentor"} • Archived: {conversation.archived_at ? new Date(conversation.archived_at).toLocaleDateString() : 'Unknown'}
                       </p>
                     </div>
                     <div className="flex items-center gap-2">
