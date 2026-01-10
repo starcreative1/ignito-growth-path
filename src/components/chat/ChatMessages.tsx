@@ -1,15 +1,15 @@
 import { useEffect, useRef } from "react";
-import { MessageBubble } from "./MessageBubble";
+import { ChatBubble } from "./ChatBubble";
 import { Loader2 } from "lucide-react";
-import type { Message } from "@/hooks/useMessages";
+import type { ChatMessage } from "@/hooks/useChat";
 
-interface MessageListProps {
-  messages: Message[];
+interface ChatMessagesProps {
+  messages: ChatMessage[];
   currentUserId: string;
   loading: boolean;
 }
 
-export function MessageList({ messages, currentUserId, loading }: MessageListProps) {
+export function ChatMessages({ messages, currentUserId, loading }: ChatMessagesProps) {
   const endRef = useRef<HTMLDivElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
 
@@ -30,25 +30,28 @@ export function MessageList({ messages, currentUserId, loading }: MessageListPro
 
   if (messages.length === 0) {
     return (
-      <div className="flex-1 flex items-center justify-center text-muted-foreground">
-        <p>No messages yet. Start the conversation!</p>
+      <div className="flex-1 flex items-center justify-center text-muted-foreground px-4 text-center">
+        <div>
+          <p className="text-lg font-medium mb-1">No messages yet</p>
+          <p className="text-sm">Send a message to start the conversation!</p>
+        </div>
       </div>
     );
   }
 
   // Group messages by date
-  const groupedMessages: { date: string; messages: Message[] }[] = [];
-  
+  const groupedMessages: { date: string; messages: ChatMessage[] }[] = [];
+
   messages.forEach((msg) => {
-    const date = new Date(msg.created_at).toLocaleDateString('en-US', {
-      weekday: 'long',
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric'
+    const date = new Date(msg.created_at).toLocaleDateString("en-US", {
+      weekday: "long",
+      year: "numeric",
+      month: "long",
+      day: "numeric",
     });
-    
+
     const lastGroup = groupedMessages[groupedMessages.length - 1];
-    
+
     if (lastGroup && lastGroup.date === date) {
       lastGroup.messages.push(msg);
     } else {
@@ -57,18 +60,18 @@ export function MessageList({ messages, currentUserId, loading }: MessageListPro
   });
 
   return (
-    <div ref={containerRef} className="flex-1 overflow-y-auto p-4 space-y-4">
+    <div ref={containerRef} className="flex-1 overflow-y-auto p-4 space-y-6">
       {groupedMessages.map((group, groupIndex) => (
         <div key={groupIndex}>
           <div className="flex justify-center mb-4">
-            <span className="text-xs text-muted-foreground bg-muted px-3 py-1 rounded-full">
+            <span className="text-xs text-muted-foreground bg-muted/80 px-3 py-1.5 rounded-full">
               {group.date}
             </span>
           </div>
-          
-          <div className="space-y-2">
+
+          <div className="space-y-3">
             {group.messages.map((message) => (
-              <MessageBubble
+              <ChatBubble
                 key={message.id}
                 message={message}
                 isOwn={message.sender_id === currentUserId}
@@ -77,7 +80,7 @@ export function MessageList({ messages, currentUserId, loading }: MessageListPro
           </div>
         </div>
       ))}
-      
+
       <div ref={endRef} />
     </div>
   );
