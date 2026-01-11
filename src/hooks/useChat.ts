@@ -76,11 +76,20 @@ export function useChat(conversationId: string | undefined, user: User | null): 
       return;
     }
 
+    // Check if current user is the mentor by looking up mentor_profiles
+    const { data: mentorProfile } = await supabase
+      .from("mentor_profiles")
+      .select("user_id")
+      .eq("id", data.mentor_id)
+      .maybeSingle();
+
+    const isMentor = mentorProfile?.user_id === user.id;
+
     // Determine the other participant's name
     let participantName = data.mentor_name;
     
     // If current user is the mentor, fetch the user's name
-    if (data.mentor_id === user.id) {
+    if (isMentor) {
       const { data: profileData } = await supabase
         .from("profiles")
         .select("full_name")
@@ -204,10 +213,17 @@ export function useChat(conversationId: string | undefined, user: User | null): 
           .update({ last_message_at: new Date().toISOString() })
           .eq("id", conversationId);
 
-        // Send notification to recipient
-        const recipientId = conversation.user_id === user.id
-          ? conversation.mentor_id
-          : conversation.user_id;
+        // Send notification to recipient - need to get mentor's user_id from mentor_profiles
+        let recipientId = conversation.user_id;
+        if (conversation.user_id === user.id) {
+          // Current user is the student, get mentor's user_id
+          const { data: mentorProfile } = await supabase
+            .from("mentor_profiles")
+            .select("user_id")
+            .eq("id", conversation.mentor_id)
+            .maybeSingle();
+          recipientId = mentorProfile?.user_id || conversation.mentor_id;
+        }
 
         supabase.functions
           .invoke("send-message-notification", {

@@ -74,8 +74,14 @@ export const ConversationsList = ({ userId }: { userId: string }) => {
           .eq("is_read", false)
           .neq("sender_id", userId);
 
-        // Determine if current user is the mentor
-        const isMentorView = conv.mentor_id === userId;
+        // Check if current user is the mentor by looking up mentor_profiles
+        const { data: mentorProfile } = await supabase
+          .from("mentor_profiles")
+          .select("user_id")
+          .eq("id", conv.mentor_id)
+          .maybeSingle();
+
+        const isMentorView = mentorProfile?.user_id === userId;
 
         // Get display name for other participant
         let displayName = conv.mentor_name;
