@@ -1155,6 +1155,14 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      generate_time_slots_from_weekly: {
+        Args: { p_end_date: string; p_mentor_id: string; p_start_date: string }
+        Returns: {
+          day_name: string
+          slot_date: string
+          slot_time: string
+        }[]
+      }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
