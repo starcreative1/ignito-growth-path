@@ -9,7 +9,9 @@ import Navbar from "@/components/Navbar";
 import { MentorStatsCard } from "@/components/MentorStatsCard";
 import { MentorBookingsCard } from "@/components/MentorBookingsCard";
 import { MentorProfileEditor } from "@/components/MentorProfileEditor";
-import { MentorAvailabilityManager } from "@/components/MentorAvailabilityManager";
+import { WeeklyAvailabilityEditor } from "@/components/WeeklyAvailabilityEditor";
+import { GoogleCalendarSync } from "@/components/GoogleCalendarSync";
+import { AvailabilitySummary } from "@/components/AvailabilitySummary";
 import { ConversationsList } from "@/components/ConversationsList";
 import { NotificationSettings } from "@/components/NotificationSettings";
 import { AvatarManagementTab } from "@/components/AvatarManagementTab";
@@ -351,12 +353,16 @@ const MentorCabinet = () => {
 
           {mentorProfile && (
             <>
-              <TabsContent value="availability">
-                <MentorAvailabilityManager
-                  mentorId={mentorProfile.id}
-                  timeSlots={timeSlots}
-                  onUpdate={() => loadMentorData(user?.id || "")}
-                />
+              <TabsContent value="availability" className="space-y-6">
+                <div className="grid gap-6 lg:grid-cols-3">
+                  <div className="lg:col-span-2">
+                    <WeeklyAvailabilityEditor mentorId={mentorProfile.id} />
+                  </div>
+                  <div className="space-y-6">
+                    <AvailabilitySummary mentorId={mentorProfile.id} />
+                    <GoogleCalendarSync mentorId={mentorProfile.id} />
+                  </div>
+                </div>
               </TabsContent>
 
               <TabsContent value="questions">
