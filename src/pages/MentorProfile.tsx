@@ -22,6 +22,12 @@ interface TimeSlot {
   is_available: boolean;
 }
 
+interface WeeklySlot {
+  day_of_week: number;
+  start_time: string;
+  end_time: string;
+}
+
 interface Product {
   id: string;
   title: string;
@@ -32,6 +38,52 @@ interface Product {
   average_rating: number;
   review_count: number;
 }
+
+// Generate 1-hour slots from weekly availability for the next 4 weeks
+const generateSlotsFromWeekly = (mentorId: string, weeklySlots: WeeklySlot[]): TimeSlot[] => {
+  const slots: TimeSlot[] = [];
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  
+  // Generate for next 28 days (4 weeks)
+  for (let dayOffset = 0; dayOffset < 28; dayOffset++) {
+    const date = new Date(today);
+    date.setDate(today.getDate() + dayOffset);
+    const dayOfWeek = date.getDay(); // 0 = Sunday, 1 = Monday, etc.
+    
+    // Find weekly slots for this day
+    const daySlots = weeklySlots.filter(s => s.day_of_week === dayOfWeek);
+    
+    daySlots.forEach(slot => {
+      const startHour = parseInt(slot.start_time.split(':')[0]);
+      const endHour = parseInt(slot.end_time.split(':')[0]);
+      
+      // Generate 1-hour slots between start and end
+      for (let hour = startHour; hour < endHour; hour++) {
+        const timeStr = `${hour.toString().padStart(2, '0')}:00:00`;
+        const dateStr = date.toISOString().split('T')[0];
+        
+        // Skip if slot is in the past
+        const slotDateTime = new Date(`${dateStr}T${timeStr}`);
+        if (slotDateTime <= new Date()) continue;
+        
+        slots.push({
+          id: `${mentorId}_${dateStr}_${timeStr}`,
+          mentor_id: mentorId,
+          date: dateStr,
+          time: timeStr,
+          is_available: true
+        });
+      }
+    });
+  }
+  
+  return slots.sort((a, b) => {
+    const dateCompare = a.date.localeCompare(b.date);
+    if (dateCompare !== 0) return dateCompare;
+    return a.time.localeCompare(b.time);
+  });
+};
 
 const MentorProfile = () => {
   const { id } = useParams();
@@ -134,24 +186,56 @@ const MentorProfile = () => {
       })));
     }
 
-    // Fetch time slots
-    const { data: slotsData } = await supabase
-      .from("mentor_time_slots")
-      .select("*")
+    // Fetch weekly availability and generate time slots
+    const { data: weeklyData } = await (supabase
+      .from("mentor_weekly_availability" as any)
+      .select("day_of_week, start_time, end_time")
       .eq("mentor_id", id)
-      .eq("is_available", true)
-      .gte("date", new Date().toISOString().split('T')[0])
-      .order("date", { ascending: true })
-      .order("time", { ascending: true });
+      .eq("is_active", true) as any);
 
-    if (slotsData) {
-      setTimeSlots(slotsData.map(s => ({
-        id: s.id,
-        mentor_id: s.mentor_id,
-        date: s.date,
-        time: s.time,
-        is_available: s.is_available,
-      })));
+    if (weeklyData && weeklyData.length > 0) {
+      // Generate slots for the next 4 weeks from weekly availability
+      const generatedSlots = generateSlotsFromWeekly(id!, weeklyData as WeeklySlot[]);
+      
+      // Fetch existing bookings to mark slots as unavailable
+      const { data: bookingsData } = await supabase
+        .from("bookings")
+        .select("booking_date, booking_time")
+        .eq("mentor_id", id)
+        .in("status", ["pending", "confirmed"])
+        .gte("booking_date", new Date().toISOString().split('T')[0]);
+      
+      const bookedSlots = new Set(
+        (bookingsData || []).map(b => `${b.booking_date}_${b.booking_time}`)
+      );
+      
+      // Mark booked slots as unavailable
+      const slotsWithAvailability = generatedSlots.map(slot => ({
+        ...slot,
+        is_available: !bookedSlots.has(`${slot.date}_${slot.time}`)
+      }));
+      
+      setTimeSlots(slotsWithAvailability);
+    } else {
+      // Fallback to old mentor_time_slots table
+      const { data: slotsData } = await supabase
+        .from("mentor_time_slots")
+        .select("*")
+        .eq("mentor_id", id)
+        .eq("is_available", true)
+        .gte("date", new Date().toISOString().split('T')[0])
+        .order("date", { ascending: true })
+        .order("time", { ascending: true });
+
+      if (slotsData) {
+        setTimeSlots(slotsData.map(s => ({
+          id: s.id,
+          mentor_id: s.mentor_id,
+          date: s.date,
+          time: s.time,
+          is_available: s.is_available ?? true,
+        })));
+      }
     }
 
     // Fetch avatar if available
