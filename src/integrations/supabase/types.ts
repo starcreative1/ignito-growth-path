@@ -291,6 +291,56 @@ export type Database = {
           },
         ]
       }
+      mentor_calendar_connections: {
+        Row: {
+          access_token: string | null
+          calendar_id: string | null
+          created_at: string
+          id: string
+          last_synced_at: string | null
+          mentor_id: string
+          provider: string
+          refresh_token: string | null
+          sync_enabled: boolean
+          token_expires_at: string | null
+          updated_at: string
+        }
+        Insert: {
+          access_token?: string | null
+          calendar_id?: string | null
+          created_at?: string
+          id?: string
+          last_synced_at?: string | null
+          mentor_id: string
+          provider?: string
+          refresh_token?: string | null
+          sync_enabled?: boolean
+          token_expires_at?: string | null
+          updated_at?: string
+        }
+        Update: {
+          access_token?: string | null
+          calendar_id?: string | null
+          created_at?: string
+          id?: string
+          last_synced_at?: string | null
+          mentor_id?: string
+          provider?: string
+          refresh_token?: string | null
+          sync_enabled?: boolean
+          token_expires_at?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "mentor_calendar_connections_mentor_id_fkey"
+            columns: ["mentor_id"]
+            isOneToOne: false
+            referencedRelation: "mentor_profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       mentor_courses: {
         Row: {
           created_at: string
@@ -642,6 +692,47 @@ export type Database = {
             columns: ["question_id"]
             isOneToOne: true
             referencedRelation: "mentor_questions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      mentor_weekly_availability: {
+        Row: {
+          created_at: string
+          day_of_week: number
+          end_time: string
+          id: string
+          is_active: boolean
+          mentor_id: string
+          start_time: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          day_of_week: number
+          end_time: string
+          id?: string
+          is_active?: boolean
+          mentor_id: string
+          start_time: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          day_of_week?: number
+          end_time?: string
+          id?: string
+          is_active?: boolean
+          mentor_id?: string
+          start_time?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "mentor_weekly_availability_mentor_id_fkey"
+            columns: ["mentor_id"]
+            isOneToOne: false
+            referencedRelation: "mentor_profiles"
             referencedColumns: ["id"]
           },
         ]
