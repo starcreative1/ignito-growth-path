@@ -28,9 +28,10 @@ interface Recommendation {
 interface RecommendationsCardProps {
   recommendations: Recommendation[];
   loading: boolean;
+  onCompleteProfile?: () => void;
 }
 
-export const RecommendationsCard = ({ recommendations, loading }: RecommendationsCardProps) => {
+export const RecommendationsCard = ({ recommendations, loading, onCompleteProfile }: RecommendationsCardProps) => {
   const navigate = useNavigate();
 
   if (loading) {
@@ -70,7 +71,7 @@ export const RecommendationsCard = ({ recommendations, loading }: Recommendation
           <p className="text-sm text-muted-foreground mb-4">
             Add your interests, skill level, and goals to receive AI-powered mentor matches.
           </p>
-          <Button onClick={() => document.getElementById('profile-tab')?.click()}>
+          <Button onClick={onCompleteProfile}>
             Complete Profile
           </Button>
         </CardContent>
