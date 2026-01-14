@@ -73,7 +73,7 @@ serve(async (req) => {
     console.log("[RECOMMEND-MENTORS] Profile loaded for user:", userId);
 
     // Fetch real mentors from database (mentor_profiles are publicly readable)
-    const { data: mentors, error: mentorsError } = await supabaseClient
+    const { data: allMentors, error: mentorsError } = await supabaseClient
       .from("mentor_profiles")
       .select("*")
       .eq("is_active", true);
@@ -83,7 +83,11 @@ serve(async (req) => {
       throw new Error("Failed to fetch mentors");
     }
 
-    if (!mentors || mentors.length === 0) {
+    // Filter out the current user if they are a mentor (prevent self-recommendation)
+    const mentors = (allMentors || []).filter(mentor => mentor.user_id !== userId);
+    console.log(`[RECOMMEND-MENTORS] Filtered out self from ${allMentors?.length || 0} mentors, ${mentors.length} remaining`);
+
+    if (mentors.length === 0) {
       return new Response(
         JSON.stringify({ recommendations: [] }),
         {
@@ -93,7 +97,7 @@ serve(async (req) => {
       );
     }
 
-    console.log(`[RECOMMEND-MENTORS] Found ${mentors.length} active mentors`);
+    console.log(`[RECOMMEND-MENTORS] Found ${mentors.length} active mentors (excluding self)`);
 
     // Use Lovable AI to recommend mentors
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
