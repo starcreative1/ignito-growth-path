@@ -156,8 +156,19 @@ const Dashboard = () => {
     setRecommendationsLoading(true);
     
     try {
+      const { data: sessionData } = await supabase.auth.getSession();
+      const accessToken = sessionData.session?.access_token;
+
+      // If the user is not authenticated yet, don't call the backend function.
+      if (!accessToken) {
+        throw new Error("Authentication required");
+      }
+
       const { data, error } = await supabase.functions.invoke("recommend-mentors", {
         body: { userId },
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+        },
       });
 
       if (error) throw error;
@@ -167,16 +178,30 @@ const Dashboard = () => {
       }
     } catch (error: any) {
       console.error("Recommendations error:", error);
-      if (error.message?.includes("Rate limit")) {
+
+      const msg = error?.message || "";
+      if (msg.includes("Authentication required") || error?.status === 401) {
+        toast({
+          title: "Sign in required",
+          description: "Please sign in to get AI-powered mentor recommendations.",
+          variant: "destructive",
+        });
+      } else if (msg.includes("Rate limit")) {
         toast({
           title: "Rate Limit",
           description: "Too many requests. Please try again in a moment.",
           variant: "destructive",
         });
-      } else if (error.message?.includes("credits")) {
+      } else if (msg.includes("credits") || msg.includes("Credits")) {
         toast({
           title: "Credits Exhausted",
           description: "AI credits exhausted. Please add credits to continue.",
+          variant: "destructive",
+        });
+      } else {
+        toast({
+          title: "Recommendations unavailable",
+          description: "We couldn't load recommendations right now. Please try again later.",
           variant: "destructive",
         });
       }
