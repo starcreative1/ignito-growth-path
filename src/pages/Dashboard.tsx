@@ -65,6 +65,7 @@ const Dashboard = () => {
   const [recommendations, setRecommendations] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [recommendationsLoading, setRecommendationsLoading] = useState(false);
+  const [activeTab, setActiveTab] = useState("recommendations");
   const navigate = useNavigate();
   const { toast } = useToast();
 
@@ -256,7 +257,7 @@ const Dashboard = () => {
           </Button>
         </div>
 
-        <Tabs defaultValue="recommendations" className="space-y-4 sm:space-y-6">
+        <Tabs defaultValue="recommendations" value={activeTab} onValueChange={setActiveTab} className="space-y-4 sm:space-y-6">
           {/* Horizontally scrollable tabs for mobile */}
           <div className="overflow-x-auto -mx-4 px-4 pb-2">
             <TabsList className="inline-flex w-max min-w-full sm:w-auto sm:flex-wrap gap-1">
@@ -280,7 +281,7 @@ const Dashboard = () => {
               <TabsTrigger value="messages" className="text-xs sm:text-sm whitespace-nowrap">
                 Messages
               </TabsTrigger>
-              <TabsTrigger value="profile" id="profile-tab" className="text-xs sm:text-sm whitespace-nowrap">
+              <TabsTrigger value="profile" className="text-xs sm:text-sm whitespace-nowrap">
                 Profile
               </TabsTrigger>
               <TabsTrigger value="settings" className="text-xs sm:text-sm whitespace-nowrap">
@@ -294,6 +295,7 @@ const Dashboard = () => {
             <RecommendationsCard 
               recommendations={recommendations}
               loading={recommendationsLoading}
+              onCompleteProfile={() => setActiveTab("profile")}
             />
           </TabsContent>
 
