@@ -28,19 +28,18 @@ serve(async (req) => {
       { global: { headers: { Authorization: authHeader } } }
     );
 
-    // Verify authentication using getClaims
-    const token = authHeader.replace("Bearer ", "");
-    const { data: claimsData, error: claimsError } = await supabaseClient.auth.getClaims(token);
+    // Verify authentication using getUser
+    const { data: { user }, error: userError } = await supabaseClient.auth.getUser();
     
-    if (claimsError || !claimsData?.claims) {
-      console.error("[RECOMMEND-MENTORS] Auth error:", claimsError);
+    if (userError || !user) {
+      console.error("[RECOMMEND-MENTORS] Auth error:", userError);
       return new Response(
         JSON.stringify({ error: "Authentication required" }),
         { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
 
-    const userId = claimsData.claims.sub;
+    const userId = user.id;
     console.log("[RECOMMEND-MENTORS] Authenticated user:", userId);
 
     // Get user profile using their own auth context (respects RLS)
