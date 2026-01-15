@@ -50,12 +50,30 @@ export const ConversationsList = ({ userId }: { userId: string }) => {
     
     setLoading(true);
 
-    // Fetch conversations where user is either participant
-    const { data: conversationsData, error } = await supabase
+    // First, check if the current user is a mentor and get their mentor_profile id
+    const { data: mentorProfile } = await supabase
+      .from("mentor_profiles")
+      .select("id")
+      .eq("user_id", userId)
+      .maybeSingle();
+
+    const mentorProfileId = mentorProfile?.id;
+
+    // Build the filter: user_id matches OR mentor_id matches (for mentors)
+    let query = supabase
       .from("conversations")
       .select("*")
-      .or(`user_id.eq.${userId},mentor_id.eq.${userId}`)
       .order("last_message_at", { ascending: false });
+
+    if (mentorProfileId) {
+      // User is a mentor - show conversations where they are the student OR the mentor
+      query = query.or(`user_id.eq.${userId},mentor_id.eq.${mentorProfileId}`);
+    } else {
+      // User is not a mentor - only show conversations where they are the student
+      query = query.eq("user_id", userId);
+    }
+
+    const { data: conversationsData, error } = await query;
 
     if (error) {
       console.error("Error fetching conversations:", error);
