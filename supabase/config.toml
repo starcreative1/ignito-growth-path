@@ -4,7 +4,10 @@ project_id = "tpwjhrurjiqefojvmrlj"
 verify_jwt = false
 
 [functions.train-avatar]
-verify_jwt = true
+verify_jwt = false
 
 [functions.chat-with-avatar]
-verify_jwt = true
+verify_jwt = false
+
+[functions.send-push-notification]
+verify_jwt = false
