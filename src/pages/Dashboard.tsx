@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -9,6 +9,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
+import { useUnreadMessages } from "@/hooks/useUnreadMessages";
 import Navbar from "@/components/Navbar";
 import { RecommendationsCard } from "@/components/RecommendationsCard";
 import { ConversationsList } from "@/components/ConversationsList";
@@ -65,9 +66,11 @@ const Dashboard = () => {
   const [recommendations, setRecommendations] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [recommendationsLoading, setRecommendationsLoading] = useState(false);
-  const [activeTab, setActiveTab] = useState("recommendations");
+  const [searchParams, setSearchParams] = useSearchParams();
+  const [activeTab, setActiveTab] = useState(searchParams.get("tab") || "recommendations");
   const navigate = useNavigate();
   const { toast } = useToast();
+  const { unreadCount } = useUnreadMessages(user);
 
   useEffect(() => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
@@ -282,7 +285,10 @@ const Dashboard = () => {
           </Button>
         </div>
 
-        <Tabs defaultValue="recommendations" value={activeTab} onValueChange={setActiveTab} className="space-y-4 sm:space-y-6">
+        <Tabs defaultValue={activeTab} value={activeTab} onValueChange={(val) => {
+          setActiveTab(val);
+          setSearchParams({ tab: val });
+        }} className="space-y-4 sm:space-y-6">
           {/* Horizontally scrollable tabs for mobile */}
           <div className="overflow-x-auto -mx-4 px-4 pb-2">
             <TabsList className="inline-flex w-max min-w-full sm:w-auto sm:flex-wrap gap-1">
@@ -303,8 +309,14 @@ const Dashboard = () => {
                   <Badge variant="secondary" className="ml-1 sm:ml-2 text-xs">{purchases.length}</Badge>
                 )}
               </TabsTrigger>
-              <TabsTrigger value="messages" className="text-xs sm:text-sm whitespace-nowrap">
+              <TabsTrigger value="messages" className="text-xs sm:text-sm whitespace-nowrap relative">
+                <MessageCircle className="h-3.5 w-3.5 sm:h-4 sm:w-4 mr-1 sm:mr-2" />
                 Messages
+                {unreadCount > 0 && (
+                  <Badge variant="destructive" className="ml-1 sm:ml-2 text-xs">
+                    {unreadCount > 99 ? '99+' : unreadCount}
+                  </Badge>
+                )}
               </TabsTrigger>
               <TabsTrigger value="profile" className="text-xs sm:text-sm whitespace-nowrap">
                 Profile
