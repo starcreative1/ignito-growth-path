@@ -167,14 +167,31 @@ export function useChat(conversationId: string | undefined, user: User | null): 
       console.log("[Chat] Sending message");
 
       try {
-        // Get sender's name
-        const { data: profileData } = await supabase
-          .from("profiles")
-          .select("full_name")
-          .eq("id", user.id)
+        // Determine if current user is the mentor in this conversation
+        const { data: mentorProfile } = await supabase
+          .from("mentor_profiles")
+          .select("user_id, name")
+          .eq("id", conversation.mentor_id)
           .maybeSingle();
 
-        const senderName = profileData?.full_name || user.email?.split("@")[0] || "User";
+        const isMentor = mentorProfile?.user_id === user.id;
+        let senderName: string;
+
+        if (isMentor && mentorProfile?.name) {
+          // User is the mentor, use mentor profile name
+          senderName = mentorProfile.name;
+          console.log("[Chat] Sender is mentor:", senderName);
+        } else {
+          // User is the student, get name from profiles table
+          const { data: profileData } = await supabase
+            .from("profiles")
+            .select("full_name")
+            .eq("id", user.id)
+            .maybeSingle();
+
+          senderName = profileData?.full_name || user.email?.split("@")[0] || "User";
+          console.log("[Chat] Sender is student:", senderName);
+        }
 
         // Insert message
         const { data: newMessage, error } = await supabase
@@ -213,15 +230,13 @@ export function useChat(conversationId: string | undefined, user: User | null): 
           .update({ last_message_at: new Date().toISOString() })
           .eq("id", conversationId);
 
-        // Send notification to recipient - need to get mentor's user_id from mentor_profiles
-        let recipientId = conversation.user_id;
-        if (conversation.user_id === user.id) {
-          // Current user is the student, get mentor's user_id
-          const { data: mentorProfile } = await supabase
-            .from("mentor_profiles")
-            .select("user_id")
-            .eq("id", conversation.mentor_id)
-            .maybeSingle();
+        // Send notification to recipient
+        let recipientId: string;
+        if (isMentor) {
+          // Mentor is sending, recipient is the student (conversation.user_id)
+          recipientId = conversation.user_id;
+        } else {
+          // Student is sending, recipient is the mentor
           recipientId = mentorProfile?.user_id || conversation.mentor_id;
         }
 
