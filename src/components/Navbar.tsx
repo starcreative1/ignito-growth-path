@@ -1,13 +1,16 @@
 import { Button } from "@/components/ui/button";
-import { Menu, X } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
+import { Menu, X, MessageCircle } from "lucide-react";
 import { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
+import { useUnreadMessages } from "@/hooks/useUnreadMessages";
 
 const Navbar = () => {
   const [isOpen, setIsOpen] = useState(false);
   const [user, setUser] = useState<any>(null);
   const navigate = useNavigate();
+  const { unreadCount } = useUnreadMessages(user);
 
   useEffect(() => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
@@ -52,6 +55,25 @@ const Navbar = () => {
 
           {/* CTA Buttons */}
           <div className="hidden md:flex items-center space-x-4">
+            {user && (
+              <Button
+                variant="ghost"
+                size="icon"
+                className="relative"
+                onClick={() => navigate('/dashboard?tab=messages')}
+                aria-label="Messages"
+              >
+                <MessageCircle className="h-5 w-5" />
+                {unreadCount > 0 && (
+                  <Badge 
+                    variant="destructive" 
+                    className="absolute -top-1 -right-1 h-5 min-w-5 px-1.5 text-xs flex items-center justify-center"
+                  >
+                    {unreadCount > 99 ? '99+' : unreadCount}
+                  </Badge>
+                )}
+              </Button>
+            )}
             {!user && (
               <Button variant="ghost" onClick={() => navigate('/auth')}>Sign In</Button>
             )}
@@ -103,6 +125,27 @@ const Navbar = () => {
               How It Works
             </a>
             <div className="pt-4 space-y-2">
+              {user && (
+                <Button
+                  variant="outline"
+                  className="w-full relative"
+                  onClick={() => {
+                    setIsOpen(false);
+                    navigate('/dashboard?tab=messages');
+                  }}
+                >
+                  <MessageCircle className="h-4 w-4 mr-2" />
+                  Messages
+                  {unreadCount > 0 && (
+                    <Badge 
+                      variant="destructive" 
+                      className="ml-2 h-5 min-w-5 px-1.5 text-xs"
+                    >
+                      {unreadCount > 99 ? '99+' : unreadCount}
+                    </Badge>
+                  )}
+                </Button>
+              )}
               {!user && (
                 <Button 
                   variant="ghost" 
