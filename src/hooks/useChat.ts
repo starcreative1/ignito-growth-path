@@ -166,33 +166,27 @@ export function useChat(conversationId: string | undefined, user: User | null): 
       setSending(true);
       console.log("[Chat] Sending message");
 
-      try {
-        // Get the mentor profile for THIS conversation to determine if current user is the mentor
-        const { data: conversationMentor } = await supabase
-          .from("mentor_profiles")
-          .select("user_id, name")
-          .eq("id", conversation.mentor_id)
-          .maybeSingle();
+        try {
+          // Get mentor profile for THIS conversation (only needed to determine recipient for notifications)
+          const { data: conversationMentor } = await supabase
+            .from("mentor_profiles")
+            .select("user_id")
+            .eq("id", conversation.mentor_id)
+            .maybeSingle();
 
-        // User is the mentor ONLY if their user_id matches the mentor's user_id in this conversation
-        const isMentorInThisConversation = conversationMentor?.user_id === user.id;
-        let senderName: string;
+          // User is the mentor ONLY if their user_id matches the mentor's user_id in this conversation
+          const isMentorInThisConversation = conversationMentor?.user_id === user.id;
 
-        if (isMentorInThisConversation && conversationMentor?.name) {
-          // Current user is the mentor in this conversation
-          senderName = conversationMentor.name;
-          console.log("[Chat] Sender is MENTOR in this conversation:", senderName);
-        } else {
-          // Current user is the student in this conversation (even if they have a mentor profile elsewhere)
+          // Unified identity: always use the single canonical name from the user's profile.
+          // (Mentor vs user is a permission/context, not a separate identity.)
           const { data: profileData } = await supabase
             .from("profiles")
             .select("full_name")
             .eq("id", user.id)
             .maybeSingle();
 
-          senderName = profileData?.full_name || user.email?.split("@")[0] || "User";
-          console.log("[Chat] Sender is STUDENT in this conversation:", senderName);
-        }
+          const senderName = profileData?.full_name || user.email?.split("@")[0] || "User";
+          console.log("[Chat] Sender identity (unified):", { userId: user.id, senderName });
 
         // Insert message
         const { data: newMessage, error } = await supabase
