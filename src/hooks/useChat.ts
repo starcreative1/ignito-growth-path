@@ -167,22 +167,23 @@ export function useChat(conversationId: string | undefined, user: User | null): 
       console.log("[Chat] Sending message");
 
       try {
-        // Determine if current user is the mentor in this conversation
-        const { data: mentorProfile } = await supabase
+        // Get the mentor profile for THIS conversation to determine if current user is the mentor
+        const { data: conversationMentor } = await supabase
           .from("mentor_profiles")
           .select("user_id, name")
           .eq("id", conversation.mentor_id)
           .maybeSingle();
 
-        const isMentor = mentorProfile?.user_id === user.id;
+        // User is the mentor ONLY if their user_id matches the mentor's user_id in this conversation
+        const isMentorInThisConversation = conversationMentor?.user_id === user.id;
         let senderName: string;
 
-        if (isMentor && mentorProfile?.name) {
-          // User is the mentor, use mentor profile name
-          senderName = mentorProfile.name;
-          console.log("[Chat] Sender is mentor:", senderName);
+        if (isMentorInThisConversation && conversationMentor?.name) {
+          // Current user is the mentor in this conversation
+          senderName = conversationMentor.name;
+          console.log("[Chat] Sender is MENTOR in this conversation:", senderName);
         } else {
-          // User is the student, get name from profiles table
+          // Current user is the student in this conversation (even if they have a mentor profile elsewhere)
           const { data: profileData } = await supabase
             .from("profiles")
             .select("full_name")
@@ -190,7 +191,7 @@ export function useChat(conversationId: string | undefined, user: User | null): 
             .maybeSingle();
 
           senderName = profileData?.full_name || user.email?.split("@")[0] || "User";
-          console.log("[Chat] Sender is student:", senderName);
+          console.log("[Chat] Sender is STUDENT in this conversation:", senderName);
         }
 
         // Insert message
@@ -232,12 +233,12 @@ export function useChat(conversationId: string | undefined, user: User | null): 
 
         // Send notification to recipient
         let recipientId: string;
-        if (isMentor) {
+        if (isMentorInThisConversation) {
           // Mentor is sending, recipient is the student (conversation.user_id)
           recipientId = conversation.user_id;
         } else {
           // Student is sending, recipient is the mentor
-          recipientId = mentorProfile?.user_id || conversation.mentor_id;
+          recipientId = conversationMentor?.user_id || conversation.mentor_id;
         }
 
         supabase.functions
