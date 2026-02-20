@@ -43,29 +43,8 @@ const Hero = () => {
             Connect with industry leaders in Business, Tech, and Creator industries. Personalized learning paths powered by AI.
           </p>
 
-          {/* AI Twin Value Section */}
-          <div className="max-w-2xl mx-auto py-8 animate-fade-in-up animation-delay-400 space-y-5">
-            <p className="text-lg text-muted-foreground leading-relaxed">
-              Connect with <span className="font-semibold text-foreground">AI Twins</span> of real mentors who answer your questions, recommend the right digital products and services, and help you make smarter decisions — <span className="gradient-text font-semibold">24/7</span>.
-            </p>
-            <div className="flex flex-col sm:flex-row gap-4 justify-center text-sm font-medium">
-              <div className="flex items-center gap-2 px-4 py-2 rounded-full bg-accent/10 border border-accent/20 text-accent">
-                <Bot size={16} />
-                Ask anything — get instant answers
-              </div>
-              <div className="flex items-center gap-2 px-4 py-2 rounded-full bg-accent/10 border border-accent/20 text-accent">
-                <Sparkles size={16} />
-                Personalized recommendations
-              </div>
-              <div className="flex items-center gap-2 px-4 py-2 rounded-full bg-accent/10 border border-accent/20 text-accent">
-                <Video size={16} />
-                Learn from global experts in your language
-              </div>
-            </div>
-          </div>
-
           {/* CTAs */}
-          <div className="flex flex-col sm:flex-row gap-4 justify-center animate-fade-in-up animation-delay-600">
+          <div className="flex flex-col sm:flex-row gap-4 justify-center animate-fade-in-up animation-delay-400">
             <Button 
               variant="hero" 
               size="lg" 
@@ -83,6 +62,27 @@ const Hero = () => {
             >
               Become a Mentor
             </Button>
+          </div>
+
+          {/* AI Twin Value Section */}
+          <div className="max-w-2xl mx-auto py-8 animate-fade-in-up animation-delay-600 space-y-5">
+            <p className="text-lg text-muted-foreground leading-relaxed">
+              Connect with <span className="font-semibold text-foreground">AI Twins</span> of real mentors who answer your questions, recommend the right digital products and services, and help you make smarter decisions — <span className="gradient-text font-semibold">24/7</span>.
+            </p>
+            <div className="flex flex-col sm:flex-row gap-4 justify-center text-sm font-medium">
+              <div className="flex items-center gap-2 px-4 py-2 rounded-full bg-accent/10 border border-accent/20 text-accent">
+                <Bot size={16} />
+                Ask anything — get instant answers
+              </div>
+              <div className="flex items-center gap-2 px-4 py-2 rounded-full bg-accent/10 border border-accent/20 text-accent">
+                <Sparkles size={16} />
+                Personalized recommendations
+              </div>
+              <div className="flex items-center gap-2 px-4 py-2 rounded-full bg-accent/10 border border-accent/20 text-accent">
+                <Video size={16} />
+                Learn from global experts in your language
+              </div>
+            </div>
           </div>
 
           {/* Trust Indicators */}
