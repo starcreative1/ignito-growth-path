@@ -39,11 +39,10 @@ const Hero = () => {
           </h1>
 
           {/* Subheadline */}
-          <p className="text-xl sm:text-2xl text-muted-foreground max-w-2xl mx-auto animate-fade-in-up animation-delay-200">
-            Connect with industry leaders in Business, Tech, and Creator industries.
-            <br />
-            Personalized learning paths powered by AI.
-          </p>
+          <div className="text-xl sm:text-2xl text-muted-foreground max-w-3xl mx-auto animate-fade-in-up animation-delay-200 space-y-1">
+            <p>Connect with industry leaders in Business, Tech, and Creator industries.</p>
+            <p>Personalized learning paths powered by AI.</p>
+          </div>
 
           {/* CTAs */}
           <div className="flex flex-col sm:flex-row gap-4 justify-center animate-fade-in-up animation-delay-400">
