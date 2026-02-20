@@ -40,7 +40,9 @@ const Hero = () => {
 
           {/* Subheadline */}
           <p className="text-xl sm:text-2xl text-muted-foreground max-w-2xl mx-auto animate-fade-in-up animation-delay-200">
-            Connect with industry leaders in Business, Tech, and Creator industries. Personalized learning paths powered by AI.
+            Connect with industry leaders in Business, Tech, and Creator industries.
+            <br />
+            Personalized learning paths powered by AI.
           </p>
 
           {/* CTAs */}
