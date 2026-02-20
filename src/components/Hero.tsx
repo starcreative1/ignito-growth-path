@@ -34,13 +34,13 @@ const Hero = () => {
 
           {/* Headline */}
           <h1 className="text-5xl sm:text-6xl lg:text-7xl font-display font-bold leading-tight animate-fade-in-up">
-            G.Creators is the AI Operating System for experts, mentors, and creators who want to monetize and scale their knowledge{" "}
-            <span className="gradient-text">24/7</span>
+            Unlock Your Full Potential with{" "}
+            <span className="gradient-text">Expert Mentors</span>
           </h1>
 
           {/* Subheadline */}
           <p className="text-xl sm:text-2xl text-muted-foreground max-w-3xl mx-auto animate-fade-in-up animation-delay-200">
-            Turn Your Expertise into a Scalable Business.
+            Connect with industry leaders in Business, Tech, and Creator industries. Personalized learning paths powered by AI.
           </p>
 
           {/* CTAs */}
