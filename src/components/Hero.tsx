@@ -85,10 +85,6 @@ const Hero = () => {
             </div>
           </div>
 
-          {/* Trust Indicators */}
-          <p className="text-sm text-muted-foreground animate-fade-in-up animation-delay-800">
-            Trusted by 10,000+ professionals worldwide
-          </p>
         </div>
       </div>
     </section>
