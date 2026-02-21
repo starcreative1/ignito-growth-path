@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import JSZip from "jszip";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -28,6 +29,7 @@ const StorageDownload = () => {
   const [files, setFiles] = useState<StorageFile[]>([]);
   const [loading, setLoading] = useState(true);
   const [downloading, setDownloading] = useState<string | null>(null);
+  const [zipping, setZipping] = useState(false);
   const { toast } = useToast();
   const navigate = useNavigate();
 
@@ -54,20 +56,52 @@ const StorageDownload = () => {
     fetchFiles();
   }, []);
 
-  const handleDownload = (file: StorageFile) => {
+  const handleDownload = async (file: StorageFile) => {
     setDownloading(file.name);
-    const a = document.createElement("a");
-    a.href = file.url;
-    a.target = "_blank";
-    a.download = file.name.split("/").pop() || file.name;
-    a.click();
-    setTimeout(() => setDownloading(null), 1000);
+    try {
+      const response = await fetch(file.url);
+      const blob = await response.blob();
+      const a = document.createElement("a");
+      a.href = URL.createObjectURL(blob);
+      a.download = file.name.split("/").pop() || file.name;
+      a.click();
+      URL.revokeObjectURL(a.href);
+    } catch {
+      toast({ title: "Download failed", variant: "destructive" });
+    } finally {
+      setDownloading(null);
+    }
   };
 
-  const downloadAll = () => {
-    files.forEach((file, i) => {
-      setTimeout(() => handleDownload(file), i * 300);
-    });
+  const downloadAll = async () => {
+    setZipping(true);
+    try {
+      const zip = new JSZip();
+
+      for (const file of files) {
+        try {
+          const response = await fetch(file.url);
+          const blob = await response.blob();
+          // Structure: bucket/filename
+          zip.file(`${file.bucket}/${file.name}`, blob);
+        } catch (err) {
+          console.error(`Failed to fetch ${file.name}:`, err);
+        }
+      }
+
+      const content = await zip.generateAsync({ type: "blob" });
+      const a = document.createElement("a");
+      a.href = URL.createObjectURL(content);
+      a.download = "storage-backup.zip";
+      a.click();
+      URL.revokeObjectURL(a.href);
+
+      toast({ title: "Download complete", description: "All files saved as storage-backup.zip" });
+    } catch (err: any) {
+      toast({ title: "Error creating zip", description: err.message, variant: "destructive" });
+    } finally {
+      setZipping(false);
+    }
   };
 
   // Group files by bucket
@@ -94,9 +128,18 @@ const StorageDownload = () => {
               Refresh
             </Button>
             {files.length > 0 && (
-              <Button onClick={downloadAll}>
-                <Download className="mr-2 h-4 w-4" />
-                Download All ({files.length})
+              <Button onClick={downloadAll} disabled={zipping}>
+                {zipping ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Creating ZIP...
+                  </>
+                ) : (
+                  <>
+                    <Download className="mr-2 h-4 w-4" />
+                    Download All ({files.length})
+                  </>
+                )}
               </Button>
             )}
           </div>
