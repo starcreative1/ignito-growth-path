@@ -19,6 +19,7 @@ import Profile from "./pages/Profile";
 import AvatarChat from "./pages/AvatarChat";
 import MentorShop from "./pages/MentorShop";
 import PurchaseSuccess from "./pages/PurchaseSuccess";
+import StorageDownload from "./pages/StorageDownload";
 
 const queryClient = new QueryClient();
 
@@ -44,6 +45,7 @@ const App = () => (
           <Route path="/my-questions" element={<MyQuestions />} />
           <Route path="/shop/:username" element={<MentorShop />} />
           <Route path="/purchase-success" element={<PurchaseSuccess />} />
+          <Route path="/storage-download" element={<StorageDownload />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>
