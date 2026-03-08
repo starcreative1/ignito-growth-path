@@ -9,6 +9,7 @@ const corsHeaders = {
 const GOOGLE_CLIENT_ID = Deno.env.get("GOOGLE_CLIENT_ID");
 const GOOGLE_CLIENT_SECRET = Deno.env.get("GOOGLE_CLIENT_SECRET");
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
+const SUPABASE_ANON_KEY = Deno.env.get("SUPABASE_ANON_KEY")!;
 const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 
 async function refreshAccessToken(refreshToken: string): Promise<{ access_token: string; expires_in: number } | null> {
@@ -69,10 +70,46 @@ serve(async (req) => {
   }
 
   try {
+    // Authenticate user
+    const authHeader = req.headers.get("Authorization");
+    if (!authHeader) {
+      return new Response(
+        JSON.stringify({ error: "Authentication required" }),
+        { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    const supabaseAuth = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
+      global: { headers: { Authorization: authHeader } },
+    });
+
+    const { data: { user }, error: authError } = await supabaseAuth.auth.getUser();
+    if (authError || !user) {
+      return new Response(
+        JSON.stringify({ error: "Authentication required" }),
+        { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
     const { mentorId, action } = await req.json();
 
     if (!mentorId) {
       throw new Error("Mentor ID is required");
+    }
+
+    // Verify the authenticated user owns this mentor profile
+    const { data: mentorProfile, error: mentorError } = await supabaseAuth
+      .from("mentor_profiles")
+      .select("id")
+      .eq("id", mentorId)
+      .eq("user_id", user.id)
+      .single();
+
+    if (mentorError || !mentorProfile) {
+      return new Response(
+        JSON.stringify({ error: "Unauthorized - you do not own this mentor profile" }),
+        { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
     }
 
     const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
@@ -127,13 +164,11 @@ serve(async (req) => {
     const busySlots: { date: string; start_time: string; end_time: string }[] = [];
     
     for (const event of events) {
-      // Skip all-day events
       if (!event.start?.dateTime || !event.end?.dateTime) continue;
       
       const start = new Date(event.start.dateTime);
       const end = new Date(event.end.dateTime);
       
-      // Only consider events during business hours (8 AM - 8 PM)
       const startHour = start.getHours();
       const endHour = end.getHours();
       
@@ -151,11 +186,6 @@ serve(async (req) => {
       .from("mentor_calendar_connections")
       .update({ last_synced_at: new Date().toISOString() })
       .eq("mentor_id", mentorId);
-
-    // Note: In a full implementation, you would use these busy slots to:
-    // 1. Mark specific time slots as unavailable in mentor_time_slots
-    // 2. Or store them in a separate busy_times table
-    // For now, we just return the sync info
 
     return new Response(
       JSON.stringify({ 
