@@ -359,6 +359,12 @@ const MentorCabinet = () => {
           )}
 
           {mentorProfile && (
+            <TabsContent value="airequests">
+              <MentorAIRequestsTab mentorId={mentorProfile.id} />
+            </TabsContent>
+          )}
+
+          {mentorProfile && (
             <>
               <TabsContent value="availability" className="space-y-6">
                 <div className="grid gap-6 lg:grid-cols-3">
