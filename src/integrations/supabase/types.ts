@@ -14,6 +14,82 @@ export type Database = {
   }
   public: {
     Tables: {
+      ai_content_requests: {
+        Row: {
+          avatar_id: string
+          created_at: string
+          format: string
+          generated_script: string | null
+          generated_video_url: string | null
+          id: string
+          instructions: string | null
+          learner_id: string
+          mentor_id: string
+          price: number
+          status: string
+          stripe_payment_intent_id: string | null
+          stripe_transfer_id: string | null
+          topic: string
+          updated_at: string
+        }
+        Insert: {
+          avatar_id: string
+          created_at?: string
+          format: string
+          generated_script?: string | null
+          generated_video_url?: string | null
+          id?: string
+          instructions?: string | null
+          learner_id: string
+          mentor_id: string
+          price: number
+          status?: string
+          stripe_payment_intent_id?: string | null
+          stripe_transfer_id?: string | null
+          topic: string
+          updated_at?: string
+        }
+        Update: {
+          avatar_id?: string
+          created_at?: string
+          format?: string
+          generated_script?: string | null
+          generated_video_url?: string | null
+          id?: string
+          instructions?: string | null
+          learner_id?: string
+          mentor_id?: string
+          price?: number
+          status?: string
+          stripe_payment_intent_id?: string | null
+          stripe_transfer_id?: string | null
+          topic?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ai_content_requests_avatar_id_fkey"
+            columns: ["avatar_id"]
+            isOneToOne: false
+            referencedRelation: "mentor_avatars"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ai_content_requests_learner_id_fkey"
+            columns: ["learner_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ai_content_requests_mentor_id_fkey"
+            columns: ["mentor_id"]
+            isOneToOne: false
+            referencedRelation: "mentor_profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       avatar_conversations: {
         Row: {
           avatar_id: string
@@ -478,6 +554,7 @@ export type Database = {
           price: number
           rating: number | null
           review_count: number | null
+          stripe_account_id: string | null
           title: string
           updated_at: string
           user_id: string | null
@@ -501,6 +578,7 @@ export type Database = {
           price: number
           rating?: number | null
           review_count?: number | null
+          stripe_account_id?: string | null
           title: string
           updated_at?: string
           user_id?: string | null
@@ -524,6 +602,7 @@ export type Database = {
           price?: number
           rating?: number | null
           review_count?: number | null
+          stripe_account_id?: string | null
           title?: string
           updated_at?: string
           user_id?: string | null
