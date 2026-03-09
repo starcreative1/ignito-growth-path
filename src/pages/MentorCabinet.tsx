@@ -18,8 +18,9 @@ import { AvatarManagementTab } from "@/components/AvatarManagementTab";
 import { MentorProductsTab } from "@/components/MentorProductsTab";
 import { MentorSalesTab } from "@/components/MentorSalesTab";
 import { MentorQuestionsTab } from "@/components/MentorQuestionsTab";
+import { MentorAIRequestsTab } from "@/components/MentorAIRequestsTab";
 import { User } from "@supabase/supabase-js";
-import { LogOut, Settings, ShoppingBag, Receipt, MessageCircle, LayoutDashboard, User as UserIcon, Bot, CalendarClock, HelpCircle, CalendarDays, MessageSquare } from "lucide-react";
+import { LogOut, Settings, ShoppingBag, Receipt, MessageCircle, LayoutDashboard, User as UserIcon, Bot, CalendarClock, HelpCircle, CalendarDays, MessageSquare, Video } from "lucide-react";
 
 interface MentorProfile {
   id: string;
@@ -275,6 +276,12 @@ const MentorCabinet = () => {
                 </TabsTrigger>
               )}
               {mentorProfile && (
+                <TabsTrigger value="airequests" className="px-3 py-2 text-xs sm:text-sm">
+                  <Video className="h-4 w-4 mr-1.5 sm:mr-2" />
+                  AI Requests
+                </TabsTrigger>
+              )}
+              {mentorProfile && (
                 <TabsTrigger value="sales" className="px-3 py-2 text-xs sm:text-sm">
                   <Receipt className="h-4 w-4 mr-1.5 sm:mr-2" />
                   Sales
@@ -348,6 +355,12 @@ const MentorCabinet = () => {
           {mentorProfile && (
             <TabsContent value="sales">
               <MentorSalesTab mentorId={mentorProfile.id} />
+            </TabsContent>
+          )}
+
+          {mentorProfile && (
+            <TabsContent value="airequests">
+              <MentorAIRequestsTab mentorId={mentorProfile.id} />
             </TabsContent>
           )}
 
