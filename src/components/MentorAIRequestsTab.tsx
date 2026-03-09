@@ -109,7 +109,7 @@ export function MentorAIRequestsTab({ mentorId }: { mentorId: string }) {
                       <>
                         <Button 
                           onClick={() => handleUpdateStatus(req.id, 'accepted')}
-                          className="w-full bg-green-600 hover:bg-green-700"
+                          className="w-full bg-primary hover:bg-primary/90"
                         >
                           <Check size={16} className="mr-1" /> Accept
                         </Button>
