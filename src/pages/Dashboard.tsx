@@ -370,6 +370,14 @@ const Dashboard = () => {
             </Card>
           </TabsContent>
 
+          <TabsContent value="purchases" className="space-y-6">
+            {/* Purchase tab content... */}
+          </TabsContent>
+
+          <TabsContent value="requests" className="space-y-6">
+            <LearnerAIRequestsTab userId={user?.id || ""} />
+          </TabsContent>
+
           <TabsContent value="messages" className="space-y-6">
             <ConversationsList userId={user?.id || ""} />
           </TabsContent>
