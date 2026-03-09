@@ -14,12 +14,3 @@ verify_jwt = false
 
 [functions.list-storage-files]
 verify_jwt = false
-
-[functions.create-ai-content-checkout]
-verify_jwt = false
-
-[functions.generate-script]
-verify_jwt = false
-
-[functions.generate-heygen-video]
-verify_jwt = false

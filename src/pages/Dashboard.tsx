@@ -16,7 +16,6 @@ import { ConversationsList } from "@/components/ConversationsList";
 import { NotificationSettings } from "@/components/NotificationSettings";
 import { PurchasedProductCard } from "@/components/PurchasedProductCard";
 import { DashboardQuestionsTab } from "@/components/DashboardQuestionsTab";
-import { LearnerAIRequestsTab } from "@/components/LearnerAIRequestsTab";
 import { User, Session } from "@supabase/supabase-js";
 import { Calendar, Clock, LogOut, Settings, ShoppingBag, MessageCircle } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
@@ -310,10 +309,6 @@ const Dashboard = () => {
                   <Badge variant="secondary" className="ml-1 sm:ml-2 text-xs">{purchases.length}</Badge>
                 )}
               </TabsTrigger>
-              <TabsTrigger value="requests" className="text-xs sm:text-sm whitespace-nowrap">
-                <MessageCircle className="h-3.5 w-3.5 sm:h-4 sm:w-4 mr-1 sm:mr-2" />
-                AI Requests
-              </TabsTrigger>
               <TabsTrigger value="messages" className="text-xs sm:text-sm whitespace-nowrap relative">
                 <MessageCircle className="h-3.5 w-3.5 sm:h-4 sm:w-4 mr-1 sm:mr-2" />
                 Messages
@@ -369,14 +364,6 @@ const Dashboard = () => {
                 )}
               </CardContent>
             </Card>
-          </TabsContent>
-
-          <TabsContent value="purchases" className="space-y-6">
-            {/* Purchase tab content... */}
-          </TabsContent>
-
-          <TabsContent value="requests" className="space-y-6">
-            <LearnerAIRequestsTab userId={user?.id || ""} />
           </TabsContent>
 
           <TabsContent value="messages" className="space-y-6">

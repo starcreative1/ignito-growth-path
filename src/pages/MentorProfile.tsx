@@ -11,7 +11,6 @@ import ReviewCard from "@/components/ReviewCard";
 import ShopProductCard from "@/components/ShopProductCard";
 import TimeSlotSelector from "@/components/TimeSlotSelector";
 import { QuestionSubmissionForm } from "@/components/QuestionSubmissionForm";
-import { AIContentRequestForm } from "@/components/AIContentRequestForm";
 import type { Mentor, Review } from "@/data/mentors";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
@@ -468,7 +467,7 @@ const MentorProfile = () => {
               <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6 sm:space-y-8">
                 {/* Scrollable tabs for mobile */}
                 <div className="overflow-x-auto -mx-4 px-4 sm:mx-0 sm:px-0">
-                  <TabsList className="inline-flex w-max sm:grid sm:w-full sm:grid-cols-5 gap-1">
+                  <TabsList className="inline-flex w-max sm:grid sm:w-full sm:grid-cols-4 gap-1">
                     <TabsTrigger value="overview" className="text-xs sm:text-sm whitespace-nowrap px-3 sm:px-4">
                       Overview
                     </TabsTrigger>
@@ -481,9 +480,6 @@ const MentorProfile = () => {
                     </TabsTrigger>
                     <TabsTrigger value="question" className="text-xs sm:text-sm whitespace-nowrap px-3 sm:px-4">
                       Ask Question
-                    </TabsTrigger>
-                    <TabsTrigger value="aicontent" className="text-xs sm:text-sm whitespace-nowrap px-3 sm:px-4">
-                      AI Content
                     </TabsTrigger>
                   </TabsList>
                 </div>
@@ -675,24 +671,6 @@ const MentorProfile = () => {
                     mentorId={id!}
                     mentorName={mentor.name}
                   />
-                </TabsContent>
-
-                {/* AI Content Tab */}
-                <TabsContent value="aicontent" className="space-y-6">
-                  {avatar ? (
-                    <AIContentRequestForm
-                      mentorId={id!}
-                      avatarId={avatar.id}
-                      price={mentor.price * 0.8} // Example pricing for AI content vs live session
-                    />
-                  ) : (
-                    <Card>
-                      <CardContent className="p-12 text-center">
-                        <Bot size={48} className="mx-auto text-muted-foreground/50 mb-4" />
-                        <p className="text-muted-foreground">{mentor.name} hasn't created an AI avatar yet.</p>
-                      </CardContent>
-                    </Card>
-                  )}
                 </TabsContent>
               </Tabs>
             </div>
