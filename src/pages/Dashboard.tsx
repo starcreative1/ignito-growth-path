@@ -309,6 +309,10 @@ const Dashboard = () => {
                   <Badge variant="secondary" className="ml-1 sm:ml-2 text-xs">{purchases.length}</Badge>
                 )}
               </TabsTrigger>
+              <TabsTrigger value="requests" className="text-xs sm:text-sm whitespace-nowrap">
+                <MessageCircle className="h-3.5 w-3.5 sm:h-4 sm:w-4 mr-1 sm:mr-2" />
+                AI Requests
+              </TabsTrigger>
               <TabsTrigger value="messages" className="text-xs sm:text-sm whitespace-nowrap relative">
                 <MessageCircle className="h-3.5 w-3.5 sm:h-4 sm:w-4 mr-1 sm:mr-2" />
                 Messages
