@@ -676,6 +676,24 @@ const MentorProfile = () => {
                     mentorName={mentor.name}
                   />
                 </TabsContent>
+
+                {/* AI Content Tab */}
+                <TabsContent value="aicontent" className="space-y-6">
+                  {avatar ? (
+                    <AIContentRequestForm
+                      mentorId={id!}
+                      avatarId={avatar.id}
+                      price={mentor.price * 0.8} // Example pricing for AI content vs live session
+                    />
+                  ) : (
+                    <Card>
+                      <CardContent className="p-12 text-center">
+                        <Bot size={48} className="mx-auto text-muted-foreground/50 mb-4" />
+                        <p className="text-muted-foreground">{mentor.name} hasn't created an AI avatar yet.</p>
+                      </CardContent>
+                    </Card>
+                  )}
+                </TabsContent>
               </Tabs>
             </div>
           </div>
