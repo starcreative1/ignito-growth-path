@@ -468,7 +468,7 @@ const MentorProfile = () => {
               <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6 sm:space-y-8">
                 {/* Scrollable tabs for mobile */}
                 <div className="overflow-x-auto -mx-4 px-4 sm:mx-0 sm:px-0">
-                  <TabsList className="inline-flex w-max sm:grid sm:w-full sm:grid-cols-4 gap-1">
+                  <TabsList className="inline-flex w-max sm:grid sm:w-full sm:grid-cols-5 gap-1">
                     <TabsTrigger value="overview" className="text-xs sm:text-sm whitespace-nowrap px-3 sm:px-4">
                       Overview
                     </TabsTrigger>
@@ -481,6 +481,9 @@ const MentorProfile = () => {
                     </TabsTrigger>
                     <TabsTrigger value="question" className="text-xs sm:text-sm whitespace-nowrap px-3 sm:px-4">
                       Ask Question
+                    </TabsTrigger>
+                    <TabsTrigger value="aicontent" className="text-xs sm:text-sm whitespace-nowrap px-3 sm:px-4">
+                      AI Content
                     </TabsTrigger>
                   </TabsList>
                 </div>
