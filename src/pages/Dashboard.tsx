@@ -16,6 +16,7 @@ import { ConversationsList } from "@/components/ConversationsList";
 import { NotificationSettings } from "@/components/NotificationSettings";
 import { PurchasedProductCard } from "@/components/PurchasedProductCard";
 import { DashboardQuestionsTab } from "@/components/DashboardQuestionsTab";
+import { LearnerAIRequestsTab } from "@/components/LearnerAIRequestsTab";
 import { User, Session } from "@supabase/supabase-js";
 import { Calendar, Clock, LogOut, Settings, ShoppingBag, MessageCircle } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
