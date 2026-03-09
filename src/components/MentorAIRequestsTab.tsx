@@ -96,7 +96,7 @@ export function MentorAIRequestsTab({ mentorId }: { mentorId: string }) {
                     <p className="text-sm text-muted-foreground">From: {req.profiles?.full_name || 'Anonymous'}</p>
                     <div className="flex gap-4 text-sm mt-2">
                       <span className="flex items-center gap-1"><FileText size={14}/> {req.format}</span>
-                      <span className="font-medium text-green-600">${req.price}</span>
+                      <span className="font-medium text-primary">${req.price}</span>
                     </div>
                     <div className="mt-4 p-3 bg-muted rounded-md text-sm">
                       <strong>Instructions:</strong>
