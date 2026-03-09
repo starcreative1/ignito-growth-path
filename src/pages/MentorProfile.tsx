@@ -11,6 +11,7 @@ import ReviewCard from "@/components/ReviewCard";
 import ShopProductCard from "@/components/ShopProductCard";
 import TimeSlotSelector from "@/components/TimeSlotSelector";
 import { QuestionSubmissionForm } from "@/components/QuestionSubmissionForm";
+import { AIContentRequestForm } from "@/components/AIContentRequestForm";
 import type { Mentor, Review } from "@/data/mentors";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
