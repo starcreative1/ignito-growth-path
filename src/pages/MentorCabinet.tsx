@@ -18,8 +18,9 @@ import { AvatarManagementTab } from "@/components/AvatarManagementTab";
 import { MentorProductsTab } from "@/components/MentorProductsTab";
 import { MentorSalesTab } from "@/components/MentorSalesTab";
 import { MentorQuestionsTab } from "@/components/MentorQuestionsTab";
+import { MentorAIRequestsTab } from "@/components/MentorAIRequestsTab";
 import { User } from "@supabase/supabase-js";
-import { LogOut, Settings, ShoppingBag, Receipt, MessageCircle, LayoutDashboard, User as UserIcon, Bot, CalendarClock, HelpCircle, CalendarDays, MessageSquare } from "lucide-react";
+import { LogOut, Settings, ShoppingBag, Receipt, MessageCircle, LayoutDashboard, User as UserIcon, Bot, CalendarClock, HelpCircle, CalendarDays, MessageSquare, Video } from "lucide-react";
 
 interface MentorProfile {
   id: string;
