@@ -276,6 +276,12 @@ const MentorCabinet = () => {
                 </TabsTrigger>
               )}
               {mentorProfile && (
+                <TabsTrigger value="airequests" className="px-3 py-2 text-xs sm:text-sm">
+                  <Video className="h-4 w-4 mr-1.5 sm:mr-2" />
+                  AI Requests
+                </TabsTrigger>
+              )}
+              {mentorProfile && (
                 <TabsTrigger value="sales" className="px-3 py-2 text-xs sm:text-sm">
                   <Receipt className="h-4 w-4 mr-1.5 sm:mr-2" />
                   Sales
