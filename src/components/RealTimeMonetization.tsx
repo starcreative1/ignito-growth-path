@@ -62,9 +62,9 @@ const RealTimeMonetization = () => {
                 <div className="w-10" />
               </div>
 
-              <div className="p-5 sm:p-6 grid grid-cols-5 gap-4">
+              <div className="p-4 sm:p-6 grid grid-cols-1 sm:grid-cols-5 gap-4">
                 {/* Revenue counter */}
-                <div className="col-span-3 space-y-4">
+                <div className="sm:col-span-3 space-y-4">
                   <div className="p-4 rounded-xl bg-gradient-primary text-white">
                     <p className="text-[11px] uppercase tracking-wider opacity-80 font-semibold">
                       Revenue today
@@ -107,7 +107,7 @@ const RealTimeMonetization = () => {
                 </div>
 
                 {/* Live sale notifications */}
-                <div className="col-span-2 space-y-2">
+                <div className="sm:col-span-2 space-y-2">
                   <p className="text-[11px] uppercase tracking-wider text-muted-foreground font-semibold mb-1">
                     Live sales
                   </p>
