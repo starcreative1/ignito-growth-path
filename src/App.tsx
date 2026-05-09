@@ -52,6 +52,8 @@ const App = () => (
           <Route path="/shop/:username" element={<CreatorShop />} />
           <Route path="/purchase-success" element={<PurchaseSuccess />} />
           <Route path="/storage-download" element={<StorageDownload />} />
+          {/* Personal storefront: gcreators.me/yourname */}
+          <Route path="/:username" element={<CreatorShop />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>
