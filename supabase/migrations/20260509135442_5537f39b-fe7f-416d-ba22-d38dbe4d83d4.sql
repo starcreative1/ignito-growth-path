@@ -1,0 +1,1 @@
+ALTER TABLE public.mentor_products ADD COLUMN IF NOT EXISTS preview_image_fit TEXT NOT NULL DEFAULT 'cover' CHECK (preview_image_fit IN ('cover','contain'));

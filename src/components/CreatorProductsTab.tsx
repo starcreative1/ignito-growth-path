@@ -27,6 +27,7 @@ interface Product {
   file_name: string;
   file_type: string;
   preview_image_url: string | null;
+  preview_image_fit?: string | null;
   sales_count: number;
   total_earnings: number;
   is_active: boolean;
@@ -234,7 +235,7 @@ export const CreatorProductsTab = ({ mentorId, mentorUsername, mentorName }: Cre
                         src={product.preview_image_url}
                         alt={product.title}
                         loading="lazy"
-                        className="w-full h-full object-cover"
+                        className={`w-full h-full ${product.preview_image_fit === "contain" ? "object-contain" : "object-cover"}`}
                       />
                     ) : (
                       <div className="w-full h-full flex items-center justify-center">

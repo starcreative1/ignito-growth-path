@@ -27,6 +27,7 @@ interface Product {
   description: string;
   price: number;
   preview_image_url: string | null;
+  preview_image_fit?: string | null;
   file_type: string;
   sales_count: number;
 }
@@ -67,7 +68,7 @@ const CreatorShop = () => {
     // Load active products
     const { data: productsData } = await supabase
       .from("mentor_products")
-      .select("id, title, description, price, preview_image_url, file_type, sales_count")
+      .select("id, title, description, price, preview_image_url, preview_image_fit, file_type, sales_count")
       .eq("mentor_id", mentorData.id)
       .eq("is_active", true)
       .order("created_at", { ascending: false });
@@ -199,7 +200,7 @@ const CreatorShop = () => {
                     <img
                       src={product.preview_image_url}
                       alt={product.title}
-                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                      className={`w-full h-full ${product.preview_image_fit === "contain" ? "object-contain" : "object-cover"} group-hover:scale-105 transition-transform duration-300`}
                     />
                   ) : (
                     <div className="w-full h-full flex items-center justify-center">

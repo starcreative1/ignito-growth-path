@@ -17,6 +17,7 @@ interface Product {
   file_name: string;
   file_type: string;
   preview_image_url: string | null;
+  preview_image_fit?: string | null;
 }
 
 interface ProductFormProps {
@@ -33,6 +34,9 @@ export const ProductForm = ({ mentorId, product, onClose, onSuccess }: ProductFo
   const [file, setFile] = useState<File | null>(null);
   const [previewImage, setPreviewImage] = useState<File | null>(null);
   const [previewUrl, setPreviewUrl] = useState(product?.preview_image_url || "");
+  const [previewFit, setPreviewFit] = useState<"cover" | "contain">(
+    (product?.preview_image_fit as "cover" | "contain") || "cover"
+  );
   const [loading, setLoading] = useState(false);
   const [uploadingFile, setUploadingFile] = useState(false);
   const [uploadingPreview, setUploadingPreview] = useState(false);
@@ -170,6 +174,7 @@ export const ProductForm = ({ mentorId, product, onClose, onSuccess }: ProductFo
         file_name: fileName,
         file_type: fileType,
         preview_image_url: imageUrl,
+        preview_image_fit: previewFit,
       };
 
       if (product) {
@@ -302,7 +307,7 @@ export const ProductForm = ({ mentorId, product, onClose, onSuccess }: ProductFo
                       <img
                         src={previewUrl}
                         alt="Preview"
-                        className="w-full h-full object-contain"
+                        className={`w-full h-full object-${previewFit}`}
                       />
                     </div>
                   ) : (
@@ -316,6 +321,27 @@ export const ProductForm = ({ mentorId, product, onClose, onSuccess }: ProductFo
                   </p>
                 </label>
               </div>
+              {previewUrl && (
+                <div className="flex items-center gap-2 pt-2">
+                  <span className="text-xs text-muted-foreground mr-1">Display:</span>
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant={previewFit === "cover" ? "default" : "outline"}
+                    onClick={() => setPreviewFit("cover")}
+                  >
+                    Crop to fill
+                  </Button>
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant={previewFit === "contain" ? "default" : "outline"}
+                    onClick={() => setPreviewFit("contain")}
+                  >
+                    Fit whole image
+                  </Button>
+                </div>
+              )}
             </div>
           </div>
 
