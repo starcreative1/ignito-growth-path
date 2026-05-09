@@ -7,9 +7,6 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
 import { ArrowLeft, Upload, Image, Loader2 } from "lucide-react";
-import { CategoryFields } from "@/components/shop/CategoryFields";
-import { CategoryBadge } from "@/components/shop/CategoryBadge";
-import { getCategory, type ProductCategoryId } from "@/lib/productCategories";
 
 interface Product {
   id: string;
@@ -21,45 +18,24 @@ interface Product {
   file_type: string;
   preview_image_url: string | null;
   preview_image_fit?: string | null;
-  category?: string | null;
-  category_data?: Record<string, any> | null;
-  is_free?: boolean | null;
 }
 
 interface ProductFormProps {
   mentorId: string;
   product: Product | null;
-  initialCategory?: ProductCategoryId;
   onClose: () => void;
   onSuccess: () => void;
 }
 
-export const ProductForm = ({
-  mentorId,
-  product,
-  initialCategory,
-  onClose,
-  onSuccess,
-}: ProductFormProps) => {
-  const category: ProductCategoryId =
-    (product?.category as ProductCategoryId) || initialCategory || "digital_download";
-  const catDef = getCategory(category);
-  const isLeadMagnet = category === "lead_magnet";
-  const isExternalLink = category === "external_link";
-
+export const ProductForm = ({ mentorId, product, onClose, onSuccess }: ProductFormProps) => {
   const [title, setTitle] = useState(product?.title || "");
   const [description, setDescription] = useState(product?.description || "");
-  const [price, setPrice] = useState(
-    product?.price?.toString() || (isLeadMagnet ? "0" : "")
-  );
+  const [price, setPrice] = useState(product?.price?.toString() || "");
   const [file, setFile] = useState<File | null>(null);
   const [previewImage, setPreviewImage] = useState<File | null>(null);
   const [previewUrl, setPreviewUrl] = useState(product?.preview_image_url || "");
   const [previewFit, setPreviewFit] = useState<"cover" | "contain">(
     (product?.preview_image_fit as "cover" | "contain") || "cover"
-  );
-  const [categoryData, setCategoryData] = useState<Record<string, any>>(
-    (product?.category_data as Record<string, any>) || {}
   );
   const [loading, setLoading] = useState(false);
   const [uploadingFile, setUploadingFile] = useState(false);
@@ -147,21 +123,10 @@ export const ProductForm = ({
       return;
     }
 
-    // External links and bundles don't need a file upload
-    const requiresFile = !isExternalLink && category !== "bundle";
-    if (!product && requiresFile && !file) {
+    if (!product && !file) {
       toast({
         title: "Missing file",
         description: "Please upload a product file",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    if (isExternalLink && !categoryData.external_url) {
-      toast({
-        title: "Missing URL",
-        description: "External link products need a destination URL.",
         variant: "destructive",
       });
       return;
@@ -200,13 +165,6 @@ export const ProductForm = ({
         }
       }
 
-      // Non-file categories: keep file_* columns satisfied with placeholders
-      if (!fileUrl && (isExternalLink || category === "bundle")) {
-        fileUrl = isExternalLink ? (categoryData.external_url as string) : "bundle://";
-        fileName = catDef.label;
-        fileType = isExternalLink ? "link" : "bundle";
-      }
-
       const productData = {
         mentor_id: mentorId,
         title: title.trim(),
@@ -217,9 +175,6 @@ export const ProductForm = ({
         file_type: fileType,
         preview_image_url: imageUrl,
         preview_image_fit: previewFit,
-        category,
-        category_data: categoryData,
-        is_free: isLeadMagnet || parseFloat(price) === 0,
       };
 
       if (product) {
@@ -264,14 +219,11 @@ export const ProductForm = ({
   return (
     <Card>
       <CardHeader>
-        <div className="flex items-center gap-4 flex-wrap">
+        <div className="flex items-center gap-4">
           <Button variant="ghost" size="icon" onClick={onClose}>
             <ArrowLeft className="h-4 w-4" />
           </Button>
-          <CardTitle className="tracking-tight">
-            {product ? "Edit Product" : "Add New Product"}
-          </CardTitle>
-          <CategoryBadge categoryId={category} />
+          <CardTitle>{product ? "Edit Product" : "Add New Product"}</CardTitle>
         </div>
       </CardHeader>
       <CardContent>
@@ -288,9 +240,7 @@ export const ProductForm = ({
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="price">
-                Price (USD) {isLeadMagnet ? "" : "*"}
-              </Label>
+              <Label htmlFor="price">Price (USD) *</Label>
               <Input
                 id="price"
                 type="number"
@@ -298,9 +248,8 @@ export const ProductForm = ({
                 step="0.01"
                 value={price}
                 onChange={(e) => setPrice(e.target.value)}
-                placeholder={isLeadMagnet ? "0 (free)" : "29.99"}
-                disabled={isLeadMagnet}
-                required={!isLeadMagnet}
+                placeholder="29.99"
+                required
               />
             </div>
           </div>
@@ -317,28 +266,11 @@ export const ProductForm = ({
             />
           </div>
 
-          {/* Category-specific fields */}
-          <div className="space-y-3 rounded-lg border bg-muted/20 p-4">
-            <div className="flex items-center gap-2">
-              <h3 className="text-sm font-semibold tracking-tight">{catDef.label} details</h3>
-            </div>
-            <CategoryFields
-              category={category}
-              data={categoryData}
-              onChange={setCategoryData}
-              mentorId={mentorId}
-              currentProductId={product?.id}
-            />
-          </div>
-
           <div className="grid gap-6 md:grid-cols-2">
             {/* Product File Upload */}
-            {!isExternalLink && category !== "bundle" && (
-              <div className="space-y-2">
-                <Label>
-                  Product File {!product && "*"}
-                </Label>
-                <div className="border-2 border-dashed border-border rounded-lg p-6 text-center">
+            <div className="space-y-2">
+              <Label>Product File {!product && "*"}</Label>
+              <div className="border-2 border-dashed border-border rounded-lg p-6 text-center">
                 <input
                   type="file"
                   id="product-file"
@@ -355,12 +287,11 @@ export const ProductForm = ({
                     PDF, ZIP, MP3, MP4, etc. (Max 100MB)
                   </p>
                 </label>
-                </div>
               </div>
-            )}
+            </div>
 
             {/* Preview Image Upload */}
-            <div className={`space-y-2 ${isExternalLink || category === "bundle" ? "md:col-span-2" : ""}`}>
+            <div className="space-y-2">
               <Label>Preview Image</Label>
               <div className="border-2 border-dashed border-border rounded-lg p-6 text-center overflow-hidden">
                 <input

@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -8,10 +8,6 @@ import { EmptyState } from "@/components/dashboard/EmptyState";
 import { ProductForm } from "./ProductForm";
 import { ShareShopDialog } from "./ShareShopDialog";
 import { Badge } from "@/components/ui/badge";
-import { CategoryPickerModal } from "@/components/shop/CategoryPickerModal";
-import { CategoryBadge, FreeBadge } from "@/components/shop/CategoryBadge";
-import { ShopFilters } from "@/components/shop/ShopFilters";
-import { type ProductCategoryId, type ProductSortId } from "@/lib/productCategories";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -39,9 +35,6 @@ interface Product {
   created_at: string;
   average_rating: number;
   review_count: number;
-  category?: string | null;
-  category_data?: Record<string, any> | null;
-  is_free?: boolean | null;
 }
 
 interface CreatorProductsTabProps {
@@ -53,14 +46,10 @@ interface CreatorProductsTabProps {
 export const CreatorProductsTab = ({ mentorId, mentorUsername, mentorName }: CreatorProductsTabProps) => {
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
-  const [showPicker, setShowPicker] = useState(false);
-  const [pendingCategory, setPendingCategory] = useState<ProductCategoryId | null>(null);
+  const [showForm, setShowForm] = useState(false);
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
   const [deleteProduct, setDeleteProduct] = useState<Product | null>(null);
   const [showShareDialog, setShowShareDialog] = useState(false);
-  const [search, setSearch] = useState("");
-  const [activeCategory, setActiveCategory] = useState<ProductCategoryId | "all">("all");
-  const [sort, setSort] = useState<ProductSortId>("recent");
   const { toast } = useToast();
 
   useEffect(() => {
@@ -131,54 +120,21 @@ export const CreatorProductsTab = ({ mentorId, mentorUsername, mentorName }: Cre
   const totalEarnings = products.reduce((sum, p) => sum + Number(p.total_earnings), 0);
   const totalSales = products.reduce((sum, p) => sum + p.sales_count, 0);
 
-  const counts = useMemo(() => {
-    const c: Record<string, number> = {};
-    for (const p of products) {
-      const k = (p.category as string) || "digital_download";
-      c[k] = (c[k] || 0) + 1;
-    }
-    return c;
-  }, [products]);
-
-  const visibleProducts = useMemo(() => {
-    const q = search.trim().toLowerCase();
-    let list = products.filter((p) => {
-      if (activeCategory !== "all" && (p.category || "digital_download") !== activeCategory) return false;
-      if (!q) return true;
-      return (
-        p.title.toLowerCase().includes(q) ||
-        (p.description || "").toLowerCase().includes(q) ||
-        (p.category || "").toLowerCase().includes(q)
-      );
-    });
-    list = [...list];
-    switch (sort) {
-      case "best_selling": list.sort((a, b) => b.sales_count - a.sales_count); break;
-      case "highest_revenue": list.sort((a, b) => Number(b.total_earnings) - Number(a.total_earnings)); break;
-      case "alpha": list.sort((a, b) => a.title.localeCompare(b.title)); break;
-      case "price_asc": list.sort((a, b) => Number(a.price) - Number(b.price)); break;
-      case "price_desc": list.sort((a, b) => Number(b.price) - Number(a.price)); break;
-      default: list.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
-    }
-    return list;
-  }, [products, search, activeCategory, sort]);
-
   if (loading) {
     return <div className="text-center py-8">Loading products...</div>;
   }
 
-  if (pendingCategory || editingProduct) {
+  if (showForm || editingProduct) {
     return (
       <ProductForm
         mentorId={mentorId}
         product={editingProduct}
-        initialCategory={pendingCategory || undefined}
         onClose={() => {
-          setPendingCategory(null);
+          setShowForm(false);
           setEditingProduct(null);
         }}
         onSuccess={() => {
-          setPendingCategory(null);
+          setShowForm(false);
           setEditingProduct(null);
           loadProducts();
         }}
@@ -233,7 +189,7 @@ export const CreatorProductsTab = ({ mentorId, mentorUsername, mentorName }: Cre
 
       {/* Actions */}
       <div className="flex flex-wrap gap-4">
-        <Button onClick={() => setShowPicker(true)}>
+        <Button onClick={() => setShowForm(true)}>
           <Plus className="mr-2 h-4 w-4" />
           Add Product
         </Button>
@@ -258,30 +214,16 @@ export const CreatorProductsTab = ({ mentorId, mentorUsername, mentorName }: Cre
           icon={ShoppingBag}
           title="No products yet"
           description="Add your first digital product — a guide, template, or course — and start earning from your audience."
-          action={{ label: "Create Your First Product", icon: Plus, onClick: () => setShowPicker(true) }}
+          action={{ label: "Create Your First Product", icon: Plus, onClick: () => setShowForm(true) }}
         />
       ) : (
-        <>
-        <ShopFilters
-          search={search}
-          onSearchChange={setSearch}
-          activeCategory={activeCategory}
-          onCategoryChange={setActiveCategory}
-          counts={counts}
-          total={products.length}
-          sort={sort}
-          onSortChange={setSort}
-        />
-        {visibleProducts.length === 0 && (
-          <p className="text-sm text-muted-foreground text-center py-8">No products match this filter.</p>
-        )}
         <div className="grid gap-4">
-          {visibleProducts.map((product) => (
+          {products.map((product) => (
             <Card key={product.id}>
               <CardContent className="p-4">
                 <div className="flex flex-row gap-4">
                   {/* Preview Image */}
-                  <div className="relative w-24 h-24 sm:w-32 sm:h-32 rounded-lg bg-muted overflow-hidden flex-shrink-0 border">
+                  <div className="w-24 h-24 sm:w-32 sm:h-32 rounded-lg bg-muted overflow-hidden flex-shrink-0 border">
                     {product.preview_image_url ? (
                       <img
                         src={product.preview_image_url}
@@ -294,18 +236,14 @@ export const CreatorProductsTab = ({ mentorId, mentorUsername, mentorName }: Cre
                         <ShoppingBag className="h-6 w-6 sm:h-8 sm:w-8 text-muted-foreground" />
                       </div>
                     )}
-                    <div className="absolute top-1 left-1">
-                      <CategoryBadge categoryId={product.category} size="xs" />
-                    </div>
                   </div>
 
                   {/* Product Info */}
                   <div className="flex-1 min-w-0">
                     <div className="flex items-start justify-between gap-4">
                       <div>
-                        <div className="flex items-center gap-2 flex-wrap">
+                        <div className="flex items-center gap-2">
                           <h3 className="font-semibold truncate">{product.title}</h3>
-                          {product.is_free && <FreeBadge />}
                           <Badge variant={product.is_active ? "default" : "secondary"}>
                             {product.is_active ? "Active" : "Inactive"}
                           </Badge>
@@ -315,7 +253,7 @@ export const CreatorProductsTab = ({ mentorId, mentorUsername, mentorName }: Cre
                         </p>
                       </div>
                       <p className="text-lg font-bold text-primary whitespace-nowrap">
-                        {product.is_free ? "FREE" : `$${Number(product.price).toFixed(2)}`}
+                        ${Number(product.price).toFixed(2)}
                       </p>
                     </div>
 
@@ -364,7 +302,6 @@ export const CreatorProductsTab = ({ mentorId, mentorUsername, mentorName }: Cre
             </Card>
           ))}
         </div>
-        </>
       )}
 
       {/* Share Dialog */}
@@ -373,12 +310,6 @@ export const CreatorProductsTab = ({ mentorId, mentorUsername, mentorName }: Cre
         onOpenChange={setShowShareDialog}
         mentorUsername={mentorUsername}
         mentorName={mentorName}
-      />
-
-      <CategoryPickerModal
-        open={showPicker}
-        onOpenChange={setShowPicker}
-        onPick={(id) => { setShowPicker(false); setPendingCategory(id); }}
       />
 
       {/* Delete Confirmation */}
