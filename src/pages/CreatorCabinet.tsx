@@ -224,7 +224,31 @@ const CreatorCabinet = () => {
     .filter(b => b.status === "confirmed")
     .reduce((sum, b) => sum + Number(b.price), 0);
 
-  const uniqueStudents = new Set(bookings.map(b => b.user_email)).size;
+  const [productRevenue, setProductRevenue] = useState(0);
+  const [activeProductsCount, setActiveProductsCount] = useState(0);
+
+  useEffect(() => {
+    if (!mentorProfile) return;
+    (async () => {
+      const [{ data: purchases }, { count: activeCount }] = await Promise.all([
+        supabase
+          .from("product_purchases")
+          .select("amount, product_id, mentor_products!inner(mentor_id)")
+          .eq("status", "completed")
+          .eq("mentor_products.mentor_id", mentorProfile.id),
+        supabase
+          .from("mentor_products")
+          .select("id", { count: "exact", head: true })
+          .eq("mentor_id", mentorProfile.id)
+          .eq("is_active", true),
+      ]);
+      const sum = (purchases || []).reduce((s: number, p: any) => s + Number(p.amount || 0), 0);
+      setProductRevenue(sum);
+      setActiveProductsCount(activeCount || 0);
+    })();
+  }, [mentorProfile?.id]);
+
+  const totalRevenue = totalEarnings + productRevenue;
 
   if (loading) {
     return (
@@ -242,9 +266,9 @@ const CreatorCabinet = () => {
       <Navbar />
       <div className="container pt-24 sm:pt-32 px-3 sm:px-4 pb-16">
         {/* Mobile-friendly header */}
-        <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4 mb-6 sm:mb-8">
+        <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4 mb-8 sm:mb-10">
           <div className="min-w-0">
-            <h1 className="text-2xl sm:text-4xl font-bold mb-1 sm:mb-2 truncate">Creator Cabinet</h1>
+            <h1 className="text-3xl sm:text-4xl font-bold mb-1 sm:mb-2 truncate">Creator Dashboard</h1>
             <p className="text-sm sm:text-base text-muted-foreground truncate">
               Welcome back, {mentorProfile?.name || user?.email}
             </p>
@@ -256,12 +280,12 @@ const CreatorCabinet = () => {
         </div>
 
         {mentorProfile && (
-          <div className="mb-4 sm:mb-6">
+          <div className="mb-6 sm:mb-8">
             <CreatorStatsCard
-              totalEarnings={totalEarnings}
-              totalStudents={uniqueStudents}
-              averageRating={mentorProfile.rating || 0}
-              upcomingSessions={upcomingBookings.length}
+              totalRevenue={totalRevenue}
+              storefrontVisits={0}
+              conversionRate={null}
+              activeProducts={activeProductsCount}
             />
           </div>
         )}
