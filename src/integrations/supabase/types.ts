@@ -481,6 +481,7 @@ export type Database = {
           id: string
           is_active: boolean
           mentor_id: string
+          preview_image_fit: string
           preview_image_url: string | null
           price: number
           review_count: number | null
@@ -499,6 +500,7 @@ export type Database = {
           id?: string
           is_active?: boolean
           mentor_id: string
+          preview_image_fit?: string
           preview_image_url?: string | null
           price: number
           review_count?: number | null
@@ -517,6 +519,7 @@ export type Database = {
           id?: string
           is_active?: boolean
           mentor_id?: string
+          preview_image_fit?: string
           preview_image_url?: string | null
           price?: number
           review_count?: number | null
