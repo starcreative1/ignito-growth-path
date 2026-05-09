@@ -1,5 +1,5 @@
 import { Button } from "@/components/ui/button";
-import { ArrowRight, Sparkles } from "lucide-react";
+import { ArrowRight, Rocket } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 
 const CTA = () => {
@@ -17,20 +17,20 @@ const CTA = () => {
         <div className="max-w-4xl mx-auto text-center space-y-8">
           {/* Badge */}
           <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-accent/10 border border-accent/20 text-accent text-sm font-medium">
-            <Sparkles size={16} />
-            Start Your Journey Today
+            <Rocket size={16} />
+            Get Started
           </div>
 
           {/* Headline */}
           <h2 className="text-4xl sm:text-5xl lg:text-6xl font-display font-bold leading-tight">
-            Ready to Transform Your{" "}
-            <span className="gradient-text">Career & Life?</span>
+            Run Your Creator Business on{" "}
+            <span className="gradient-text">G.Creators</span>
           </h2>
 
           {/* Description */}
           <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
-            Join thousands of professionals who are already growing with G.Creators. 
-            Get matched with expert mentors and start learning today.
+            Stop stitching together disconnected tools. Launch your AI Twin, 
+            scale your content, and monetize globally — all from one operating system built for creators.
           </p>
 
           {/* CTAs */}
@@ -41,7 +41,7 @@ const CTA = () => {
               className="text-lg px-8 py-6"
               onClick={() => navigate('/auth')}
             >
-              Get Started for Free
+              Claim Your Creator Profile
               <ArrowRight className="ml-2" size={20} />
             </Button>
             <Button 
@@ -50,13 +50,13 @@ const CTA = () => {
               className="text-lg px-8 py-6"
               onClick={() => navigate('/creators')}
             >
-              Explore Creators
+              Explore the Network
             </Button>
           </div>
 
           {/* Trust Badge */}
           <p className="text-sm text-muted-foreground pt-4">
-            No credit card required • 30-day free trial • Cancel anytime
+            Free to get started • No credit card required
           </p>
         </div>
       </div>
