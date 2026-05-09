@@ -12,6 +12,11 @@ import {
   Copy, ExternalLink, Eye, GripVertical, Plus, Trash2,
   Instagram, Youtube, Linkedin, Globe, Music2, Twitter,
 } from "lucide-react";
+import { DesignTab } from "./DesignTab";
+import {
+  StorefrontTheme, DEFAULT_THEME, FONT_PAIR_META,
+  backgroundStyleToCss, buttonRadius,
+} from "./themeTypes";
 
 interface Props {
   mentorId: string;
@@ -32,6 +37,7 @@ interface StorefrontRow {
   location: string | null;
   location_flag: string | null;
   social_links: SocialLink[];
+  theme: StorefrontTheme;
   is_published: boolean;
   has_unpublished_changes: boolean;
   last_published_at: string | null;
@@ -58,6 +64,7 @@ export const StorefrontBuilder = ({ mentorId, mentorUsername, mentorName, mentor
     location: "",
     location_flag: "",
     social_links: [],
+    theme: DEFAULT_THEME,
     is_published: false,
     has_unpublished_changes: false,
     last_published_at: null,
@@ -83,6 +90,9 @@ export const StorefrontBuilder = ({ mentorId, mentorUsername, mentorName, mentor
       setData({
         ...row,
         social_links: Array.isArray(row.social_links) ? row.social_links : [],
+        theme: row.theme && typeof row.theme === "object" && Object.keys(row.theme).length
+          ? { ...DEFAULT_THEME, ...row.theme }
+          : DEFAULT_THEME,
       });
     } else {
       setData((d) => ({ ...d, display_name: mentorName }));
@@ -103,6 +113,7 @@ export const StorefrontBuilder = ({ mentorId, mentorUsername, mentorName, mentor
       location: data.location,
       location_flag: data.location_flag,
       social_links: data.social_links,
+      theme: data.theme,
       has_unpublished_changes: true,
     };
     const { error } = await (supabase as any)
@@ -214,7 +225,7 @@ export const StorefrontBuilder = ({ mentorId, mentorUsername, mentorName, mentor
           <Tabs defaultValue="profile" className="space-y-4">
             <TabsList className="grid grid-cols-4 w-full">
               <TabsTrigger value="profile">Profile</TabsTrigger>
-              <TabsTrigger value="design" disabled>Design</TabsTrigger>
+              <TabsTrigger value="design">Design</TabsTrigger>
               <TabsTrigger value="products" disabled>Products</TabsTrigger>
               <TabsTrigger value="sections" disabled>Sections</TabsTrigger>
             </TabsList>
@@ -343,6 +354,14 @@ export const StorefrontBuilder = ({ mentorId, mentorUsername, mentorName, mentor
 
               <Button className="w-full" onClick={handleSave}>Save changes</Button>
             </TabsContent>
+
+            <TabsContent value="design" className="space-y-4">
+              <DesignTab
+                theme={data.theme}
+                onChange={(next) => update({ theme: next })}
+              />
+              <Button className="w-full" onClick={handleSave}>Save changes</Button>
+            </TabsContent>
           </Tabs>
         </Card>
 
@@ -355,34 +374,61 @@ export const StorefrontBuilder = ({ mentorId, mentorUsername, mentorName, mentor
             </Button>
           </div>
           <div className="flex justify-center">
-            <div className="w-[320px] rounded-[2rem] border-[10px] border-foreground/80 bg-background overflow-hidden shadow-xl">
-              <div className="aspect-[9/19] overflow-y-auto p-5 flex flex-col items-center text-center">
+            <div className="w-[320px] rounded-[2rem] border-[10px] border-foreground/80 overflow-hidden shadow-xl"
+                 style={{ backgroundColor: data.theme.background_color }}>
+              <div
+                className="aspect-[9/19] overflow-y-auto p-5 flex flex-col items-center text-center"
+                style={{
+                  ...backgroundStyleToCss(data.theme),
+                  color: data.theme.text_color,
+                  fontFamily: FONT_PAIR_META[data.theme.font_pairing].body,
+                }}
+              >
                 {photoUrl ? (
                   <img src={photoUrl} alt="" className="h-20 w-20 rounded-full object-cover" />
                 ) : (
                   <div className="h-20 w-20 rounded-full bg-muted" />
                 )}
-                <h3 className="mt-3 font-semibold">{data.display_name || mentorName}</h3>
+                <h3
+                  className="mt-3 font-semibold"
+                  style={{ fontFamily: FONT_PAIR_META[data.theme.font_pairing].heading }}
+                >
+                  {data.display_name || mentorName}
+                </h3>
                 {(data.location_flag || data.location) && (
-                  <p className="text-xs text-muted-foreground mt-0.5">
+                  <p className="text-xs mt-0.5 opacity-70">
                     {data.location_flag} {data.location}
                   </p>
                 )}
                 {data.bio_short && (
-                  <p className="mt-3 text-sm text-muted-foreground">{data.bio_short}</p>
+                  <p className="mt-3 text-sm opacity-80">{data.bio_short}</p>
                 )}
                 <div className="flex flex-wrap gap-2 justify-center mt-4">
                   {data.social_links.filter((s) => s.url).map((s) => {
                     const Icon = PLATFORM_META[s.platform].icon;
                     return (
                       <a key={s.id} href={s.url} target="_blank" rel="noreferrer"
-                         className="h-9 w-9 rounded-full bg-muted flex items-center justify-center hover:bg-muted/70">
+                         className="h-9 w-9 flex items-center justify-center"
+                         style={{
+                           backgroundColor: `${data.theme.primary_color}15`,
+                           color: data.theme.primary_color,
+                           borderRadius: 9999,
+                         }}>
                         <Icon className="h-4 w-4" />
                       </a>
                     );
                   })}
                 </div>
-                <p className="text-xs text-muted-foreground mt-8">Products and sections appear here ✨</p>
+                <button
+                  className="mt-6 px-5 py-2 text-sm font-medium"
+                  style={{
+                    backgroundColor: data.theme.primary_color,
+                    color: "#fff",
+                    borderRadius: buttonRadius(data.theme.button_style),
+                  }}>
+                  Shop now
+                </button>
+                <p className="text-xs mt-6 opacity-60">Products and sections appear here ✨</p>
               </div>
             </div>
           </div>
