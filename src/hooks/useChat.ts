@@ -88,15 +88,13 @@ export function useChat(conversationId: string | undefined, user: User | null): 
     // Determine the other participant's name
     let participantName = data.mentor_name;
     
-    // If current user is the mentor, fetch the user's name
+    // If current user is the mentor, fetch the user's name via secure RPC
     if (isCreator) {
-      const { data: profileData } = await supabase
-        .from("profiles")
-        .select("full_name")
-        .eq("id", data.user_id)
+      const { data: participant } = await supabase
+        .rpc("get_conversation_participant", { _user_id: data.user_id })
         .maybeSingle();
-      
-      participantName = profileData?.full_name || "User";
+
+      participantName = participant?.full_name || data.mentor_name || "User";
     }
 
     setConversation({
