@@ -527,6 +527,8 @@ export type Database = {
       mentor_products: {
         Row: {
           average_rating: number | null
+          category: string
+          category_data: Json
           created_at: string
           description: string
           file_name: string
@@ -534,6 +536,7 @@ export type Database = {
           file_url: string
           id: string
           is_active: boolean
+          is_free: boolean
           mentor_id: string
           preview_image_fit: string
           preview_image_url: string | null
@@ -546,6 +549,8 @@ export type Database = {
         }
         Insert: {
           average_rating?: number | null
+          category?: string
+          category_data?: Json
           created_at?: string
           description: string
           file_name: string
@@ -553,6 +558,7 @@ export type Database = {
           file_url: string
           id?: string
           is_active?: boolean
+          is_free?: boolean
           mentor_id: string
           preview_image_fit?: string
           preview_image_url?: string | null
@@ -565,6 +571,8 @@ export type Database = {
         }
         Update: {
           average_rating?: number | null
+          category?: string
+          category_data?: Json
           created_at?: string
           description?: string
           file_name?: string
@@ -572,6 +580,7 @@ export type Database = {
           file_url?: string
           id?: string
           is_active?: boolean
+          is_free?: boolean
           mentor_id?: string
           preview_image_fit?: string
           preview_image_url?: string | null
