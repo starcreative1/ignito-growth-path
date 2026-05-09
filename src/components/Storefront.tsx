@@ -59,9 +59,9 @@ const Storefront = () => {
           </div>
 
           {/* Phone mockup */}
-          <div className="relative flex justify-center">
+          <div className="relative flex justify-center px-4">
             <div className="absolute -inset-8 bg-gradient-primary opacity-20 blur-3xl rounded-full" />
-            <div className="relative w-[280px] sm:w-[320px] aspect-[9/19] bg-foreground rounded-[2.5rem] p-3 shadow-strong">
+            <div className="relative w-[260px] sm:w-[320px] aspect-[9/19] bg-foreground rounded-[2.5rem] p-3 shadow-strong">
               <div className="w-full h-full bg-background rounded-[2rem] overflow-hidden flex flex-col">
                 {/* Notch */}
                 <div className="h-6 flex justify-center items-end pb-1">
@@ -113,7 +113,7 @@ const Storefront = () => {
             </div>
 
             {/* Sale notification toast */}
-            <div className="absolute top-8 -right-2 sm:right-0 lg:-right-4 bg-card border border-border rounded-xl shadow-strong px-3 py-2 flex items-center gap-2 animate-fade-in-up max-w-[200px]">
+            <div className="absolute top-6 right-0 sm:right-2 lg:-right-4 bg-card border border-border rounded-xl shadow-strong px-3 py-2 flex items-center gap-2 animate-fade-in-up max-w-[180px]">
               <div className="w-7 h-7 rounded-full bg-accent/15 flex items-center justify-center shrink-0">
                 <Check className="text-accent" size={14} />
               </div>
