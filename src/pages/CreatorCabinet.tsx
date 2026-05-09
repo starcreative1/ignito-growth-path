@@ -4,7 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
-import Navbar from "@/components/Navbar";
+import DashboardNavbar from "@/components/DashboardNavbar";
 import { CreatorStatsCard } from "@/components/CreatorStatsCard";
 import { CreatorBookingsCard } from "@/components/CreatorBookingsCard";
 import { CreatorProfileEditor } from "@/components/CreatorProfileEditor";
@@ -270,7 +270,7 @@ const CreatorCabinet = () => {
   if (loading) {
     return (
       <div className="min-h-screen bg-background">
-        <Navbar />
+        <DashboardNavbar />
         <div className="container pt-32 px-4">
           <p className="text-center">Loading...</p>
         </div>
@@ -280,7 +280,7 @@ const CreatorCabinet = () => {
 
   return (
     <div className="min-h-screen bg-background">
-      <Navbar />
+      <DashboardNavbar />
       <div className="container pt-24 sm:pt-32 px-3 sm:px-4 pb-16">
         {/* Mobile-friendly header */}
         <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4 mb-8 sm:mb-10">
