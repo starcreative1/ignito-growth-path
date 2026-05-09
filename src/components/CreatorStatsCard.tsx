@@ -1,44 +1,48 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { DollarSign, Users, Star, Calendar } from "lucide-react";
+import { DollarSign, Eye, TrendingDown, Package } from "lucide-react";
 
 interface CreatorStatsCardProps {
-  totalEarnings: number;
-  totalStudents: number;
-  averageRating: number;
-  upcomingSessions: number;
+  totalRevenue: number;
+  storefrontVisits: number;
+  conversionRate: number | null;
+  activeProducts: number;
 }
 
-export const CreatorStatsCard = ({ 
-  totalEarnings, 
-  totalStudents, 
-  averageRating, 
-  upcomingSessions 
+export const CreatorStatsCard = ({
+  totalRevenue,
+  storefrontVisits,
+  conversionRate,
+  activeProducts,
 }: CreatorStatsCardProps) => {
   const stats = [
     {
-      title: "Total Earnings",
-      value: `$${totalEarnings.toFixed(2)}`,
+      title: "Total Revenue",
+      value: `$${totalRevenue.toFixed(2)}`,
       icon: DollarSign,
-      description: "Lifetime earnings"
+      description: totalRevenue > 0 ? "Lifetime earnings" : "Your first sale starts here",
+      isEmpty: totalRevenue === 0,
     },
     {
-      title: "Total Students",
-      value: totalStudents,
-      icon: Users,
-      description: "Students mentored"
+      title: "Storefront Visits",
+      value: storefrontVisits.toLocaleString(),
+      icon: Eye,
+      description: storefrontVisits > 0 ? "Last 30 days" : "Share your link to get started",
+      isEmpty: storefrontVisits === 0,
     },
     {
-      title: "Average Rating",
-      value: averageRating > 0 ? averageRating.toFixed(1) : "N/A",
-      icon: Star,
-      description: "From student reviews"
+      title: "Conversion Rate",
+      value: conversionRate !== null ? `${conversionRate.toFixed(1)}%` : "—%",
+      icon: TrendingDown,
+      description: conversionRate !== null ? "Visitors → Customers" : "Needs traffic + products",
+      isEmpty: conversionRate === null,
     },
     {
-      title: "Upcoming Sessions",
-      value: upcomingSessions,
-      icon: Calendar,
-      description: "Sessions scheduled"
-    }
+      title: "Active Products",
+      value: activeProducts.toString(),
+      icon: Package,
+      description: activeProducts > 0 ? "On your storefront" : "Add to your shop",
+      isEmpty: activeProducts === 0,
+    },
   ];
 
   return (
@@ -46,7 +50,7 @@ export const CreatorStatsCard = ({
       {stats.map((stat) => {
         const Icon = stat.icon;
         return (
-          <Card key={stat.title} className="overflow-hidden">
+          <Card key={stat.title} className="overflow-hidden transition-shadow hover:shadow-md">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 p-3 sm:p-4 pb-1 sm:pb-2">
               <CardTitle className="text-xs sm:text-sm font-medium truncate pr-2">
                 {stat.title}
@@ -54,7 +58,9 @@ export const CreatorStatsCard = ({
               <Icon className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-muted-foreground shrink-0" />
             </CardHeader>
             <CardContent className="p-3 sm:p-4 pt-0 sm:pt-0">
-              <div className="text-lg sm:text-2xl font-bold truncate">{stat.value}</div>
+              <div className={`text-2xl sm:text-3xl font-bold truncate ${stat.isEmpty ? "text-muted-foreground" : ""}`}>
+                {stat.value}
+              </div>
               <p className="text-[10px] sm:text-xs text-muted-foreground truncate">
                 {stat.description}
               </p>
