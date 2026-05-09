@@ -1,25 +1,40 @@
-import { CheckCircle2 } from "lucide-react";
+import { Brain, Sparkles, Layers, TrendingUp, type LucideIcon } from "lucide-react";
 
-const steps = [
+type Step = {
+  number: string;
+  title: string;
+  description: string;
+  icon: LucideIcon;
+};
+
+const steps: Step[] = [
   {
     number: "01",
-    title: "Create Your Profile",
-    description: "Tell us about your goals, current skills, and what you want to achieve.",
+    title: "Connect Your Knowledge",
+    description:
+      "Upload your existing content, courses, videos, or expertise. G.Creators OS ingests everything and builds your unified creator workspace in minutes.",
+    icon: Brain,
   },
   {
     number: "02",
-    title: "Get AI Recommendations",
-    description: "Our AI analyzes your profile and suggests the best mentors and courses for you.",
+    title: "Train Your AI Twin",
+    description:
+      "Your personalized AI avatar learns your voice, style, and expertise. It engages your audience 24/7, answers questions, and creates content in your unique tone — across time zones and languages.",
+    icon: Sparkles,
   },
   {
     number: "03",
-    title: "Connect & Learn",
-    description: "Book consultations, enroll in courses, and start your growth journey.",
+    title: "Scale Across Formats & Markets",
+    description:
+      "One-click AI generation turns one piece of content into many: video → text → presentation → course → social posts. Translate and localize to any language instantly.",
+    icon: Layers,
   },
   {
     number: "04",
-    title: "Track Progress",
-    description: "Monitor your achievements and celebrate milestones as you advance.",
+    title: "Monetize & Grow",
+    description:
+      "Sell through the AI-powered Marketplace that matches you with your ideal audience. Run memberships, communities, and mentorship programs. Track everything in unified analytics.",
+    icon: TrendingUp,
   },
 ];
 
@@ -28,49 +43,51 @@ const HowItWorks = () => {
     <section id="how-it-works" className="py-24 bg-background">
       <div className="container mx-auto px-4 sm:px-6 lg:px-8">
         <div className="text-center max-w-3xl mx-auto mb-16">
+          <p className="text-sm font-semibold uppercase tracking-widest text-primary mb-4">
+            How It Works
+          </p>
           <h2 className="text-4xl sm:text-5xl font-display font-bold mb-4">
-            How <span className="gradient-text">G.Creators</span> Works
+            From Expertise to Scaled Business —{" "}
+            <span className="gradient-text">in One OS</span>
           </h2>
           <p className="text-xl text-muted-foreground">
-            Your personalized learning journey in four simple steps
+            G.Creators automates the work that usually takes a team. You bring the knowledge — the OS handles the infrastructure, content scaling, and audience growth.
           </p>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
-          {steps.map((step, index) => (
-            <div
-              key={index}
-              className="relative group"
-            >
-              {/* Connector Line (hidden on mobile) */}
-              {index < steps.length - 1 && (
-                <div className="hidden lg:block absolute top-16 left-1/2 w-full h-0.5 bg-gradient-primary opacity-30" />
-              )}
+        <div className="relative grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
+          {/* Horizontal connecting line spanning all steps (desktop) */}
+          <div className="hidden lg:block absolute top-16 left-0 right-0 h-0.5 bg-gradient-primary opacity-20 pointer-events-none" />
 
-              <div className="relative z-10 text-center space-y-4">
-                {/* Number Circle */}
-                <div className="inline-flex w-32 h-32 rounded-full bg-gradient-primary items-center justify-center group-hover:shadow-glow transition-all duration-300 group-hover:scale-110">
-                  <span className="text-4xl font-display font-bold text-white">
-                    {step.number}
-                  </span>
+          {steps.map((step) => {
+            const Icon = step.icon;
+            return (
+              <div key={step.number} className="relative group">
+                <div className="relative z-10 text-center space-y-4">
+                  <div className="inline-flex w-32 h-32 rounded-full bg-gradient-primary items-center justify-center group-hover:shadow-glow transition-all duration-300 group-hover:scale-110 ring-8 ring-background">
+                    <Icon className="text-white" size={40} />
+                  </div>
+
+                  <div className="space-y-2">
+                    <p className="text-sm font-mono font-semibold text-primary">
+                      {step.number}
+                    </p>
+                    <h3 className="text-xl font-display font-bold">
+                      {step.title}
+                    </h3>
+                    <p className="text-muted-foreground">
+                      {step.description}
+                    </p>
+                  </div>
                 </div>
-
-                {/* Content */}
-                <div className="space-y-2">
-                  <h3 className="text-xl font-display font-bold">
-                    {step.title}
-                  </h3>
-                  <p className="text-muted-foreground">
-                    {step.description}
-                  </p>
-                </div>
-
-                {/* Check Icon */}
-                <CheckCircle2 className="inline-block text-accent" size={24} />
               </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
+
+        <p className="text-center text-lg text-muted-foreground italic max-w-2xl mx-auto mt-16">
+          G.Creators handles the infrastructure so you can focus on what only you can do — create.
+        </p>
       </div>
     </section>
   );
