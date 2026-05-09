@@ -361,7 +361,7 @@ export type Database = {
           {
             foreignKeyName: "mentor_avatars_mentor_id_fkey"
             columns: ["mentor_id"]
-            isOneToOne: false
+            isOneToOne: true
             referencedRelation: "mentor_profiles"
             referencedColumns: ["id"]
           },
