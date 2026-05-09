@@ -74,6 +74,9 @@ export const StorefrontBuilder = ({ mentorId, mentorUsername, mentorName, mentor
   });
   const [photoUrl, setPhotoUrl] = useState<string | null>(mentorImageUrl);
   const [dragId, setDragId] = useState<string | null>(null);
+  const [products, setProducts] = useState<Array<{
+    id: string; title: string; price: number; preview_image_url: string | null;
+  }>>([]);
 
   const liveUrl = useMemo(
     () => (mentorUsername ? `gcreators.me/${mentorUsername}` : "gcreators.me/—"),
@@ -81,6 +84,17 @@ export const StorefrontBuilder = ({ mentorId, mentorUsername, mentorName, mentor
   );
 
   useEffect(() => { load(); /* eslint-disable-next-line */ }, [mentorId]);
+
+  useEffect(() => {
+    (async () => {
+      const { data: rows } = await supabase
+        .from("mentor_products")
+        .select("id,title,price,preview_image_url")
+        .eq("mentor_id", mentorId)
+        .eq("is_active", true);
+      setProducts((rows as any) || []);
+    })();
+  }, [mentorId]);
 
   const load = async () => {
     setLoading(true);
@@ -231,7 +245,7 @@ export const StorefrontBuilder = ({ mentorId, mentorUsername, mentorName, mentor
             <TabsList className="grid grid-cols-4 w-full">
               <TabsTrigger value="profile">Profile</TabsTrigger>
               <TabsTrigger value="design">Design</TabsTrigger>
-              <TabsTrigger value="products" disabled>Products</TabsTrigger>
+              <TabsTrigger value="products">Products</TabsTrigger>
               <TabsTrigger value="sections" disabled>Sections</TabsTrigger>
             </TabsList>
 
@@ -364,6 +378,15 @@ export const StorefrontBuilder = ({ mentorId, mentorUsername, mentorName, mentor
               <DesignTab
                 theme={data.theme}
                 onChange={(next) => update({ theme: next })}
+              />
+              <Button className="w-full" onClick={handleSave}>Save changes</Button>
+            </TabsContent>
+
+            <TabsContent value="products" className="space-y-4">
+              <ProductsTab
+                mentorId={mentorId}
+                value={data.product_display}
+                onChange={(next) => update({ product_display: next })}
               />
               <Button className="w-full" onClick={handleSave}>Save changes</Button>
             </TabsContent>
