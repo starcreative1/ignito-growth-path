@@ -41,7 +41,7 @@ const AvatarChat = () => {
     if (error || !data) {
       console.error("Error fetching avatar:", error);
       toast.error("Avatar not found or not available");
-      navigate("/mentors");
+      navigate("/creators");
       return;
     }
 
@@ -66,7 +66,7 @@ const AvatarChat = () => {
         <Navbar />
         <div className="container mx-auto px-4 py-32 text-center">
           <h1 className="text-2xl font-bold mb-4">Avatar not found</h1>
-          <Button onClick={() => navigate("/mentors")}>Back to Creators</Button>
+          <Button onClick={() => navigate("/creators")}>Back to Creators</Button>
         </div>
       </div>
     );
@@ -78,7 +78,7 @@ const AvatarChat = () => {
       <div className="container mx-auto px-4 py-32">
         <Button
           variant="ghost"
-          onClick={() => navigate(`/mentors/${avatar.mentor_id}`)}
+          onClick={() => navigate(`/creators/${avatar.mentor_id}`)}
           className="mb-6"
         >
           <ArrowLeft size={20} className="mr-2" />

@@ -60,7 +60,7 @@ const CreatorQuestions = () => {
         description: "You need to create a mentor profile first.",
         variant: "destructive",
       });
-      navigate("/mentor-cabinet");
+      navigate("/creator-cabinet");
       return;
     }
 

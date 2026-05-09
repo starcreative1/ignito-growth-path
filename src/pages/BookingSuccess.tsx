@@ -170,7 +170,7 @@ const BookingSuccess = () => {
                       variant="outline"
                       size="lg"
                       className="w-full"
-                      onClick={() => navigate("/mentors")}
+                      onClick={() => navigate("/creators")}
                     >
                       <ArrowLeft size={20} className="mr-2" />
                       Back to Creators

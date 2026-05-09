@@ -138,7 +138,7 @@ export const DashboardQuestionsTab = ({ userId }: DashboardQuestionsTabProps) =>
           <div className="text-center py-8 text-muted-foreground">
             <MessageCircle className="mx-auto h-12 w-12 mb-4 opacity-50" />
             <p>No questions yet</p>
-            <Button className="mt-4" onClick={() => navigate("/mentors")}>
+            <Button className="mt-4" onClick={() => navigate("/creators")}>
               Ask a Creator
             </Button>
           </div>

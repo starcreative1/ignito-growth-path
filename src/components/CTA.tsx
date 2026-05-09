@@ -48,7 +48,7 @@ const CTA = () => {
               variant="outline" 
               size="lg" 
               className="text-lg px-8 py-6"
-              onClick={() => navigate('/mentors')}
+              onClick={() => navigate('/creators')}
             >
               Explore Creators
             </Button>

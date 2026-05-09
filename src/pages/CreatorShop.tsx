@@ -133,7 +133,7 @@ const CreatorShop = () => {
           <p className="text-muted-foreground mb-8">
             This mentor shop doesn't exist or is no longer available.
           </p>
-          <Button onClick={() => navigate("/mentors")}>Browse Creators</Button>
+          <Button onClick={() => navigate("/creators")}>Browse Creators</Button>
         </div>
         <Footer />
       </div>
@@ -171,7 +171,7 @@ const CreatorShop = () => {
                 <Button
                   variant="link"
                   className="p-0 h-auto"
-                  onClick={() => navigate(`/mentors/${mentor.id}`)}
+                  onClick={() => navigate(`/creators/${mentor.id}`)}
                 >
                   View Profile <ExternalLink className="ml-1 h-3 w-3" />
                 </Button>

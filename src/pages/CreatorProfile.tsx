@@ -272,7 +272,7 @@ const CreatorProfile = () => {
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
           <h1 className="text-2xl font-bold mb-4">Creator not found</h1>
-          <Button onClick={() => navigate("/mentors")}>Back to Creators</Button>
+          <Button onClick={() => navigate("/creators")}>Back to Creators</Button>
         </div>
       </div>
     );
@@ -372,7 +372,7 @@ const CreatorProfile = () => {
         <div className="container mx-auto px-4 sm:px-6 lg:px-8">
           <Button
             variant="ghost"
-            onClick={() => navigate("/mentors")}
+            onClick={() => navigate("/creators")}
             className="mb-4 sm:mb-6 -ml-2"
             size="sm"
           >

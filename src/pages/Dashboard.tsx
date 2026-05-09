@@ -351,7 +351,7 @@ const Dashboard = () => {
                   <div className="text-center py-8 text-muted-foreground">
                     <ShoppingBag className="mx-auto h-12 w-12 mb-4 opacity-50" />
                     <p>No purchases yet</p>
-                    <Button className="mt-4" onClick={() => navigate("/mentors")}>
+                    <Button className="mt-4" onClick={() => navigate("/creators")}>
                       Browse Products
                     </Button>
                   </div>
@@ -380,7 +380,7 @@ const Dashboard = () => {
                 {upcomingSessions.length === 0 ? (
                   <div className="text-center py-8 text-muted-foreground">
                     <p>No upcoming sessions</p>
-                    <Button className="mt-4" onClick={() => navigate("/mentors")}>
+                    <Button className="mt-4" onClick={() => navigate("/creators")}>
                       Book a Session
                     </Button>
                   </div>
