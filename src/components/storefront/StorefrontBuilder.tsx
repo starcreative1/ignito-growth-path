@@ -242,11 +242,10 @@ export const StorefrontBuilder = ({ mentorId, mentorUsername, mentorName, mentor
         {/* Left editor */}
         <Card className="lg:col-span-2 p-4">
           <Tabs defaultValue="profile" className="space-y-4">
-            <TabsList className="grid grid-cols-4 w-full">
+            <TabsList className="grid grid-cols-3 w-full">
               <TabsTrigger value="profile">Profile</TabsTrigger>
               <TabsTrigger value="design">Design</TabsTrigger>
               <TabsTrigger value="products">Products</TabsTrigger>
-              <TabsTrigger value="sections" disabled>Sections</TabsTrigger>
             </TabsList>
 
             <TabsContent value="profile" className="space-y-5">
