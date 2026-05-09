@@ -71,45 +71,63 @@ export const ProfilePhotoUpload = ({
 
   return (
     <div className="flex flex-col items-center gap-4">
-      <Avatar className="w-32 h-32">
-        <AvatarImage src={photoUrl || undefined} alt="Profile photo" />
-        <AvatarFallback className="text-2xl">{fallbackText}</AvatarFallback>
-      </Avatar>
-      
-      <div className="relative">
-        <input
-          type="file"
-          accept="image/*"
-          onChange={handleFileUpload}
-          disabled={uploading}
-          className="hidden"
-          id="photo-upload"
-        />
-        <label htmlFor="photo-upload">
-          <Button
-            type="button"
-            variant="outline"
-            disabled={uploading}
-            asChild
-          >
-            <span className="cursor-pointer">
-              {uploading ? (
-                <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Uploading...
-                </>
-              ) : (
-                <>
-                  <Camera className="mr-2 h-4 w-4" />
-                  Upload Photo
-                </>
-              )}
-            </span>
-          </Button>
+      <input
+        type="file"
+        accept="image/*"
+        onChange={handleFileUpload}
+        disabled={uploading}
+        className="hidden"
+        id="photo-upload"
+      />
+      <label
+        htmlFor="photo-upload"
+        className="group relative cursor-pointer rounded-full"
+      >
+        <Avatar className="w-36 h-36 sm:w-40 sm:h-40 ring-4 ring-background shadow-lg ring-offset-2 ring-offset-primary/20 transition-transform group-hover:scale-[1.02]">
+          <AvatarImage
+            src={photoUrl || undefined}
+            alt="Profile photo"
+            className="object-cover"
+          />
+          <AvatarFallback className="text-3xl bg-gradient-to-br from-primary/20 to-accent/20 text-foreground font-semibold">
+            {fallbackText}
+          </AvatarFallback>
+        </Avatar>
+        <div className="absolute inset-0 rounded-full bg-black/45 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center text-white pointer-events-none">
+          {uploading ? (
+            <Loader2 className="h-6 w-6 animate-spin" />
+          ) : (
+            <>
+              <Camera className="h-6 w-6" />
+              <span className="text-xs font-medium mt-1">Change photo</span>
+            </>
+          )}
+        </div>
+      </label>
+
+      <Button
+        type="button"
+        variant="outline"
+        size="sm"
+        disabled={uploading}
+        asChild
+      >
+        <label htmlFor="photo-upload" className="cursor-pointer">
+          {uploading ? (
+            <>
+              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              Uploading...
+            </>
+          ) : (
+            <>
+              <Camera className="mr-2 h-4 w-4" />
+              {photoUrl ? "Change photo" : "Upload photo"}
+            </>
+          )}
         </label>
-      </div>
+      </Button>
       <p className="text-xs text-muted-foreground text-center">
-        JPG, PNG or WEBP. Max 5MB.
+        Square images work best. JPG, PNG or WEBP. Max 5MB.
       </p>
     </div>
   );
