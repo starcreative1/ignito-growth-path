@@ -127,7 +127,7 @@ const CreatorCabinet = () => {
       // Load completeness signals in parallel
       const [{ data: avatarRow }, { count: availCount }, { count: productCount }] = await Promise.all([
         supabase.from("mentor_avatars").select("id").eq("mentor_id", profileData.id).limit(1).maybeSingle(),
-        supabase.from("mentor_recurring_availability").select("id", { count: "exact", head: true }).eq("mentor_id", profileData.id),
+        (supabase as any).from("mentor_weekly_availability").select("id", { count: "exact", head: true }).eq("mentor_id", profileData.id),
         supabase.from("mentor_products").select("id", { count: "exact", head: true }).eq("mentor_id", profileData.id),
       ]);
       setHasAvatar(Boolean(avatarRow));
