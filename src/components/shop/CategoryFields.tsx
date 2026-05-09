@@ -12,7 +12,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Trash2, Plus, Sparkles } from "lucide-react";
+import { Trash2, Plus, Sparkles, Gift } from "lucide-react";
 import { getCategory, type ProductCategoryId } from "@/lib/productCategories";
 
 interface Props {
@@ -533,5 +533,3 @@ const BundlePicker = ({
   );
 };
 
-// re-export Gift icon
-import { Gift } from "lucide-react";
