@@ -315,10 +315,14 @@ export const ConversationsList = ({ userId }: { userId: string }) => {
 
             <TabsContent value="active">
               {activeConversations.length === 0 ? (
-                <div className="text-center py-8 text-muted-foreground">
-                  <MessageSquare className="h-12 w-12 mx-auto mb-4 opacity-50" />
-                  <p>No active conversations</p>
-                  <p className="text-sm mt-2">Start a conversation with a mentor</p>
+                <div className="flex flex-col items-center text-center py-12 px-4 rounded-lg border border-dashed bg-muted/20">
+                  <div className="h-12 w-12 rounded-xl bg-background flex items-center justify-center shadow-subtle ring-1 ring-border mb-3">
+                    <MessageSquare className="h-5 w-5 text-muted-foreground" />
+                  </div>
+                  <p className="text-sm font-medium">No active conversations</p>
+                  <p className="text-xs text-muted-foreground mt-1 max-w-xs">
+                    Start a conversation with a creator — your messages will appear here.
+                  </p>
                 </div>
               ) : (
                 <div className="space-y-3">
@@ -331,9 +335,11 @@ export const ConversationsList = ({ userId }: { userId: string }) => {
 
             <TabsContent value="archived">
               {archivedConversations.length === 0 ? (
-                <div className="text-center py-8 text-muted-foreground">
-                  <Archive className="h-12 w-12 mx-auto mb-4 opacity-50" />
-                  <p>No archived conversations</p>
+                <div className="flex flex-col items-center text-center py-12 px-4 rounded-lg border border-dashed bg-muted/20">
+                  <div className="h-12 w-12 rounded-xl bg-background flex items-center justify-center shadow-subtle ring-1 ring-border mb-3">
+                    <Archive className="h-5 w-5 text-muted-foreground" />
+                  </div>
+                  <p className="text-sm font-medium">No archived conversations</p>
                 </div>
               ) : (
                 <div className="space-y-3">
