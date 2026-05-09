@@ -23,7 +23,7 @@ import { ShopStorefrontHero } from "@/components/ShopStorefrontHero";
 import { SecondaryToolsStrip } from "@/components/SecondaryToolsStrip";
 import { AIInsightsCard } from "@/components/AIInsightsCard";
 import { User } from "@supabase/supabase-js";
-import { LogOut, Settings, ShoppingBag, Receipt, MessageCircle, LayoutDashboard, User as UserIcon, Bot, CalendarClock, HelpCircle, CalendarDays, MessageSquare, Store } from "lucide-react";
+import { Settings, ShoppingBag, Receipt, LayoutDashboard, User as UserIcon, Bot, CalendarClock, HelpCircle, CalendarDays, MessageSquare, Store } from "lucide-react";
 
 interface CreatorProfile {
   id: string;
