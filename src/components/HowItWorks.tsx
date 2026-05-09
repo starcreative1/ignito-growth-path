@@ -64,18 +64,18 @@ const HowItWorks = () => {
             return (
               <div key={step.number} className="relative group">
                 <div className="relative z-10 text-center space-y-4">
-                  <div className="inline-flex w-32 h-32 rounded-full bg-gradient-primary items-center justify-center group-hover:shadow-glow transition-all duration-300 group-hover:scale-110 ring-8 ring-background">
-                    <Icon className="text-white" size={40} />
+                  <div className="inline-flex w-24 h-24 sm:w-32 sm:h-32 rounded-full bg-gradient-primary items-center justify-center group-hover:shadow-glow transition-all duration-300 group-hover:scale-110 ring-8 ring-background">
+                    <Icon className="text-white" size={32} />
                   </div>
 
                   <div className="space-y-2">
                     <p className="text-sm font-mono font-semibold text-primary">
                       {step.number}
                     </p>
-                    <h3 className="text-xl font-display font-bold">
+                    <h3 className="text-lg sm:text-xl font-display font-bold">
                       {step.title}
                     </h3>
-                    <p className="text-muted-foreground">
+                    <p className="text-sm sm:text-base text-muted-foreground">
                       {step.description}
                     </p>
                   </div>
