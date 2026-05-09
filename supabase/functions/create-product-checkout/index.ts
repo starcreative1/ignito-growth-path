@@ -130,7 +130,7 @@ serve(async (req) => {
       ],
       mode: "payment",
       success_url: `${origin}/purchase-success?session_id={CHECKOUT_SESSION_ID}`,
-      cancel_url: `${origin}/mentors/${product.mentor_id}`,
+      cancel_url: `${origin}/creators/${product.mentor_id}`,
       metadata: {
         product_id: productId,
         buyer_id: user.id,
