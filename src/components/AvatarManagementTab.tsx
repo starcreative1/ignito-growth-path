@@ -28,6 +28,8 @@ export const AvatarManagementTab = ({ mentorId }: AvatarManagementTabProps) => {
       .from('mentor_avatars')
       .select('*')
       .eq('mentor_id', mentorId)
+      .order('created_at', { ascending: false })
+      .limit(1)
       .maybeSingle();
 
     if (error) {
