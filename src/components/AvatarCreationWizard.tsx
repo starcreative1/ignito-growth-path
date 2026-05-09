@@ -127,11 +127,24 @@ export const AvatarCreationWizard = ({ mentorId, existingAvatar, onSuccess }: Av
         status: 'draft'
       };
 
-      const { data: avatar, error: avatarError } = existingAvatar
+      // Check for any existing avatar for this mentor (defensive — prevents duplicates)
+      let targetId = existingAvatar?.id as string | undefined;
+      if (!targetId) {
+        const { data: existing } = await supabase
+          .from('mentor_avatars')
+          .select('id')
+          .eq('mentor_id', mentorId)
+          .order('created_at', { ascending: false })
+          .limit(1)
+          .maybeSingle();
+        targetId = existing?.id;
+      }
+
+      const { data: avatar, error: avatarError } = targetId
         ? await supabase
             .from('mentor_avatars')
             .update(avatarData)
-            .eq('id', existingAvatar.id)
+            .eq('id', targetId)
             .select()
             .single()
         : await supabase
