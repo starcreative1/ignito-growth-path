@@ -13,6 +13,7 @@ import {
   Instagram, Youtube, Linkedin, Globe, Music2, Twitter,
 } from "lucide-react";
 import { DesignTab } from "./DesignTab";
+import { ProductsTab, ProductDisplayItem } from "./ProductsTab";
 import {
   StorefrontTheme, DEFAULT_THEME, FONT_PAIR_META,
   backgroundStyleToCss, buttonRadius,
@@ -38,6 +39,7 @@ interface StorefrontRow {
   location_flag: string | null;
   social_links: SocialLink[];
   theme: StorefrontTheme;
+  product_display: ProductDisplayItem[];
   is_published: boolean;
   has_unpublished_changes: boolean;
   last_published_at: string | null;
@@ -65,6 +67,7 @@ export const StorefrontBuilder = ({ mentorId, mentorUsername, mentorName, mentor
     location_flag: "",
     social_links: [],
     theme: DEFAULT_THEME,
+    product_display: [],
     is_published: false,
     has_unpublished_changes: false,
     last_published_at: null,
@@ -90,6 +93,7 @@ export const StorefrontBuilder = ({ mentorId, mentorUsername, mentorName, mentor
       setData({
         ...row,
         social_links: Array.isArray(row.social_links) ? row.social_links : [],
+        product_display: Array.isArray(row.product_display) ? row.product_display : [],
         theme: row.theme && typeof row.theme === "object" && Object.keys(row.theme).length
           ? { ...DEFAULT_THEME, ...row.theme }
           : DEFAULT_THEME,
@@ -114,6 +118,7 @@ export const StorefrontBuilder = ({ mentorId, mentorUsername, mentorName, mentor
       location_flag: data.location_flag,
       social_links: data.social_links,
       theme: data.theme,
+      product_display: data.product_display,
       has_unpublished_changes: true,
     };
     const { error } = await (supabase as any)
