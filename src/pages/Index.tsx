@@ -1,6 +1,8 @@
 import Navbar from "@/components/Navbar";
 import Hero from "@/components/Hero";
 import HowItWorks from "@/components/HowItWorks";
+import Storefront from "@/components/Storefront";
+import RealTimeMonetization from "@/components/RealTimeMonetization";
 import CTA from "@/components/CTA";
 import Footer from "@/components/Footer";
 
@@ -10,6 +12,8 @@ const Index = () => {
       <Navbar />
       <Hero />
       <HowItWorks />
+      <Storefront />
+      <RealTimeMonetization />
       <CTA />
       <Footer />
     </div>
