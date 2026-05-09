@@ -273,6 +273,60 @@ export type Database = {
           },
         ]
       }
+      creator_storefronts: {
+        Row: {
+          bio_short: string | null
+          created_at: string
+          display_name: string | null
+          has_unpublished_changes: boolean
+          id: string
+          is_published: boolean
+          last_published_at: string | null
+          location: string | null
+          location_flag: string | null
+          mentor_id: string
+          product_display: Json
+          sections: Json
+          social_links: Json
+          theme: Json
+          updated_at: string
+        }
+        Insert: {
+          bio_short?: string | null
+          created_at?: string
+          display_name?: string | null
+          has_unpublished_changes?: boolean
+          id?: string
+          is_published?: boolean
+          last_published_at?: string | null
+          location?: string | null
+          location_flag?: string | null
+          mentor_id: string
+          product_display?: Json
+          sections?: Json
+          social_links?: Json
+          theme?: Json
+          updated_at?: string
+        }
+        Update: {
+          bio_short?: string | null
+          created_at?: string
+          display_name?: string | null
+          has_unpublished_changes?: boolean
+          id?: string
+          is_published?: boolean
+          last_published_at?: string | null
+          location?: string | null
+          location_flag?: string | null
+          mentor_id?: string
+          product_display?: Json
+          sections?: Json
+          social_links?: Json
+          theme?: Json
+          updated_at?: string
+        }
+        Relationships: []
+      }
       mentor_avatar_knowledge: {
         Row: {
           avatar_id: string
