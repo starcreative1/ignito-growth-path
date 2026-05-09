@@ -113,47 +113,12 @@ serve(async (req) => {
       });
     }
 
-    // Generate embeddings for each entry using OpenAI
-    const OPENAI_API_KEY = Deno.env.get('OPENAI_API_KEY');
-    const embeddingsPromises = knowledgeEntries.map(async (entry) => {
-      try {
-        const response = await fetch('https://api.openai.com/v1/embeddings', {
-          method: 'POST',
-          headers: {
-            'Authorization': `Bearer ${OPENAI_API_KEY}`,
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            model: 'text-embedding-3-small',
-            input: entry.content,
-          }),
-        });
-
-        if (!response.ok) {
-          const errorText = await response.text();
-          console.error('OpenAI embeddings API error:', response.status, errorText);
-          throw new Error(`OpenAI embeddings API failed: ${response.status} - ${errorText}`);
-        }
-
-        const data = await response.json();
-        
-        if (!data || !data.data || !Array.isArray(data.data) || data.data.length === 0) {
-          console.error('Invalid embeddings response:', data);
-          throw new Error('Invalid embeddings response format');
-        }
-
-        return {
-          ...entry,
-          embedding: JSON.stringify(data.data[0].embedding),
-          avatar_id: avatarId
-        };
-      } catch (error) {
-        console.error('Error generating embedding for entry:', entry.content_type, error);
-        throw error;
-      }
-    });
-
-    const entriesWithEmbeddings = await Promise.all(embeddingsPromises);
+    // Store knowledge entries as plain text (embeddings disabled —
+    // chat-with-avatar reads the full knowledge base directly).
+    const entriesWithEmbeddings = knowledgeEntries.map((entry) => ({
+      ...entry,
+      avatar_id: avatarId,
+    }));
 
     // Delete old knowledge entries
     await supabaseClient
