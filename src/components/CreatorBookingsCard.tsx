@@ -1,6 +1,6 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Calendar, Clock, DollarSign } from "lucide-react";
+import { Calendar, Clock, DollarSign, CalendarDays, History } from "lucide-react";
 
 interface Booking {
   id: string;
@@ -30,9 +30,23 @@ export const CreatorBookingsCard = ({ bookings, type }: CreatorBookingsCardProps
       </CardHeader>
       <CardContent className="p-4 sm:p-6 pt-0 sm:pt-0">
         {bookings.length === 0 ? (
-          <p className="text-center py-6 sm:py-8 text-muted-foreground text-sm">
-            No {type} sessions
-          </p>
+          <div className="flex flex-col items-center text-center py-10 px-4 rounded-lg border border-dashed bg-muted/20">
+            <div className="h-12 w-12 rounded-xl bg-background flex items-center justify-center shadow-subtle ring-1 ring-border mb-3">
+              {type === "upcoming" ? (
+                <CalendarDays className="h-5 w-5 text-muted-foreground" />
+              ) : (
+                <History className="h-5 w-5 text-muted-foreground" />
+              )}
+            </div>
+            <p className="text-sm font-medium">
+              {type === "upcoming" ? "No upcoming sessions" : "No past sessions"}
+            </p>
+            <p className="text-xs text-muted-foreground mt-1 max-w-xs">
+              {type === "upcoming"
+                ? "When someone books a session with you, it'll show up here."
+                : "Your completed sessions will appear here."}
+            </p>
+          </div>
         ) : (
           <div className="space-y-3 sm:space-y-4">
             {bookings.map((booking) => (

@@ -23,7 +23,7 @@ import { ShopStorefrontHero } from "@/components/ShopStorefrontHero";
 import { SecondaryToolsStrip } from "@/components/SecondaryToolsStrip";
 import { AIInsightsCard } from "@/components/AIInsightsCard";
 import { User } from "@supabase/supabase-js";
-import { LogOut, Settings, ShoppingBag, Receipt, MessageCircle, LayoutDashboard, User as UserIcon, Bot, CalendarClock, HelpCircle, CalendarDays, MessageSquare, Store } from "lucide-react";
+import { Settings, ShoppingBag, Receipt, LayoutDashboard, User as UserIcon, Bot, CalendarClock, HelpCircle, CalendarDays, MessageSquare, Store } from "lucide-react";
 
 interface CreatorProfile {
   id: string;
@@ -281,20 +281,15 @@ const CreatorCabinet = () => {
   return (
     <div className="min-h-screen bg-background">
       <DashboardNavbar />
-      <div className="container pt-24 sm:pt-32 px-3 sm:px-4 pb-16">
-        {/* Mobile-friendly header */}
-        <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4 mb-8 sm:mb-10">
-          <div className="min-w-0">
-            <h1 className="text-3xl sm:text-4xl font-bold mb-1 sm:mb-2 truncate">Creator Dashboard</h1>
-            <p className="text-sm sm:text-base text-muted-foreground truncate">
-              Welcome back, {mentorProfile?.name || user?.email}
-              {heroSubtitle && <> · <span className="text-foreground/80">{heroSubtitle}</span></>}
-            </p>
-          </div>
-          <Button onClick={handleSignOut} variant="outline" size="sm" className="self-start sm:self-auto shrink-0">
-            <LogOut className="mr-2 h-4 w-4" />
-            Sign Out
-          </Button>
+      <div className="container pt-24 sm:pt-28 px-3 sm:px-4 pb-20 max-w-6xl">
+        {/* Header */}
+        <div className="mb-8 sm:mb-10">
+          <h1 className="text-3xl sm:text-4xl font-bold tracking-tight mb-2">
+            Welcome back{mentorProfile?.name ? `, ${mentorProfile.name.split(" ")[0]}` : ""}
+          </h1>
+          {heroSubtitle && (
+            <p className="text-sm sm:text-base text-muted-foreground">{heroSubtitle}</p>
+          )}
         </div>
 
         {mentorProfile && (
@@ -314,8 +309,8 @@ const CreatorCabinet = () => {
 
         <Tabs value={activeTab} onValueChange={handleTabChange} className="space-y-4 sm:space-y-6">
           {/* Scrollable tabs for mobile, wraps on desktop */}
-          <div className="w-full overflow-x-auto scrollbar-none border-b -mx-3 sm:mx-0 px-3 sm:px-0">
-            <TabsList className="inline-flex h-auto p-1 w-max sm:w-full sm:flex-wrap sm:justify-start gap-1">
+          <div className="w-full overflow-x-auto scrollbar-none -mx-3 sm:mx-0 px-3 sm:px-0">
+            <TabsList className="inline-flex h-auto p-1 w-max sm:w-full sm:flex-wrap sm:justify-start gap-1 bg-muted/40 shadow-subtle rounded-xl">
               {mentorProfile && (
                 <TabsTrigger value="overview" className="px-3 py-2 text-xs sm:text-sm">
                   <LayoutDashboard className="h-4 w-4 mr-1.5 sm:mr-2" />

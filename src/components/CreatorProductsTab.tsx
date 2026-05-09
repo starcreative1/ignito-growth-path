@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
 import { Plus, Edit, Trash2, Eye, Share2, DollarSign, ShoppingBag, Star, MessageSquare } from "lucide-react";
+import { EmptyState } from "@/components/dashboard/EmptyState";
 import { ProductForm } from "./ProductForm";
 import { ShareShopDialog } from "./ShareShopDialog";
 import { Badge } from "@/components/ui/badge";
@@ -209,19 +210,12 @@ export const CreatorProductsTab = ({ mentorId, mentorUsername, mentorName }: Cre
 
       {/* Products List */}
       {products.length === 0 ? (
-        <Card>
-          <CardContent className="py-12 text-center">
-            <ShoppingBag className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
-            <h3 className="text-lg font-semibold mb-2">No products yet</h3>
-            <p className="text-muted-foreground mb-4">
-              Start selling digital products to your audience
-            </p>
-            <Button onClick={() => setShowForm(true)}>
-              <Plus className="mr-2 h-4 w-4" />
-              Create Your First Product
-            </Button>
-          </CardContent>
-        </Card>
+        <EmptyState
+          icon={ShoppingBag}
+          title="No products yet"
+          description="Add your first digital product — a guide, template, or course — and start earning from your audience."
+          action={{ label: "Create Your First Product", icon: Plus, onClick: () => setShowForm(true) }}
+        />
       ) : (
         <div className="grid gap-4">
           {products.map((product) => (
