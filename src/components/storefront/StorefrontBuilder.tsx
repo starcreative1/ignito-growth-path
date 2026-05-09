@@ -447,16 +447,46 @@ export const StorefrontBuilder = ({ mentorId, mentorUsername, mentorName, mentor
                     );
                   })}
                 </div>
-                <button
-                  className="mt-6 px-5 py-2 text-sm font-medium"
-                  style={{
-                    backgroundColor: data.theme.primary_color,
-                    color: "#fff",
-                    borderRadius: buttonRadius(data.theme.button_style),
-                  }}>
-                  Shop now
-                </button>
-                <p className="text-xs mt-6 opacity-60">Products and sections appear here ✨</p>
+                {(() => {
+                  const map = new Map(products.map((p) => [p.id, p]));
+                  const visible = data.product_display
+                    .filter((it) => it.visible && map.has(it.product_id))
+                    .map((it) => ({ ...map.get(it.product_id)!, featured: it.featured }));
+                  if (visible.length === 0) {
+                    return (
+                      <p className="text-xs mt-6 opacity-60">
+                        Add products in the Products tab to feature them here ✨
+                      </p>
+                    );
+                  }
+                  return (
+                    <div className="mt-6 w-full space-y-2">
+                      {visible.map((p) => (
+                        <div
+                          key={p.id}
+                          className="w-full flex items-center gap-2 p-2 text-left"
+                          style={{
+                            backgroundColor: `${data.theme.primary_color}12`,
+                            borderRadius: buttonRadius(data.theme.button_style),
+                          }}
+                        >
+                          {p.preview_image_url ? (
+                            <img src={p.preview_image_url} alt="" className="h-10 w-10 rounded object-cover shrink-0" />
+                          ) : (
+                            <div className="h-10 w-10 rounded bg-foreground/10 shrink-0" />
+                          )}
+                          <div className="min-w-0 flex-1">
+                            <p className="text-xs font-medium truncate flex items-center gap-1">
+                              {p.featured && <span style={{ color: data.theme.primary_color }}>★</span>}
+                              {p.title}
+                            </p>
+                            <p className="text-[10px] opacity-70">${Number(p.price).toFixed(2)}</p>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  );
+                })()}
               </div>
             </div>
           </div>
