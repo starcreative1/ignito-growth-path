@@ -270,10 +270,10 @@ const CreatorCabinet = () => {
           <NoProfileEmptyState onStart={() => handleTabChange("profile")} />
         )}
 
-        <Tabs value={activeTab} onValueChange={handleTabChange} className="space-y-4 sm:space-y-6 mt-4">
-          {/* Sticky scrollable tabs for mobile */}
-          <ScrollArea className="w-full whitespace-nowrap sticky top-16 sm:top-20 z-30 bg-background/80 backdrop-blur supports-[backdrop-filter]:bg-background/60 border-b -mx-3 sm:mx-0 px-3 sm:px-0 py-1">
-            <TabsList className="inline-flex h-auto p-1 w-max min-w-full sm:w-auto sm:flex-wrap gap-1">
+        <Tabs value={activeTab} onValueChange={handleTabChange} className="space-y-4 sm:space-y-6">
+          {/* Scrollable tabs for mobile, wraps on desktop */}
+          <div className="w-full overflow-x-auto scrollbar-none border-b -mx-3 sm:mx-0 px-3 sm:px-0">
+            <TabsList className="inline-flex h-auto p-1 w-max sm:w-full sm:flex-wrap sm:justify-start gap-1">
               {mentorProfile && (
                 <TabsTrigger value="overview" className="px-3 py-2 text-xs sm:text-sm">
                   <LayoutDashboard className="h-4 w-4 mr-1.5 sm:mr-2" />
@@ -336,21 +336,30 @@ const CreatorCabinet = () => {
                 Settings
               </TabsTrigger>
             </TabsList>
-            <ScrollBar orientation="horizontal" className="invisible" />
-          </ScrollArea>
+          </div>
 
           {mentorProfile && (
             <TabsContent value="overview" className="space-y-6">
-              <div className="grid gap-6 lg:grid-cols-2">
-                <ProfileCompletenessCard
-                  profile={mentorProfile}
-                  hasAvatar={hasAvatar}
-                  hasAvailability={hasAvailability}
-                  hasProducts={hasProducts}
-                  onNavigate={handleTabChange}
-                />
-                <QuickActionsCard username={mentorProfile.username} onNavigate={handleTabChange} />
-              </div>
+              {(() => {
+                const isComplete =
+                  Boolean(mentorProfile.name && mentorProfile.bio && mentorProfile.image_url && mentorProfile.expertise?.length) &&
+                  Boolean(mentorProfile.username) &&
+                  hasAvailability && hasAvatar && hasProducts;
+                return isComplete ? (
+                  <QuickActionsCard username={mentorProfile.username} onNavigate={handleTabChange} />
+                ) : (
+                  <div className="grid gap-6 lg:grid-cols-2">
+                    <ProfileCompletenessCard
+                      profile={mentorProfile}
+                      hasAvatar={hasAvatar}
+                      hasAvailability={hasAvailability}
+                      hasProducts={hasProducts}
+                      onNavigate={handleTabChange}
+                    />
+                    <QuickActionsCard username={mentorProfile.username} onNavigate={handleTabChange} />
+                  </div>
+                );
+              })()}
               <CreatorBookingsCard bookings={upcomingBookings} type="upcoming" />
             </TabsContent>
           )}
