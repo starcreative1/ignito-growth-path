@@ -307,7 +307,7 @@ export const ProductForm = ({ mentorId, product, onClose, onSuccess }: ProductFo
                       <img
                         src={previewUrl}
                         alt="Preview"
-                        className={`w-full h-full object-${previewFit}`}
+                        className={`w-full h-full ${previewFit === "contain" ? "object-contain" : "object-cover"}`}
                       />
                     </div>
                   ) : (
