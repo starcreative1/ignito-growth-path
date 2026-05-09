@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -18,6 +18,7 @@ import { AvatarManagementTab } from "@/components/AvatarManagementTab";
 import { CreatorProductsTab } from "@/components/CreatorProductsTab";
 import { CreatorSalesTab } from "@/components/CreatorSalesTab";
 import { CreatorQuestionsTab } from "@/components/CreatorQuestionsTab";
+import { ProfileCompletenessCard, QuickActionsCard, NoProfileEmptyState } from "@/components/CreatorOverviewWidgets";
 import { User } from "@supabase/supabase-js";
 import { LogOut, Settings, ShoppingBag, Receipt, MessageCircle, LayoutDashboard, User as UserIcon, Bot, CalendarClock, HelpCircle, CalendarDays, MessageSquare } from "lucide-react";
 
@@ -64,8 +65,17 @@ const CreatorCabinet = () => {
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [timeSlots, setTimeSlots] = useState<TimeSlot[]>([]);
   const [loading, setLoading] = useState(true);
+  const [hasAvatar, setHasAvatar] = useState(false);
+  const [hasAvailability, setHasAvailability] = useState(false);
+  const [hasProducts, setHasProducts] = useState(false);
   const navigate = useNavigate();
   const { toast } = useToast();
+  const [searchParams, setSearchParams] = useSearchParams();
+  const activeTab = searchParams.get("tab") || (mentorProfile ? "overview" : "profile");
+
+  const handleTabChange = (value: string) => {
+    setSearchParams({ tab: value }, { replace: true });
+  };
 
   useEffect(() => {
     checkAuth();
@@ -113,6 +123,16 @@ const CreatorCabinet = () => {
         .order("date", { ascending: true });
 
       setTimeSlots(slotsData || []);
+
+      // Load completeness signals in parallel
+      const [{ data: avatarRow }, { count: availCount }, { count: productCount }] = await Promise.all([
+        supabase.from("mentor_avatars").select("id").eq("mentor_id", profileData.id).limit(1).maybeSingle(),
+        (supabase as any).from("mentor_weekly_availability").select("id", { count: "exact", head: true }).eq("mentor_id", profileData.id),
+        supabase.from("mentor_products").select("id", { count: "exact", head: true }).eq("mentor_id", profileData.id),
+      ]);
+      setHasAvatar(Boolean(avatarRow));
+      setHasAvailability((availCount || 0) > 0);
+      setHasProducts((productCount || 0) > 0);
     }
 
     setLoading(false);
@@ -246,9 +266,13 @@ const CreatorCabinet = () => {
           </div>
         )}
 
-        <Tabs defaultValue={mentorProfile ? "overview" : "profile"} className="space-y-4 sm:space-y-6">
-          {/* Scrollable tabs for mobile */}
-          <ScrollArea className="w-full whitespace-nowrap">
+        {!mentorProfile && (
+          <NoProfileEmptyState onStart={() => handleTabChange("profile")} />
+        )}
+
+        <Tabs value={activeTab} onValueChange={handleTabChange} className="space-y-4 sm:space-y-6 mt-4">
+          {/* Sticky scrollable tabs for mobile */}
+          <ScrollArea className="w-full whitespace-nowrap sticky top-16 sm:top-20 z-30 bg-background/80 backdrop-blur supports-[backdrop-filter]:bg-background/60 border-b -mx-3 sm:mx-0 px-3 sm:px-0 py-1">
             <TabsList className="inline-flex h-auto p-1 w-max min-w-full sm:w-auto sm:flex-wrap gap-1">
               {mentorProfile && (
                 <TabsTrigger value="overview" className="px-3 py-2 text-xs sm:text-sm">
@@ -317,6 +341,16 @@ const CreatorCabinet = () => {
 
           {mentorProfile && (
             <TabsContent value="overview" className="space-y-6">
+              <div className="grid gap-6 lg:grid-cols-2">
+                <ProfileCompletenessCard
+                  profile={mentorProfile}
+                  hasAvatar={hasAvatar}
+                  hasAvailability={hasAvailability}
+                  hasProducts={hasProducts}
+                  onNavigate={handleTabChange}
+                />
+                <QuickActionsCard username={mentorProfile.username} onNavigate={handleTabChange} />
+              </div>
               <CreatorBookingsCard bookings={upcomingBookings} type="upcoming" />
             </TabsContent>
           )}
