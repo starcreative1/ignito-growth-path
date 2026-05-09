@@ -27,6 +27,7 @@ interface Product {
   description: string;
   price: number;
   preview_image_url: string | null;
+  preview_image_fit?: string | null;
   file_type: string;
   sales_count: number;
 }
@@ -199,7 +200,7 @@ const CreatorShop = () => {
                     <img
                       src={product.preview_image_url}
                       alt={product.title}
-                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                      className={`w-full h-full ${product.preview_image_fit === "contain" ? "object-contain" : "object-cover"} group-hover:scale-105 transition-transform duration-300`}
                     />
                   ) : (
                     <div className="w-full h-full flex items-center justify-center">
