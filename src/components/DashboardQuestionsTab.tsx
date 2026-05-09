@@ -22,7 +22,7 @@ interface Question {
   }>;
 }
 
-interface MentorProfile {
+interface CreatorProfile {
   name: string;
   image_url: string | null;
 }
@@ -33,7 +33,7 @@ interface DashboardQuestionsTabProps {
 
 export const DashboardQuestionsTab = ({ userId }: DashboardQuestionsTabProps) => {
   const [questions, setQuestions] = useState<Question[]>([]);
-  const [mentorProfiles, setMentorProfiles] = useState<Record<string, MentorProfile>>({});
+  const [mentorProfiles, setCreatorProfiles] = useState<Record<string, CreatorProfile>>({});
   const [loading, setLoading] = useState(true);
   const [expandedVideo, setExpandedVideo] = useState<string | null>(null);
   const navigate = useNavigate();
@@ -69,11 +69,11 @@ export const DashboardQuestionsTab = ({ userId }: DashboardQuestionsTabProps) =>
         .select("id, name, image_url")
         .in("id", mentorIds);
 
-      const mentorMap: Record<string, MentorProfile> = {};
+      const mentorMap: Record<string, CreatorProfile> = {};
       mentors?.forEach(m => {
         mentorMap[m.id] = { name: m.name, image_url: m.image_url };
       });
-      setMentorProfiles(mentorMap);
+      setCreatorProfiles(mentorMap);
 
       const transformedQuestions = (data || []).map(q => ({
         ...q,
@@ -139,7 +139,7 @@ export const DashboardQuestionsTab = ({ userId }: DashboardQuestionsTabProps) =>
             <MessageCircle className="mx-auto h-12 w-12 mb-4 opacity-50" />
             <p>No questions yet</p>
             <Button className="mt-4" onClick={() => navigate("/mentors")}>
-              Ask a Mentor
+              Ask a Creator
             </Button>
           </div>
         ) : (

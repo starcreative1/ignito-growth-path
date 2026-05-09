@@ -14,7 +14,7 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import Navbar from "@/components/Navbar";
 import { useUserRole } from "@/hooks/useUserRole";
 
-interface MentorProfile {
+interface CreatorProfile {
   id: string;
   name: string;
   title: string;
@@ -24,12 +24,12 @@ interface MentorProfile {
   is_active: boolean;
 }
 
-const AdminMentors = () => {
-  const [mentors, setMentors] = useState<MentorProfile[]>([]);
+const AdminCreators = () => {
+  const [mentors, setCreators] = useState<CreatorProfile[]>([]);
   const [loading, setLoading] = useState(true);
   const [user, setUser] = useState<any>(null);
   const [showDialog, setShowDialog] = useState(false);
-  const [editingMentor, setEditingMentor] = useState<MentorProfile | null>(null);
+  const [editingCreator, setEditingCreator] = useState<CreatorProfile | null>(null);
   const navigate = useNavigate();
   const { isAdmin, loading: roleLoading } = useUserRole();
 
@@ -51,7 +51,7 @@ const AdminMentors = () => {
 
   useEffect(() => {
     checkAuth();
-    fetchMentors();
+    fetchCreators();
   }, []);
 
   const checkAuth = async () => {
@@ -72,7 +72,7 @@ const AdminMentors = () => {
     }
   }, [isAdmin, roleLoading, user, navigate]);
 
-  const fetchMentors = async () => {
+  const fetchCreators = async () => {
     setLoading(true);
     const { data, error } = await supabase
       .from("mentor_profiles")
@@ -83,7 +83,7 @@ const AdminMentors = () => {
       console.error("Error fetching mentors:", error);
       toast.error("Failed to load mentors");
     } else {
-      setMentors(data || []);
+      setCreators(data || []);
     }
     setLoading(false);
   };
@@ -113,18 +113,18 @@ const AdminMentors = () => {
       certifications: formData.certifications ? formData.certifications.split(",").map(s => s.trim()) : [],
     };
 
-    if (editingMentor) {
+    if (editingCreator) {
       const { error } = await supabase
         .from("mentor_profiles")
         .update(mentorData)
-        .eq("id", editingMentor.id);
+        .eq("id", editingCreator.id);
 
       if (error) {
         console.error("Error updating mentor:", error);
         toast.error("Failed to update mentor");
         return;
       }
-      toast.success("Mentor updated successfully");
+      toast.success("Creator updated successfully");
     } else {
       const { error } = await supabase
         .from("mentor_profiles")
@@ -135,17 +135,17 @@ const AdminMentors = () => {
         toast.error("Failed to create mentor");
         return;
       }
-      toast.success("Mentor created successfully");
+      toast.success("Creator created successfully");
     }
 
     setShowDialog(false);
-    setEditingMentor(null);
+    setEditingCreator(null);
     resetForm();
-    fetchMentors();
+    fetchCreators();
   };
 
-  const handleEdit = (mentor: MentorProfile) => {
-    setEditingMentor(mentor);
+  const handleEdit = (mentor: CreatorProfile) => {
+    setEditingCreator(mentor);
     // Fetch full mentor data
     supabase
       .from("mentor_profiles")
@@ -188,8 +188,8 @@ const AdminMentors = () => {
       return;
     }
 
-    toast.success("Mentor deleted successfully");
-    fetchMentors();
+    toast.success("Creator deleted successfully");
+    fetchCreators();
   };
 
   const resetForm = () => {
@@ -245,23 +245,23 @@ const AdminMentors = () => {
       
       <div className="container mx-auto px-4 py-32">
         <div className="flex justify-between items-center mb-8">
-          <h1 className="text-4xl font-display font-bold">Manage Mentors</h1>
+          <h1 className="text-4xl font-display font-bold">Manage Creators</h1>
           <Dialog open={showDialog} onOpenChange={(open) => {
             setShowDialog(open);
             if (!open) {
-              setEditingMentor(null);
+              setEditingCreator(null);
               resetForm();
             }
           }}>
             <DialogTrigger asChild>
               <Button variant="hero">
                 <Plus className="h-4 w-4 mr-2" />
-                Add Mentor
+                Add Creator
               </Button>
             </DialogTrigger>
             <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
               <DialogHeader>
-                <DialogTitle>{editingMentor ? "Edit Mentor" : "Add New Mentor"}</DialogTitle>
+                <DialogTitle>{editingCreator ? "Edit Creator" : "Add New Creator"}</DialogTitle>
               </DialogHeader>
               <form onSubmit={handleSubmit} className="space-y-4">
                 <div className="grid grid-cols-2 gap-4">
@@ -410,13 +410,13 @@ const AdminMentors = () => {
                 <div className="flex justify-end gap-2">
                   <Button type="button" variant="outline" onClick={() => {
                     setShowDialog(false);
-                    setEditingMentor(null);
+                    setEditingCreator(null);
                     resetForm();
                   }}>
                     Cancel
                   </Button>
                   <Button type="submit" variant="hero">
-                    {editingMentor ? "Update" : "Create"}
+                    {editingCreator ? "Update" : "Create"}
                   </Button>
                 </div>
               </form>
@@ -476,4 +476,4 @@ const AdminMentors = () => {
   );
 };
 
-export default AdminMentors;
+export default AdminCreators;

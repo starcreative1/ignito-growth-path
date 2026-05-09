@@ -6,22 +6,22 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
 import { useToast } from "@/hooks/use-toast";
 import Navbar from "@/components/Navbar";
-import { MentorStatsCard } from "@/components/MentorStatsCard";
-import { MentorBookingsCard } from "@/components/MentorBookingsCard";
-import { MentorProfileEditor } from "@/components/MentorProfileEditor";
+import { CreatorStatsCard } from "@/components/CreatorStatsCard";
+import { CreatorBookingsCard } from "@/components/CreatorBookingsCard";
+import { CreatorProfileEditor } from "@/components/CreatorProfileEditor";
 import { WeeklyAvailabilityEditor } from "@/components/WeeklyAvailabilityEditor";
 import { GoogleCalendarSync } from "@/components/GoogleCalendarSync";
 import { AvailabilitySummary } from "@/components/AvailabilitySummary";
 import { ConversationsList } from "@/components/ConversationsList";
 import { NotificationSettings } from "@/components/NotificationSettings";
 import { AvatarManagementTab } from "@/components/AvatarManagementTab";
-import { MentorProductsTab } from "@/components/MentorProductsTab";
-import { MentorSalesTab } from "@/components/MentorSalesTab";
-import { MentorQuestionsTab } from "@/components/MentorQuestionsTab";
+import { CreatorProductsTab } from "@/components/CreatorProductsTab";
+import { CreatorSalesTab } from "@/components/CreatorSalesTab";
+import { CreatorQuestionsTab } from "@/components/CreatorQuestionsTab";
 import { User } from "@supabase/supabase-js";
 import { LogOut, Settings, ShoppingBag, Receipt, MessageCircle, LayoutDashboard, User as UserIcon, Bot, CalendarClock, HelpCircle, CalendarDays, MessageSquare } from "lucide-react";
 
-interface MentorProfile {
+interface CreatorProfile {
   id: string;
   user_id: string;
   name: string;
@@ -58,9 +58,9 @@ interface TimeSlot {
   is_available: boolean;
 }
 
-const MentorCabinet = () => {
+const CreatorCabinet = () => {
   const [user, setUser] = useState<User | null>(null);
-  const [mentorProfile, setMentorProfile] = useState<MentorProfile | null>(null);
+  const [mentorProfile, setCreatorProfile] = useState<CreatorProfile | null>(null);
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [timeSlots, setTimeSlots] = useState<TimeSlot[]>([]);
   const [loading, setLoading] = useState(true);
@@ -80,10 +80,10 @@ const MentorCabinet = () => {
     }
     
     setUser(session.user);
-    loadMentorData(session.user.id);
+    loadCreatorData(session.user.id);
   };
 
-  const loadMentorData = async (userId: string) => {
+  const loadCreatorData = async (userId: string) => {
     setLoading(true);
 
     // Load mentor profile
@@ -93,7 +93,7 @@ const MentorCabinet = () => {
       .eq("user_id", userId)
       .maybeSingle();
 
-    setMentorProfile(profileData);
+    setCreatorProfile(profileData);
 
     if (profileData) {
       // Load bookings for this mentor
@@ -168,7 +168,7 @@ const MentorCabinet = () => {
           title: "Success",
           description: "Profile updated successfully",
         });
-        loadMentorData(user.id);
+        loadCreatorData(user.id);
       }
     } else {
       // Create new profile
@@ -185,9 +185,9 @@ const MentorCabinet = () => {
       } else {
         toast({
           title: "Success",
-          description: "Mentor profile created successfully",
+          description: "Creator profile created successfully",
         });
-        loadMentorData(user.id);
+        loadCreatorData(user.id);
       }
     }
   };
@@ -224,7 +224,7 @@ const MentorCabinet = () => {
         {/* Mobile-friendly header */}
         <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4 mb-6 sm:mb-8">
           <div className="min-w-0">
-            <h1 className="text-2xl sm:text-4xl font-bold mb-1 sm:mb-2 truncate">Mentor Cabinet</h1>
+            <h1 className="text-2xl sm:text-4xl font-bold mb-1 sm:mb-2 truncate">Creator Cabinet</h1>
             <p className="text-sm sm:text-base text-muted-foreground truncate">
               Welcome back, {mentorProfile?.name || user?.email}
             </p>
@@ -237,7 +237,7 @@ const MentorCabinet = () => {
 
         {mentorProfile && (
           <div className="mb-4 sm:mb-6">
-            <MentorStatsCard
+            <CreatorStatsCard
               totalEarnings={totalEarnings}
               totalStudents={uniqueStudents}
               averageRating={mentorProfile.rating || 0}
@@ -317,12 +317,12 @@ const MentorCabinet = () => {
 
           {mentorProfile && (
             <TabsContent value="overview" className="space-y-6">
-              <MentorBookingsCard bookings={upcomingBookings} type="upcoming" />
+              <CreatorBookingsCard bookings={upcomingBookings} type="upcoming" />
             </TabsContent>
           )}
 
           <TabsContent value="profile">
-            <MentorProfileEditor 
+            <CreatorProfileEditor 
               profile={mentorProfile}
               onSubmit={handleProfileSubmit}
               userId={user?.id || ""}
@@ -337,7 +337,7 @@ const MentorCabinet = () => {
 
           {mentorProfile && (
             <TabsContent value="shop">
-              <MentorProductsTab
+              <CreatorProductsTab
                 mentorId={mentorProfile.id}
                 mentorUsername={mentorProfile.username}
                 mentorName={mentorProfile.name}
@@ -347,7 +347,7 @@ const MentorCabinet = () => {
 
           {mentorProfile && (
             <TabsContent value="sales">
-              <MentorSalesTab mentorId={mentorProfile.id} />
+              <CreatorSalesTab mentorId={mentorProfile.id} />
             </TabsContent>
           )}
 
@@ -366,12 +366,12 @@ const MentorCabinet = () => {
               </TabsContent>
 
               <TabsContent value="questions">
-                <MentorQuestionsTab mentorId={mentorProfile.id} />
+                <CreatorQuestionsTab mentorId={mentorProfile.id} />
               </TabsContent>
 
               <TabsContent value="sessions" className="space-y-6">
-                <MentorBookingsCard bookings={upcomingBookings} type="upcoming" />
-                <MentorBookingsCard bookings={pastBookings} type="past" />
+                <CreatorBookingsCard bookings={upcomingBookings} type="upcoming" />
+                <CreatorBookingsCard bookings={pastBookings} type="past" />
               </TabsContent>
 
               <TabsContent value="messages">
@@ -389,4 +389,4 @@ const MentorCabinet = () => {
   );
 };
 
-export default MentorCabinet;
+export default CreatorCabinet;

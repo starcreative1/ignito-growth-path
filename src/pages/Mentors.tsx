@@ -3,16 +3,16 @@ import { Search, SlidersHorizontal } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import MentorCard from "@/components/MentorCard";
+import CreatorCard from "@/components/CreatorCard";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import { supabase } from "@/integrations/supabase/client";
-import type { Mentor } from "@/data/mentors";
+import type { Creator } from "@/data/mentors";
 
 type CategoryFilter = "All" | "Business" | "Tech" | "Creators";
 
-const Mentors = () => {
-  const [mentors, setMentors] = useState<Mentor[]>([]);
+const Creators = () => {
+  const [mentors, setCreators] = useState<Creator[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCategory, setSelectedCategory] = useState<CategoryFilter>("All");
@@ -21,10 +21,10 @@ const Mentors = () => {
   const categories: CategoryFilter[] = ["All", "Business", "Tech", "Creators"];
 
   useEffect(() => {
-    fetchMentors();
+    fetchCreators();
   }, []);
 
-  const fetchMentors = async () => {
+  const fetchCreators = async () => {
     setLoading(true);
     const { data, error } = await supabase
       .from("mentor_profiles")
@@ -34,7 +34,7 @@ const Mentors = () => {
     if (error) {
       console.error("Error fetching mentors:", error);
     } else {
-      const formattedMentors = (data || []).map(mentor => ({
+      const formattedCreators = (data || []).map(mentor => ({
         id: mentor.id,
         name: mentor.name,
         title: mentor.title,
@@ -52,13 +52,13 @@ const Mentors = () => {
         education: mentor.education,
         certifications: mentor.certifications || [],
       }));
-      setMentors(formattedMentors);
+      setCreators(formattedCreators);
     }
     setLoading(false);
   };
 
   // Filter and sort mentors
-  const filteredMentors = useMemo(() => {
+  const filteredCreators = useMemo(() => {
     let filtered = mentors;
 
     // Filter by category
@@ -100,7 +100,7 @@ const Mentors = () => {
           <div className="max-w-4xl mx-auto text-center space-y-4 sm:space-y-6">
             <h1 className="text-3xl sm:text-5xl lg:text-6xl font-display font-bold">
               Find Your Perfect{" "}
-              <span className="gradient-text">Mentor</span>
+              <span className="gradient-text">Creator</span>
             </h1>
             <p className="text-base sm:text-xl text-muted-foreground px-2">
               Connect with industry experts in Business, Tech, and Creator industries
@@ -175,7 +175,7 @@ const Mentors = () => {
             <p className="text-muted-foreground">
               {loading ? "Loading..." : (
                 <>
-                  Showing <span className="font-semibold text-foreground">{filteredMentors.length}</span> mentors
+                  Showing <span className="font-semibold text-foreground">{filteredCreators.length}</span> mentors
                   {selectedCategory !== "All" && (
                     <span> in <span className="font-semibold text-foreground">{selectedCategory}</span></span>
                   )}
@@ -184,11 +184,11 @@ const Mentors = () => {
             </p>
           </div>
 
-          {/* Mentor Grid */}
-          {filteredMentors.length > 0 ? (
+          {/* Creator Grid */}
+          {filteredCreators.length > 0 ? (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 animate-fade-in">
-              {filteredMentors.map((mentor) => (
-                <MentorCard key={mentor.id} mentor={mentor} />
+              {filteredCreators.map((mentor) => (
+                <CreatorCard key={mentor.id} mentor={mentor} />
               ))}
             </div>
           ) : (
@@ -215,4 +215,4 @@ const Mentors = () => {
   );
 };
 
-export default Mentors;
+export default Creators;

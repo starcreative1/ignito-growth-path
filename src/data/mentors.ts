@@ -1,4 +1,4 @@
-export interface Mentor {
+export interface Creator {
   id: string;
   name: string;
   title: string;
@@ -47,7 +47,7 @@ export interface TimeSlot {
   available: boolean;
 }
 
-export const mentors: Mentor[] = [
+export const mentors: Creator[] = [
   {
     id: "1",
     name: "Sarah Mitchell",

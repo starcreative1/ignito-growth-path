@@ -10,7 +10,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useToast } from "@/hooks/use-toast";
 import { ShoppingBag, Star, Loader2, ExternalLink } from "lucide-react";
 
-interface MentorProfile {
+interface CreatorProfile {
   id: string;
   name: string;
   title: string;
@@ -31,10 +31,10 @@ interface Product {
   sales_count: number;
 }
 
-const MentorShop = () => {
+const CreatorShop = () => {
   const { username } = useParams<{ username: string }>();
   const navigate = useNavigate();
-  const [mentor, setMentor] = useState<MentorProfile | null>(null);
+  const [mentor, setCreator] = useState<CreatorProfile | null>(null);
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
   const [purchaseLoading, setPurchaseLoading] = useState<string | null>(null);
@@ -62,7 +62,7 @@ const MentorShop = () => {
       return;
     }
 
-    setMentor(mentorData);
+    setCreator(mentorData);
 
     // Load active products
     const { data: productsData } = await supabase
@@ -133,7 +133,7 @@ const MentorShop = () => {
           <p className="text-muted-foreground mb-8">
             This mentor shop doesn't exist or is no longer available.
           </p>
-          <Button onClick={() => navigate("/mentors")}>Browse Mentors</Button>
+          <Button onClick={() => navigate("/mentors")}>Browse Creators</Button>
         </div>
         <Footer />
       </div>
@@ -144,7 +144,7 @@ const MentorShop = () => {
     <div className="min-h-screen bg-background">
       <Navbar />
       <main className="container pt-32 px-4 pb-16">
-        {/* Mentor Header */}
+        {/* Creator Header */}
         <div className="max-w-4xl mx-auto mb-12">
           <div className="flex flex-col md:flex-row items-center gap-6 text-center md:text-left">
             <Avatar className="h-24 w-24">
@@ -252,4 +252,4 @@ const MentorShop = () => {
   );
 };
 
-export default MentorShop;
+export default CreatorShop;

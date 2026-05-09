@@ -374,7 +374,7 @@ const Dashboard = () => {
             <Card>
               <CardHeader>
                 <CardTitle>Upcoming Sessions</CardTitle>
-                <CardDescription>Your scheduled mentorship sessions</CardDescription>
+                <CardDescription>Your scheduled creator business sessions</CardDescription>
               </CardHeader>
               <CardContent>
                 {upcomingSessions.length === 0 ? (

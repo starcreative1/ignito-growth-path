@@ -29,7 +29,7 @@ export const AvatarChatInterface = ({ avatarId, mentorId, onBookingClick }: Avat
   const [isLoading, setIsLoading] = useState(false);
   const [conversationId, setConversationId] = useState<string | null>(null);
   const [avatar, setAvatar] = useState<any>(null);
-  const [mentor, setMentor] = useState<any>(null);
+  const [mentor, setCreator] = useState<any>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -50,7 +50,7 @@ export const AvatarChatInterface = ({ avatarId, mentorId, onBookingClick }: Avat
 
     if (avatarData) {
       setAvatar(avatarData);
-      setMentor(avatarData.mentor_profiles);
+      setCreator(avatarData.mentor_profiles);
     }
   };
 

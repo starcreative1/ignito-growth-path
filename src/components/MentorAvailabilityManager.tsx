@@ -15,13 +15,13 @@ interface TimeSlot {
   is_available: boolean;
 }
 
-interface MentorAvailabilityManagerProps {
+interface CreatorAvailabilityManagerProps {
   mentorId: string;
   timeSlots: TimeSlot[];
   onUpdate: () => void;
 }
 
-export const MentorAvailabilityManager = ({ mentorId, timeSlots, onUpdate }: MentorAvailabilityManagerProps) => {
+export const CreatorAvailabilityManager = ({ mentorId, timeSlots, onUpdate }: CreatorAvailabilityManagerProps) => {
   const [date, setDate] = useState("");
   const [time, setTime] = useState("");
   const { toast } = useToast();

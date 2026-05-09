@@ -35,13 +35,13 @@ interface Product {
   review_count: number;
 }
 
-interface MentorProductsTabProps {
+interface CreatorProductsTabProps {
   mentorId: string;
   mentorUsername: string | null;
   mentorName: string;
 }
 
-export const MentorProductsTab = ({ mentorId, mentorUsername, mentorName }: MentorProductsTabProps) => {
+export const CreatorProductsTab = ({ mentorId, mentorUsername, mentorName }: CreatorProductsTabProps) => {
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);

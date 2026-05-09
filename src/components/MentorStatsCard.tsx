@@ -1,19 +1,19 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { DollarSign, Users, Star, Calendar } from "lucide-react";
 
-interface MentorStatsCardProps {
+interface CreatorStatsCardProps {
   totalEarnings: number;
   totalStudents: number;
   averageRating: number;
   upcomingSessions: number;
 }
 
-export const MentorStatsCard = ({ 
+export const CreatorStatsCard = ({ 
   totalEarnings, 
   totalStudents, 
   averageRating, 
   upcomingSessions 
-}: MentorStatsCardProps) => {
+}: CreatorStatsCardProps) => {
   const stats = [
     {
       title: "Total Earnings",

@@ -111,7 +111,7 @@ const PurchaseSuccess = () => {
                     Go to Dashboard
                   </Button>
                   <Button variant="ghost" onClick={() => navigate("/mentors")}>
-                    Browse Mentors
+                    Browse Creators
                   </Button>
                 </div>
               </div>

@@ -50,7 +50,7 @@ const CTA = () => {
               className="text-lg px-8 py-6"
               onClick={() => navigate('/mentors')}
             >
-              Explore Mentors
+              Explore Creators
             </Button>
           </div>
 

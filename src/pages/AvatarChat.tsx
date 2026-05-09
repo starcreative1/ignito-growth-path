@@ -66,7 +66,7 @@ const AvatarChat = () => {
         <Navbar />
         <div className="container mx-auto px-4 py-32 text-center">
           <h1 className="text-2xl font-bold mb-4">Avatar not found</h1>
-          <Button onClick={() => navigate("/mentors")}>Back to Mentors</Button>
+          <Button onClick={() => navigate("/mentors")}>Back to Creators</Button>
         </div>
       </div>
     );

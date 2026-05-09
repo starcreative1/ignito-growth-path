@@ -4,7 +4,7 @@ import { Badge } from "@/components/ui/badge";
 import { Star, ArrowRight, Sparkles } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 
-interface Mentor {
+interface Creator {
   id: string;
   name: string;
   title: string;
@@ -22,7 +22,7 @@ interface Recommendation {
   matchScore: number;
   reasoning: string;
   keyBenefits: string[];
-  mentor: Mentor;
+  mentor: Creator;
 }
 
 interface RecommendationsCardProps {

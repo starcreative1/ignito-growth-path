@@ -26,9 +26,9 @@ interface UserProfile {
   full_name: string | null;
 }
 
-const MentorQuestions = () => {
+const CreatorQuestions = () => {
   const [loading, setLoading] = useState(true);
-  const [mentorId, setMentorId] = useState<string | null>(null);
+  const [mentorId, setCreatorId] = useState<string | null>(null);
   const [pendingQuestions, setPendingQuestions] = useState<Question[]>([]);
   const [answeredQuestions, setAnsweredQuestions] = useState<Question[]>([]);
   const [userProfiles, setUserProfiles] = useState<Record<string, UserProfile>>({});
@@ -56,7 +56,7 @@ const MentorQuestions = () => {
 
     if (!mentorProfile) {
       toast({
-        title: "Not a Mentor",
+        title: "Not a Creator",
         description: "You need to create a mentor profile first.",
         variant: "destructive",
       });
@@ -64,7 +64,7 @@ const MentorQuestions = () => {
       return;
     }
 
-    setMentorId(mentorProfile.id);
+    setCreatorId(mentorProfile.id);
     loadQuestions(mentorProfile.id);
   };
 
@@ -236,4 +236,4 @@ const MentorQuestions = () => {
   );
 };
 
-export default MentorQuestions;
+export default CreatorQuestions;

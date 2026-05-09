@@ -99,12 +99,12 @@ export const ConversationsList = ({ userId }: { userId: string }) => {
           .eq("id", conv.mentor_id)
           .maybeSingle();
 
-        const isMentorView = mentorProfile?.user_id === userId;
+        const isCreatorView = mentorProfile?.user_id === userId;
 
         // Get display name for other participant
         let displayName = conv.mentor_name;
         
-        if (isMentorView) {
+        if (isCreatorView) {
           const { data: profileData } = await supabase
             .from("profiles")
             .select("full_name")
@@ -117,7 +117,7 @@ export const ConversationsList = ({ userId }: { userId: string }) => {
           ...conv,
           unread_count: count || 0,
           display_name: displayName,
-          is_mentor_view: isMentorView,
+          is_mentor_view: isCreatorView,
         };
       })
     );
@@ -245,7 +245,7 @@ export const ConversationsList = ({ userId }: { userId: string }) => {
           )}
         </div>
         <p className="text-sm text-muted-foreground truncate">
-          {conversation.is_mentor_view ? "Student" : "Mentor"} •{" "}
+          {conversation.is_mentor_view ? "Student" : "Creator"} •{" "}
           {conversation.last_message_at
             ? new Date(conversation.last_message_at).toLocaleDateString()
             : "No messages yet"}
