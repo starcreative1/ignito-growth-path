@@ -17,7 +17,7 @@ interface Product {
   file_name: string;
   file_type: string;
   preview_image_url: string | null;
-  preview_image_fit?: "cover" | "contain" | null;
+  preview_image_fit?: string | null;
 }
 
 interface ProductFormProps {
