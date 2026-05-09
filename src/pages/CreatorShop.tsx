@@ -67,7 +67,7 @@ const CreatorShop = () => {
     // Load active products
     const { data: productsData } = await supabase
       .from("mentor_products")
-      .select("id, title, description, price, preview_image_url, file_type, sales_count")
+      .select("id, title, description, price, preview_image_url, preview_image_fit, file_type, sales_count")
       .eq("mentor_id", mentorData.id)
       .eq("is_active", true)
       .order("created_at", { ascending: false });
