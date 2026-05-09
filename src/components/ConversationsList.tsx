@@ -103,14 +103,12 @@ export const ConversationsList = ({ userId }: { userId: string }) => {
 
         // Get display name for other participant
         let displayName = conv.mentor_name;
-        
+
         if (isCreatorView) {
-          const { data: profileData } = await supabase
-            .from("profiles")
-            .select("full_name")
-            .eq("id", conv.user_id)
+          const { data: participant } = await supabase
+            .rpc("get_conversation_participant", { _user_id: conv.user_id })
             .maybeSingle();
-          displayName = profileData?.full_name || "User";
+          displayName = participant?.full_name || conv.mentor_name || "User";
         }
 
         return {
