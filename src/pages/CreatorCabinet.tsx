@@ -19,6 +19,7 @@ import { CreatorSalesTab } from "@/components/CreatorSalesTab";
 import { CreatorQuestionsTab } from "@/components/CreatorQuestionsTab";
 import { StorefrontBuilder } from "@/components/storefront/StorefrontBuilder";
 import { ProfileCompletenessCard, QuickActionsCard, NoProfileEmptyState } from "@/components/CreatorOverviewWidgets";
+import { ShopStorefrontHero } from "@/components/ShopStorefrontHero";
 import { User } from "@supabase/supabase-js";
 import { LogOut, Settings, ShoppingBag, Receipt, MessageCircle, LayoutDashboard, User as UserIcon, Bot, CalendarClock, HelpCircle, CalendarDays, MessageSquare, Store } from "lucide-react";
 
@@ -226,6 +227,7 @@ const CreatorCabinet = () => {
 
   const [productRevenue, setProductRevenue] = useState(0);
   const [activeProductsCount, setActiveProductsCount] = useState(0);
+  const [storefrontPublished, setStorefrontPublished] = useState(false);
 
   useEffect(() => {
     if (!mentorProfile) return;
@@ -245,10 +247,23 @@ const CreatorCabinet = () => {
       const sum = (purchases || []).reduce((s: number, p: any) => s + Number(p.amount || 0), 0);
       setProductRevenue(sum);
       setActiveProductsCount(activeCount || 0);
+      const { data: sf } = await (supabase as any)
+        .from("creator_storefronts")
+        .select("is_published")
+        .eq("mentor_id", mentorProfile.id)
+        .maybeSingle();
+      setStorefrontPublished(Boolean(sf?.is_published));
     })();
   }, [mentorProfile?.id]);
 
   const totalRevenue = totalEarnings + productRevenue;
+
+  const heroSubtitle = (() => {
+    if (!mentorProfile) return null;
+    if (activeProductsCount === 0) return "Add your first product to start earning";
+    if (!storefrontPublished) return "Your storefront is in Draft — publish it to start earning";
+    return `You're live at gcreators.me/${mentorProfile.username || "—"}`;
+  })();
 
   if (loading) {
     return (
@@ -271,6 +286,7 @@ const CreatorCabinet = () => {
             <h1 className="text-3xl sm:text-4xl font-bold mb-1 sm:mb-2 truncate">Creator Dashboard</h1>
             <p className="text-sm sm:text-base text-muted-foreground truncate">
               Welcome back, {mentorProfile?.name || user?.email}
+              {heroSubtitle && <> · <span className="text-foreground/80">{heroSubtitle}</span></>}
             </p>
           </div>
           <Button onClick={handleSignOut} variant="outline" size="sm" className="self-start sm:self-auto shrink-0">
@@ -371,6 +387,13 @@ const CreatorCabinet = () => {
 
           {mentorProfile && (
             <TabsContent value="overview" className="space-y-6">
+              <ShopStorefrontHero
+                mentorId={mentorProfile.id}
+                username={mentorProfile.username}
+                productRevenue={productRevenue}
+                activeProducts={activeProductsCount}
+                onNavigate={handleTabChange}
+              />
               {(() => {
                 const isComplete =
                   Boolean(mentorProfile.name && mentorProfile.bio && mentorProfile.image_url && mentorProfile.expertise?.length) &&
