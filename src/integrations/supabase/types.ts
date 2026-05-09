@@ -1336,6 +1336,13 @@ export type Database = {
           slot_time: string
         }[]
       }
+      get_conversation_participant: {
+        Args: { _user_id: string }
+        Returns: {
+          avatar_url: string
+          full_name: string
+        }[]
+      }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
