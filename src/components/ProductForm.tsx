@@ -298,11 +298,13 @@ export const ProductForm = ({ mentorId, product, onClose, onSuccess }: ProductFo
                 />
                 <label htmlFor="preview-image" className="cursor-pointer block">
                   {previewUrl ? (
-                    <img
-                      src={previewUrl}
-                      alt="Preview"
-                      className="w-full h-24 object-cover rounded-lg mb-2"
-                    />
+                    <div className="mx-auto mb-3 max-w-xs aspect-video rounded-lg overflow-hidden bg-muted border flex items-center justify-center">
+                      <img
+                        src={previewUrl}
+                        alt="Preview"
+                        className="w-full h-full object-contain"
+                      />
+                    </div>
                   ) : (
                     <Image className="h-8 w-8 mx-auto text-muted-foreground mb-2" />
                   )}

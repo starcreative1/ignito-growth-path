@@ -226,18 +226,19 @@ export const CreatorProductsTab = ({ mentorId, mentorUsername, mentorName }: Cre
           {products.map((product) => (
             <Card key={product.id}>
               <CardContent className="p-4">
-                <div className="flex flex-col md:flex-row gap-4">
+                <div className="flex flex-row gap-4">
                   {/* Preview Image */}
-                  <div className="w-full md:w-32 h-32 rounded-lg bg-muted overflow-hidden flex-shrink-0">
+                  <div className="w-24 h-24 sm:w-32 sm:h-32 rounded-lg bg-muted overflow-hidden flex-shrink-0 border">
                     {product.preview_image_url ? (
                       <img
                         src={product.preview_image_url}
                         alt={product.title}
+                        loading="lazy"
                         className="w-full h-full object-cover"
                       />
                     ) : (
                       <div className="w-full h-full flex items-center justify-center">
-                        <ShoppingBag className="h-8 w-8 text-muted-foreground" />
+                        <ShoppingBag className="h-6 w-6 sm:h-8 sm:w-8 text-muted-foreground" />
                       </div>
                     )}
                   </div>
