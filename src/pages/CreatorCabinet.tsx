@@ -20,6 +20,7 @@ import { CreatorQuestionsTab } from "@/components/CreatorQuestionsTab";
 import { StorefrontBuilder } from "@/components/storefront/StorefrontBuilder";
 import { ProfileCompletenessCard, QuickActionsCard, NoProfileEmptyState } from "@/components/CreatorOverviewWidgets";
 import { ShopStorefrontHero } from "@/components/ShopStorefrontHero";
+import { SecondaryToolsStrip } from "@/components/SecondaryToolsStrip";
 import { User } from "@supabase/supabase-js";
 import { LogOut, Settings, ShoppingBag, Receipt, MessageCircle, LayoutDashboard, User as UserIcon, Bot, CalendarClock, HelpCircle, CalendarDays, MessageSquare, Store } from "lucide-react";
 
@@ -392,6 +393,11 @@ const CreatorCabinet = () => {
                 username={mentorProfile.username}
                 productRevenue={productRevenue}
                 activeProducts={activeProductsCount}
+                onNavigate={handleTabChange}
+              />
+              <SecondaryToolsStrip
+                mentorId={mentorProfile.id}
+                userId={user?.id || ""}
                 onNavigate={handleTabChange}
               />
               {(() => {
