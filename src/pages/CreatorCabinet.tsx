@@ -17,9 +17,10 @@ import { AvatarManagementTab } from "@/components/AvatarManagementTab";
 import { CreatorProductsTab } from "@/components/CreatorProductsTab";
 import { CreatorSalesTab } from "@/components/CreatorSalesTab";
 import { CreatorQuestionsTab } from "@/components/CreatorQuestionsTab";
+import { StorefrontBuilder } from "@/components/storefront/StorefrontBuilder";
 import { ProfileCompletenessCard, QuickActionsCard, NoProfileEmptyState } from "@/components/CreatorOverviewWidgets";
 import { User } from "@supabase/supabase-js";
-import { LogOut, Settings, ShoppingBag, Receipt, MessageCircle, LayoutDashboard, User as UserIcon, Bot, CalendarClock, HelpCircle, CalendarDays, MessageSquare } from "lucide-react";
+import { LogOut, Settings, ShoppingBag, Receipt, MessageCircle, LayoutDashboard, User as UserIcon, Bot, CalendarClock, HelpCircle, CalendarDays, MessageSquare, Store } from "lucide-react";
 
 interface CreatorProfile {
   id: string;
@@ -298,6 +299,13 @@ const CreatorCabinet = () => {
                 </TabsTrigger>
               )}
               {mentorProfile && (
+                <TabsTrigger value="storefront" className="px-3 py-2 text-xs sm:text-sm">
+                  <Store className="h-4 w-4 mr-1.5 sm:mr-2" />
+                  <span className="hidden sm:inline">Storefront</span>
+                  <span className="sm:hidden">Store</span>
+                </TabsTrigger>
+              )}
+              {mentorProfile && (
                 <TabsTrigger value="sales" className="px-3 py-2 text-xs sm:text-sm">
                   <Receipt className="h-4 w-4 mr-1.5 sm:mr-2" />
                   Sales
@@ -383,6 +391,18 @@ const CreatorCabinet = () => {
                 mentorId={mentorProfile.id}
                 mentorUsername={mentorProfile.username}
                 mentorName={mentorProfile.name}
+              />
+            </TabsContent>
+          )}
+
+          {mentorProfile && (
+            <TabsContent value="storefront">
+              <StorefrontBuilder
+                mentorId={mentorProfile.id}
+                mentorUsername={mentorProfile.username}
+                mentorName={mentorProfile.name}
+                mentorImageUrl={mentorProfile.image_url}
+                userId={user?.id || ""}
               />
             </TabsContent>
           )}
