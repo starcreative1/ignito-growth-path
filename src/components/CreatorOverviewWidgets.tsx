@@ -178,7 +178,7 @@ export const NoProfileEmptyState = ({ onStart }: { onStart: () => void }) => (
       <div className="mx-auto w-16 h-16 rounded-2xl bg-primary/10 flex items-center justify-center mb-4">
         <Sparkles className="h-8 w-8 text-primary" />
       </div>
-      <h3 className="text-xl sm:text-2xl font-bold mb-2">Welcome to your Creator Cabinet</h3>
+      <h3 className="text-xl sm:text-2xl font-bold mb-2">Welcome to your Creator Dashboard</h3>
       <p className="text-sm sm:text-base text-muted-foreground max-w-md mx-auto mb-6">
         Create your creator profile to unlock your AI Avatar, shop, availability, and analytics — all in one place.
       </p>
