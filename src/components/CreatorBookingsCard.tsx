@@ -11,15 +11,15 @@ interface Booking {
   price: number;
 }
 
-interface MentorBookingsCardProps {
+interface CreatorBookingsCardProps {
   bookings: Booking[];
   type: "upcoming" | "past";
 }
 
-export const MentorBookingsCard = ({ bookings, type }: MentorBookingsCardProps) => {
+export const CreatorBookingsCard = ({ bookings, type }: CreatorBookingsCardProps) => {
   const title = type === "upcoming" ? "Upcoming Sessions" : "Past Sessions";
   const description = type === "upcoming" 
-    ? "Your scheduled mentorship sessions with students" 
+    ? "Your scheduled creator business sessions with students" 
     : "Your session history";
 
   return (

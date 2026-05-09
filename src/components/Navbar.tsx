@@ -39,11 +39,11 @@ const Navbar = () => {
 
           {/* Desktop Navigation */}
           <div className="hidden md:flex items-center space-x-8">
-            <Link to="/mentor-cabinet" className="text-foreground hover:text-accent transition-colors">
-              Become a Mentor
+            <Link to="/creator-cabinet" className="text-foreground hover:text-accent transition-colors">
+              Become a Creator
             </Link>
-            <Link to="/mentors" className="text-foreground hover:text-accent transition-colors">
-              Find Mentors
+            <Link to="/creators" className="text-foreground hover:text-accent transition-colors">
+              Find Creators
             </Link>
             <Link to="/profile" className="text-foreground hover:text-accent transition-colors">
               Profile
@@ -97,18 +97,18 @@ const Navbar = () => {
         {isOpen && (
           <div className="md:hidden py-4 space-y-4">
             <Link
-              to="/mentor-cabinet"
+              to="/creator-cabinet"
               className="block text-foreground hover:text-accent transition-colors"
               onClick={() => setIsOpen(false)}
             >
-              Become a Mentor
+              Become a Creator
             </Link>
             <Link
-              to="/mentors"
+              to="/creators"
               className="block text-foreground hover:text-accent transition-colors"
               onClick={() => setIsOpen(false)}
             >
-              Find Mentors
+              Find Creators
             </Link>
             <Link
               to="/profile"

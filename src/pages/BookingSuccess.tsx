@@ -59,7 +59,7 @@ const BookingSuccess = () => {
     const url = window.URL.createObjectURL(blob);
     const link = document.createElement("a");
     link.href = url;
-    link.download = "mentorship-session.ics";
+    link.download = "creator business-session.ics";
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
@@ -96,7 +96,7 @@ const BookingSuccess = () => {
                       Payment Successful!
                     </h1>
                     <p className="text-xl text-muted-foreground">
-                      Your mentorship session has been confirmed
+                      Your creator business session has been confirmed
                     </p>
                   </div>
 
@@ -121,7 +121,7 @@ const BookingSuccess = () => {
                         
                         <div className="space-y-2">
                           <div className="flex justify-between">
-                            <span className="text-muted-foreground">Mentor:</span>
+                            <span className="text-muted-foreground">Creator:</span>
                             <span className="font-semibold">{bookingDetails.mentor_name}</span>
                           </div>
                           
@@ -170,10 +170,10 @@ const BookingSuccess = () => {
                       variant="outline"
                       size="lg"
                       className="w-full"
-                      onClick={() => navigate("/mentors")}
+                      onClick={() => navigate("/creators")}
                     >
                       <ArrowLeft size={20} className="mr-2" />
-                      Back to Mentors
+                      Back to Creators
                     </Button>
                   </div>
 

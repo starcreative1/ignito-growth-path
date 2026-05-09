@@ -22,7 +22,7 @@ interface Question {
   }>;
 }
 
-interface MentorProfile {
+interface CreatorProfile {
   name: string;
   image_url: string | null;
 }
@@ -30,7 +30,7 @@ interface MentorProfile {
 const MyQuestions = () => {
   const [loading, setLoading] = useState(true);
   const [questions, setQuestions] = useState<Question[]>([]);
-  const [mentorProfiles, setMentorProfiles] = useState<Record<string, MentorProfile>>({});
+  const [mentorProfiles, setCreatorProfiles] = useState<Record<string, CreatorProfile>>({});
   const navigate = useNavigate();
   const { toast } = useToast();
 
@@ -75,11 +75,11 @@ const MyQuestions = () => {
         .select("id, name, image_url")
         .in("id", mentorIds);
 
-      const mentorMap: Record<string, MentorProfile> = {};
+      const mentorMap: Record<string, CreatorProfile> = {};
       mentors?.forEach(m => {
         mentorMap[m.id] = { name: m.name, image_url: m.image_url };
       });
-      setMentorProfiles(mentorMap);
+      setCreatorProfiles(mentorMap);
 
       const transformedQuestions = (data || []).map(q => ({
         ...q,

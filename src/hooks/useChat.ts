@@ -83,13 +83,13 @@ export function useChat(conversationId: string | undefined, user: User | null): 
       .eq("id", data.mentor_id)
       .maybeSingle();
 
-    const isMentor = mentorProfile?.user_id === user.id;
+    const isCreator = mentorProfile?.user_id === user.id;
 
     // Determine the other participant's name
     let participantName = data.mentor_name;
     
     // If current user is the mentor, fetch the user's name
-    if (isMentor) {
+    if (isCreator) {
       const { data: profileData } = await supabase
         .from("profiles")
         .select("full_name")
@@ -168,17 +168,17 @@ export function useChat(conversationId: string | undefined, user: User | null): 
 
         try {
           // Get mentor profile for THIS conversation (only needed to determine recipient for notifications)
-          const { data: conversationMentor } = await supabase
+          const { data: conversationCreator } = await supabase
             .from("mentor_profiles")
             .select("user_id")
             .eq("id", conversation.mentor_id)
             .maybeSingle();
 
           // User is the mentor ONLY if their user_id matches the mentor's user_id in this conversation
-          const isMentorInThisConversation = conversationMentor?.user_id === user.id;
+          const isCreatorInThisConversation = conversationCreator?.user_id === user.id;
 
           // Unified identity: always use the single canonical name from the user's profile.
-          // (Mentor vs user is a permission/context, not a separate identity.)
+          // (Creator vs user is a permission/context, not a separate identity.)
           const { data: profileData } = await supabase
             .from("profiles")
             .select("full_name")
@@ -227,12 +227,12 @@ export function useChat(conversationId: string | undefined, user: User | null): 
 
         // Send notification to recipient
         let recipientId: string;
-        if (isMentorInThisConversation) {
-          // Mentor is sending, recipient is the student (conversation.user_id)
+        if (isCreatorInThisConversation) {
+          // Creator is sending, recipient is the student (conversation.user_id)
           recipientId = conversation.user_id;
         } else {
           // Student is sending, recipient is the mentor
-          recipientId = conversationMentor?.user_id || conversation.mentor_id;
+          recipientId = conversationCreator?.user_id || conversation.mentor_id;
         }
 
         supabase.functions

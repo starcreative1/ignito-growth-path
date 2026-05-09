@@ -7,7 +7,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { ProfilePhotoUpload } from "@/components/ProfilePhotoUpload";
 import { useState } from "react";
 
-interface MentorProfile {
+interface CreatorProfile {
   id: string;
   name: string;
   title: string;
@@ -25,13 +25,13 @@ interface MentorProfile {
   username: string | null;
 }
 
-interface MentorProfileEditorProps {
-  profile: MentorProfile | null;
+interface CreatorProfileEditorProps {
+  profile: CreatorProfile | null;
   onSubmit: (e: React.FormEvent<HTMLFormElement>) => void;
   userId: string;
 }
 
-export const MentorProfileEditor = ({ profile, onSubmit, userId }: MentorProfileEditorProps) => {
+export const CreatorProfileEditor = ({ profile, onSubmit, userId }: CreatorProfileEditorProps) => {
   const [imageUrl, setImageUrl] = useState(profile?.image_url || "");
 
   const handleFormSubmit = (e: React.FormEvent<HTMLFormElement>) => {
@@ -44,7 +44,7 @@ export const MentorProfileEditor = ({ profile, onSubmit, userId }: MentorProfile
   return (
     <Card>
       <CardHeader className="p-4 sm:p-6">
-        <CardTitle className="text-lg sm:text-xl">Mentor Profile Settings</CardTitle>
+        <CardTitle className="text-lg sm:text-xl">Creator Profile Settings</CardTitle>
         <CardDescription className="text-sm">Update your mentor profile information</CardDescription>
       </CardHeader>
       <CardContent className="p-4 sm:p-6 pt-0 sm:pt-0">

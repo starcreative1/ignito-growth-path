@@ -24,11 +24,11 @@ interface UserProfile {
   full_name: string | null;
 }
 
-interface MentorQuestionsTabProps {
+interface CreatorQuestionsTabProps {
   mentorId: string;
 }
 
-export const MentorQuestionsTab = ({ mentorId }: MentorQuestionsTabProps) => {
+export const CreatorQuestionsTab = ({ mentorId }: CreatorQuestionsTabProps) => {
   const [loading, setLoading] = useState(true);
   const [pendingQuestions, setPendingQuestions] = useState<Question[]>([]);
   const [answeredQuestions, setAnsweredQuestions] = useState<Question[]>([]);

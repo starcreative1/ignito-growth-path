@@ -110,8 +110,8 @@ const PurchaseSuccess = () => {
                   <Button variant="outline" onClick={() => navigate("/dashboard")}>
                     Go to Dashboard
                   </Button>
-                  <Button variant="ghost" onClick={() => navigate("/mentors")}>
-                    Browse Mentors
+                  <Button variant="ghost" onClick={() => navigate("/creators")}>
+                    Browse Creators
                   </Button>
                 </div>
               </div>
@@ -156,7 +156,7 @@ const PurchaseSuccess = () => {
                     </Button>
                     <Button 
                       variant="ghost" 
-                      onClick={() => navigate("/mentors")}
+                      onClick={() => navigate("/creators")}
                     >
                       Continue Shopping
                     </Button>

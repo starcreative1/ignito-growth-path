@@ -34,11 +34,11 @@ interface Product {
   total_earnings: number;
 }
 
-interface MentorSalesTabProps {
+interface CreatorSalesTabProps {
   mentorId: string;
 }
 
-export const MentorSalesTab = ({ mentorId }: MentorSalesTabProps) => {
+export const CreatorSalesTab = ({ mentorId }: CreatorSalesTabProps) => {
   const [purchases, setPurchases] = useState<Purchase[]>([]);
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);

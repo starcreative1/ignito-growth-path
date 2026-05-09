@@ -3,13 +3,13 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Star, Clock, MessageSquare } from "lucide-react";
 import { useNavigate } from "react-router-dom";
-import { Mentor } from "@/data/mentors";
+import { Creator } from "@/data/creators";
 
-interface MentorCardProps {
-  mentor: Mentor;
+interface CreatorCardProps {
+  mentor: Creator;
 }
 
-const MentorCard = ({ mentor }: MentorCardProps) => {
+const CreatorCard = ({ mentor }: CreatorCardProps) => {
   const navigate = useNavigate();
   return (
     <Card 
@@ -103,4 +103,4 @@ const MentorCard = ({ mentor }: MentorCardProps) => {
   );
 };
 
-export default MentorCard;
+export default CreatorCard;

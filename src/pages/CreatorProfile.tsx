@@ -11,7 +11,7 @@ import ReviewCard from "@/components/ReviewCard";
 import ShopProductCard from "@/components/ShopProductCard";
 import TimeSlotSelector from "@/components/TimeSlotSelector";
 import { QuestionSubmissionForm } from "@/components/QuestionSubmissionForm";
-import type { Mentor, Review } from "@/data/mentors";
+import type { Creator, Review } from "@/data/creators";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 interface TimeSlot {
@@ -85,10 +85,10 @@ const generateSlotsFromWeekly = (mentorId: string, weeklySlots: WeeklySlot[]): T
   });
 };
 
-const MentorProfile = () => {
+const CreatorProfile = () => {
   const { id } = useParams();
   const navigate = useNavigate();
-  const [mentor, setMentor] = useState<Mentor | null>(null);
+  const [mentor, setCreator] = useState<Creator | null>(null);
   const [reviews, setReviews] = useState<Review[]>([]);
   const [products, setProducts] = useState<Product[]>([]);
   const [timeSlots, setTimeSlots] = useState<TimeSlot[]>([]);
@@ -107,11 +107,11 @@ const MentorProfile = () => {
 
   useEffect(() => {
     if (id) {
-      fetchMentorData();
+      fetchCreatorData();
     }
   }, [id]);
 
-  const fetchMentorData = async () => {
+  const fetchCreatorData = async () => {
     setLoading(true);
     
     // Fetch mentor profile
@@ -128,7 +128,7 @@ const MentorProfile = () => {
       return;
     }
 
-    setMentor({
+    setCreator({
       id: mentorData.id,
       name: mentorData.name,
       title: mentorData.title,
@@ -271,8 +271,8 @@ const MentorProfile = () => {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
-          <h1 className="text-2xl font-bold mb-4">Mentor not found</h1>
-          <Button onClick={() => navigate("/mentors")}>Back to Mentors</Button>
+          <h1 className="text-2xl font-bold mb-4">Creator not found</h1>
+          <Button onClick={() => navigate("/creators")}>Back to Creators</Button>
         </div>
       </div>
     );
@@ -372,7 +372,7 @@ const MentorProfile = () => {
         <div className="container mx-auto px-4 sm:px-6 lg:px-8">
           <Button
             variant="ghost"
-            onClick={() => navigate("/mentors")}
+            onClick={() => navigate("/creators")}
             className="mb-4 sm:mb-6 -ml-2"
             size="sm"
           >
@@ -683,4 +683,4 @@ const MentorProfile = () => {
   );
 };
 
-export default MentorProfile;
+export default CreatorProfile;

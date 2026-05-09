@@ -104,7 +104,7 @@ export const PurchasedProductCard = ({ purchase }: PurchasedProductCardProps) =>
     return null;
   }
 
-  const mentorName = purchase.product.mentor_profiles?.name || "Unknown Mentor";
+  const mentorName = purchase.product.mentor_profiles?.name || "Unknown Creator";
   const mentorImage = purchase.product.mentor_profiles?.image_url;
 
   return (

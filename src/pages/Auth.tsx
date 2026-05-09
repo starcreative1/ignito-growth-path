@@ -181,7 +181,7 @@ const Auth = () => {
             <Card>
               <CardHeader>
                 <CardTitle>Create Account</CardTitle>
-                <CardDescription>Sign up to start booking mentorship sessions</CardDescription>
+                <CardDescription>Sign up to start booking creator business sessions</CardDescription>
               </CardHeader>
               <CardContent>
                 <form onSubmit={handleSignUp} className="space-y-4">

@@ -9,7 +9,7 @@ const Footer = () => {
           <div className="space-y-4">
             <h3 className="text-2xl font-display font-bold">G.Creators</h3>
             <p className="text-sm opacity-80">
-              Empowering personal and professional growth through AI-powered mentorship.
+              Empowering personal and professional growth through AI-powered creator business.
             </p>
             <div className="flex gap-4">
               <a href="#" className="hover:text-accent transition-colors">
@@ -31,9 +31,9 @@ const Footer = () => {
           <div>
             <h4 className="font-semibold mb-4">Platform</h4>
             <ul className="space-y-2 text-sm opacity-80">
-              <li><a href="#" className="hover:text-accent transition-colors">Find Mentors</a></li>
+              <li><a href="#" className="hover:text-accent transition-colors">Find Creators</a></li>
               <li><a href="#" className="hover:text-accent transition-colors">Browse Courses</a></li>
-              <li><a href="#" className="hover:text-accent transition-colors">Become a Mentor</a></li>
+              <li><a href="#" className="hover:text-accent transition-colors">Become a Creator</a></li>
               <li><a href="#" className="hover:text-accent transition-colors">Pricing</a></li>
             </ul>
           </div>
