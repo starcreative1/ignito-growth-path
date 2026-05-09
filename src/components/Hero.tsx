@@ -1,8 +1,16 @@
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { ArrowRight, Sparkles, Bot, Calendar, Video } from "lucide-react";
+import { ArrowRight, Sparkles } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import heroImage from "@/assets/hero-bg.jpg";
+
+const creatorTypes = [
+  "Course Creators",
+  "Coaches",
+  "Educators",
+  "Content Creators",
+  "Industry Experts",
+  "Knowledge Entrepreneurs",
+];
 
 const Hero = () => {
   const navigate = useNavigate();
@@ -26,70 +34,67 @@ const Hero = () => {
       {/* Content */}
       <div className="container mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
         <div className="max-w-4xl mx-auto text-center space-y-8">
-          {/* Badge */}
+          {/* Eyebrow */}
           <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-accent/10 border border-accent/20 text-accent text-sm font-medium animate-fade-in">
             <Sparkles size={16} />
-            AI-Powered Mentor Matching
+            G.Creators
           </div>
 
           {/* Headline */}
           <h1 className="text-5xl sm:text-6xl lg:text-7xl font-display font-bold leading-tight animate-fade-in-up">
-            Unlock Your Full Potential with{" "}
-            <span className="gradient-text">Expert Mentors</span>
+            The AI Operating System for{" "}
+            <span className="gradient-text">Creators</span>
           </h1>
 
           {/* Subheadline */}
           <p className="text-xl sm:text-2xl text-muted-foreground max-w-3xl mx-auto animate-fade-in-up animation-delay-200">
-            Connect with industry leaders in Business, Tech, and Creator industries. Personalized learning paths powered by AI.
+            Build, scale, and monetize your creator business with one AI-powered platform. Replace your fragmented stack of tools with the OS built for creators, experts, and educators.
           </p>
 
           {/* CTAs */}
           <div className="flex flex-col sm:flex-row gap-4 justify-center animate-fade-in-up animation-delay-400">
-            <Button 
-              variant="hero" 
-              size="lg" 
+            <Button
+              variant="hero"
+              size="lg"
               className="text-lg px-8 py-6"
-              onClick={() => navigate('/mentors')}
+              onClick={() => navigate('/auth')}
             >
-              Join as Learner
+              Start Building Free
               <ArrowRight className="ml-2" size={20} />
             </Button>
-            <Button 
-              variant="outline" 
-              size="lg" 
+            <Button
+              variant="outline"
+              size="lg"
               className="text-lg px-8 py-6"
-              onClick={() => navigate('/mentor-cabinet')}
+              onClick={() => {
+                document.getElementById('how-it-works')?.scrollIntoView({ behavior: 'smooth' });
+              }}
             >
-              Become a Mentor
+              See How It Works
             </Button>
           </div>
 
-          {/* AI Twin Value Section */}
-          <div className="max-w-2xl mx-auto py-8 animate-fade-in-up animation-delay-600 space-y-5">
-            <p className="text-lg text-muted-foreground leading-relaxed">
-              Connect with <span className="font-semibold text-foreground">AI Twins</span> of real mentors who answer your questions, recommend the right digital products and services, and help you make smarter decisions — <span className="gradient-text font-semibold">24/7</span>.
+          {/* Built for strip */}
+          <div className="pt-8 animate-fade-in-up animation-delay-600 space-y-3">
+            <p className="text-xs uppercase tracking-widest text-muted-foreground font-semibold">
+              Built for
             </p>
-            <div className="flex flex-col sm:flex-row gap-4 justify-center text-sm font-medium">
-              <div className="flex items-center gap-2 px-4 py-2 rounded-full bg-accent/10 border border-accent/20 text-accent">
-                <Bot size={16} />
-                Ask anything — get instant answers
-              </div>
-              <div className="flex items-center gap-2 px-4 py-2 rounded-full bg-accent/10 border border-accent/20 text-accent">
-                <Sparkles size={16} />
-                Personalized recommendations
-              </div>
-              <div className="flex items-center gap-2 px-4 py-2 rounded-full bg-accent/10 border border-accent/20 text-accent">
-                <Video size={16} />
-                Learn from global experts in your language
-              </div>
+            <div className="flex flex-wrap gap-2 justify-center">
+              {creatorTypes.map((t) => (
+                <span
+                  key={t}
+                  className="px-3 py-1.5 rounded-full bg-accent/10 border border-accent/20 text-accent text-sm font-medium"
+                >
+                  {t}
+                </span>
+              ))}
             </div>
           </div>
 
-          {/* Trust Indicators */}
-          <p className="text-sm text-muted-foreground animate-fade-in-up animation-delay-800">
-            Trusted by 10,000+ professionals worldwide
+          {/* Positioning line */}
+          <p className="text-sm text-muted-foreground animate-fade-in-up animation-delay-800 italic">
+            The OS creators run their business on.
           </p>
-
         </div>
       </div>
     </section>
