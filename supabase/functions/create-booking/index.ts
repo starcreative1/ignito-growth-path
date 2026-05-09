@@ -111,7 +111,7 @@ serve(async (req) => {
           price_data: {
             currency: "usd",
             product_data: {
-              name: `Mentorship Session with ${mentorName}`,
+              name: `Session with ${mentorName}`,
               description: `${bookingDate} at ${bookingTime}`,
             },
             unit_amount: Math.round(price * 100), // Convert to cents
@@ -121,7 +121,7 @@ serve(async (req) => {
       ],
       mode: "payment",
       success_url: `${req.headers.get("origin")}/booking-success?session_id={CHECKOUT_SESSION_ID}&booking_id=${booking.id}`,
-      cancel_url: `${req.headers.get("origin")}/mentors/${mentorId}`,
+      cancel_url: `${req.headers.get("origin")}/creators/${mentorId}`,
       metadata: {
         booking_id: booking.id,
         mentor_id: mentorId,
