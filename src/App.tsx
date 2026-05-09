@@ -31,6 +31,9 @@ const App = () => (
       <BrowserRouter>
         <Routes>
           <Route path="/" element={<Index />} />
+          <Route path="/creators" element={<Creators />} />
+          <Route path="/creators/:id" element={<CreatorProfile />} />
+          {/* Legacy redirects */}
           <Route path="/mentors" element={<Creators />} />
           <Route path="/mentors/:id" element={<CreatorProfile />} />
           <Route path="/avatar-chat/:avatarId" element={<AvatarChat />} />
@@ -39,8 +42,11 @@ const App = () => (
           <Route path="/dashboard" element={<Dashboard />} />
           <Route path="/profile" element={<Profile />} />
           <Route path="/messages/:conversationId" element={<Messages />} />
+          <Route path="/admin/creators" element={<AdminCreators />} />
           <Route path="/admin/mentors" element={<AdminCreators />} />
+          <Route path="/creator-cabinet" element={<CreatorCabinet />} />
           <Route path="/mentor-cabinet" element={<CreatorCabinet />} />
+          <Route path="/creator-questions" element={<CreatorQuestions />} />
           <Route path="/mentor-questions" element={<CreatorQuestions />} />
           <Route path="/my-questions" element={<MyQuestions />} />
           <Route path="/shop/:username" element={<CreatorShop />} />
