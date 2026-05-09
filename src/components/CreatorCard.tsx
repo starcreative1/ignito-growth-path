@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Star, Clock, MessageSquare } from "lucide-react";
 import { useNavigate } from "react-router-dom";
-import { Creator } from "@/data/mentors";
+import { Creator } from "@/data/creators";
 
 interface CreatorCardProps {
   mentor: Creator;

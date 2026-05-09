@@ -1,6 +1,6 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Star } from "lucide-react";
-import { Review } from "@/data/mentors";
+import { Review } from "@/data/creators";
 
 interface ReviewCardProps {
   review: Review;

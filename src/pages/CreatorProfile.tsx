@@ -11,7 +11,7 @@ import ReviewCard from "@/components/ReviewCard";
 import ShopProductCard from "@/components/ShopProductCard";
 import TimeSlotSelector from "@/components/TimeSlotSelector";
 import { QuestionSubmissionForm } from "@/components/QuestionSubmissionForm";
-import type { Creator, Review } from "@/data/mentors";
+import type { Creator, Review } from "@/data/creators";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 interface TimeSlot {

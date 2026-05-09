@@ -7,7 +7,7 @@ import CreatorCard from "@/components/CreatorCard";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import { supabase } from "@/integrations/supabase/client";
-import type { Creator } from "@/data/mentors";
+import type { Creator } from "@/data/creators";
 
 type CategoryFilter = "All" | "Business" | "Tech" | "Creators";
 
