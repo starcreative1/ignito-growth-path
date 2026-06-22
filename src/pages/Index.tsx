@@ -4,6 +4,7 @@ import SEO from "@/components/SEO";
 import HowItWorks from "@/components/HowItWorks";
 import Storefront from "@/components/Storefront";
 import RealTimeMonetization from "@/components/RealTimeMonetization";
+import WaitlistSection from "@/components/WaitlistSection";
 import CTA from "@/components/CTA";
 import Footer from "@/components/Footer";
 
@@ -20,6 +21,7 @@ const Index = () => {
       <HowItWorks />
       <Storefront />
       <RealTimeMonetization />
+      <WaitlistSection />
       <CTA />
       <Footer />
     </div>
