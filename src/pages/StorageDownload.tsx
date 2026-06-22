@@ -9,6 +9,7 @@ import Footer from "@/components/Footer";
 import { Download, Loader2, FolderOpen, File, RefreshCw } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useNavigate } from "react-router-dom";
+import { useUserRole } from "@/hooks/useUserRole";
 
 interface StorageFile {
   bucket: string;
@@ -32,6 +33,7 @@ const StorageDownload = () => {
   const [zipping, setZipping] = useState(false);
   const { toast } = useToast();
   const navigate = useNavigate();
+  const { isAdmin, loading: roleLoading } = useUserRole();
 
   const fetchFiles = async () => {
     setLoading(true);
@@ -53,8 +55,13 @@ const StorageDownload = () => {
   };
 
   useEffect(() => {
+    if (roleLoading) return;
+    if (!isAdmin) {
+      navigate("/");
+      return;
+    }
     fetchFiles();
-  }, []);
+  }, [roleLoading, isAdmin]);
 
   const handleDownload = async (file: StorageFile) => {
     setDownloading(file.name);

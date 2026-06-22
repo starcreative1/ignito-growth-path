@@ -35,6 +35,21 @@ Deno.serve(async (req) => {
       });
     }
 
+    // Admin-only: this function returns signed URLs to every file in every
+    // bucket, so restrict it to platform admins.
+    const { data: adminRow } = await supabaseAdmin
+      .from("user_roles")
+      .select("role")
+      .eq("user_id", claimsData.user.id)
+      .eq("role", "admin")
+      .maybeSingle();
+    if (!adminRow) {
+      return new Response(JSON.stringify({ error: "Forbidden" }), {
+        status: 403,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
     const buckets = [
       "message-attachments",
       "avatar-photos",

@@ -84,8 +84,9 @@ export const NotificationSettings = () => {
       const subscription = await (registration as any).pushManager.subscribe({
         userVisibleOnly: true,
         applicationServerKey: urlBase64ToUint8Array(
-          // This is a public VAPID key - in production, use your own
-          'BEl62iUYgUivxIkv69yViEuiBIa-Ib9-SkvMeAtA3LFgDzkrxZJjSgSnfckjBJuBkr3qBUYIHBQFLXYp5Nksh8U'
+          // Project-specific VAPID public key. The matching private key is
+          // stored as the VAPID_PRIVATE_KEY edge function secret.
+          'BD4HXPxmM9CEUmkr__dkNQC5y7BGwjvk9mGvqrpUpbGIqo13WS0CFlHTeThM118NuCLD_JyJkAOI38ee2Wog2Qc'
         ),
       });
 
