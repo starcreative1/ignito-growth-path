@@ -20,6 +20,7 @@ import AvatarChat from "./pages/AvatarChat";
 import CreatorShop from "./pages/CreatorShop";
 import PurchaseSuccess from "./pages/PurchaseSuccess";
 import StorageDownload from "./pages/StorageDownload";
+import WaitlistPage from "./pages/Waitlist";
 
 const queryClient = new QueryClient();
 
@@ -52,6 +53,7 @@ const App = () => (
           <Route path="/shop/:username" element={<CreatorShop />} />
           <Route path="/purchase-success" element={<PurchaseSuccess />} />
           <Route path="/storage-download" element={<StorageDownload />} />
+          <Route path="/waitlist" element={<WaitlistPage />} />
           {/* Personal storefront: gcreators.me/yourname */}
           <Route path="/:username" element={<CreatorShop />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
