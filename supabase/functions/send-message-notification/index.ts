@@ -22,6 +22,25 @@ const handler = async (req: Request): Promise<Response> => {
   }
 
   try {
+    // Require an authenticated caller to prevent email spoofing.
+    const authHeader = req.headers.get("Authorization");
+    if (!authHeader?.startsWith("Bearer ")) {
+      return new Response(JSON.stringify({ error: "Unauthorized" }), {
+        status: 401, headers: { "Content-Type": "application/json", ...corsHeaders },
+      });
+    }
+    const supabaseAuth = createClient(
+      Deno.env.get("SUPABASE_URL") ?? "",
+      Deno.env.get("SUPABASE_ANON_KEY") ?? "",
+      { global: { headers: { Authorization: authHeader } } }
+    );
+    const { data: authData, error: authError } = await supabaseAuth.auth.getUser();
+    if (authError || !authData?.user) {
+      return new Response(JSON.stringify({ error: "Unauthorized" }), {
+        status: 401, headers: { "Content-Type": "application/json", ...corsHeaders },
+      });
+    }
+
     const supabaseClient = createClient(
       Deno.env.get("SUPABASE_URL") ?? "",
       Deno.env.get("SUPABASE_ANON_KEY") ?? "",
@@ -33,6 +52,44 @@ const handler = async (req: Request): Promise<Response> => {
     );
 
     const { messageId, recipientId, senderName, messageContent }: NotificationRequest = await req.json();
+
+    // Verify caller participates in a conversation with the recipient, to prevent
+    // arbitrary cross-user notifications.
+    const callerId = authData.user.id;
+    const { data: callerMentor } = await supabaseClient
+      .from("mentor_profiles")
+      .select("id")
+      .eq("user_id", callerId)
+      .maybeSingle();
+    const { data: recipientMentor } = await supabaseClient
+      .from("mentor_profiles")
+      .select("id")
+      .eq("user_id", recipientId)
+      .maybeSingle();
+    let shared = false;
+    if (recipientMentor) {
+      const { data } = await supabaseClient
+        .from("conversations")
+        .select("id")
+        .eq("user_id", callerId)
+        .eq("mentor_id", recipientMentor.id)
+        .limit(1);
+      shared = (data?.length ?? 0) > 0;
+    }
+    if (!shared && callerMentor) {
+      const { data } = await supabaseClient
+        .from("conversations")
+        .select("id")
+        .eq("user_id", recipientId)
+        .eq("mentor_id", callerMentor.id)
+        .limit(1);
+      shared = (data?.length ?? 0) > 0;
+    }
+    if (!shared) {
+      return new Response(JSON.stringify({ error: "Forbidden" }), {
+        status: 403, headers: { "Content-Type": "application/json", ...corsHeaders },
+      });
+    }
 
     console.log("Sending notification for message:", messageId);
 
