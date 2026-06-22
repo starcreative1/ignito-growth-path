@@ -11,6 +11,7 @@ import Auth from "./pages/Auth";
 import Dashboard from "./pages/Dashboard";
 import Messages from "./pages/Messages";
 import AdminCreators from "./pages/AdminCreators";
+import AdminWaitlist from "./pages/AdminWaitlist";
 import CreatorCabinet from "./pages/CreatorCabinet";
 import CreatorQuestions from "./pages/CreatorQuestions";
 import MyQuestions from "./pages/MyQuestions";
@@ -45,6 +46,7 @@ const App = () => (
           <Route path="/messages/:conversationId" element={<Messages />} />
           <Route path="/admin/creators" element={<AdminCreators />} />
           <Route path="/admin/mentors" element={<AdminCreators />} />
+          <Route path="/admin/waitlist" element={<AdminWaitlist />} />
           <Route path="/creator-cabinet" element={<CreatorCabinet />} />
           <Route path="/mentor-cabinet" element={<CreatorCabinet />} />
           <Route path="/creator-questions" element={<CreatorQuestions />} />

@@ -59,7 +59,7 @@ const Waitlist = () => {
         throw new Error((data as any)?.error || error?.message || "Signup failed");
       }
       setDone(true);
-      toast.success("You're on the list. Check your inbox.");
+      toast.success("You're on the list.");
     } catch (err: any) {
       toast.error(err?.message ?? "Could not join the waitlist. Try again.");
     } finally {
@@ -108,7 +108,7 @@ const Waitlist = () => {
                 </div>
                 <h3 className="text-2xl font-display font-bold mb-2">You're in.</h3>
                 <p className="text-muted-foreground">
-                  We just sent a confirmation to <span className="font-medium text-foreground">{email}</span>. Watch your inbox for your founding-creator invite.
+                  You're on the list. We'll be in touch soon with your founding-creator invite.
                 </p>
               </div>
             ) : (
