@@ -37,7 +37,7 @@ const DashboardNavbar = () => {
     <nav className="fixed top-0 w-full z-50 glass-effect border-b border-border">
       <div className="container mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center h-16">
-          <Link to="/creator-cabinet?tab=overview" className="flex-shrink-0">
+          <Link to="/" className="flex-shrink-0">
             <h1 className="text-2xl font-display font-bold gradient-text">G.Creators</h1>
           </Link>
 
