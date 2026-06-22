@@ -8,6 +8,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
 import Navbar from "@/components/Navbar";
+import SEO from "@/components/SEO";
 import { User, Session } from "@supabase/supabase-js";
 
 const Auth = () => {
@@ -131,6 +132,11 @@ const Auth = () => {
 
   return (
     <div className="min-h-screen bg-background">
+      <SEO
+        title="Sign In or Sign Up — G.Creators"
+        description="Sign in to your G.Creators account or create a new one to start building, scaling, and monetizing your creator business."
+        path="/auth"
+      />
       <Navbar />
       <div className="container max-w-md mx-auto pt-32 px-4">
         <Tabs defaultValue="signin" className="w-full">
