@@ -17,6 +17,26 @@ serve(async (req) => {
   }
 
   try {
+    // Require an authenticated caller.
+    const authHeader = req.headers.get("Authorization");
+    if (!authHeader?.startsWith("Bearer ")) {
+      return new Response(JSON.stringify({ error: "Unauthorized" }), {
+        status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" }
+      });
+    }
+    const supabaseAuth = createClient(
+      SUPABASE_URL,
+      Deno.env.get("SUPABASE_ANON_KEY") ?? "",
+      { global: { headers: { Authorization: authHeader } } }
+    );
+    const { data: userData, error: userError } = await supabaseAuth.auth.getUser();
+    if (userError || !userData?.user) {
+      return new Response(JSON.stringify({ error: "Unauthorized" }), {
+        status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" }
+      });
+    }
+    const callerId = userData.user.id;
+
     const { action, mentorId, redirectUrl, code } = await req.json();
 
     if (!GOOGLE_CLIENT_ID || !GOOGLE_CLIENT_SECRET) {
@@ -32,6 +52,24 @@ serve(async (req) => {
     }
 
     const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
+
+    // Verify the caller owns the mentor profile they're acting on.
+    if (!mentorId) {
+      return new Response(JSON.stringify({ error: "Missing mentorId" }), {
+        status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" }
+      });
+    }
+    const { data: ownedProfile } = await supabase
+      .from("mentor_profiles")
+      .select("id")
+      .eq("id", mentorId)
+      .eq("user_id", callerId)
+      .maybeSingle();
+    if (!ownedProfile) {
+      return new Response(JSON.stringify({ error: "Forbidden" }), {
+        status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" }
+      });
+    }
 
     if (action === "get_auth_url") {
       // Generate OAuth URL
