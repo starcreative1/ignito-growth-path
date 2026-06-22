@@ -59,49 +59,6 @@ serve(async (req) => {
       });
     }
 
-    // Confirmation email to subscriber (soft fail)
-    try {
-      await resend.emails.send({
-        from: FROM,
-        to: [email],
-        subject: "You're on the G.Creators waitlist ✨",
-        html: `
-          <div style="font-family:Inter,Arial,sans-serif;max-width:560px;margin:0 auto;padding:32px 24px;color:#0a0a0a;">
-            <h1 style="font-size:28px;margin:0 0 16px;background:linear-gradient(135deg,#1fb6e6,#a374e8);-webkit-background-clip:text;background-clip:text;color:transparent;">Welcome, Founding Creator.</h1>
-            <p style="font-size:16px;line-height:1.6;color:#333;">Hi ${full_name.replace(/</g, "&lt;")},</p>
-            <p style="font-size:16px;line-height:1.6;color:#333;">You're officially on the G.Creators waitlist — among the first creators invited to monetise and scale expertise with our AI-powered platform.</p>
-            <p style="font-size:16px;line-height:1.6;color:#333;">We'll be in touch soon with your early access invite, founding-member perks, and the first look at the platform.</p>
-            <p style="font-size:14px;line-height:1.6;color:#666;margin-top:32px;">Stay creative,<br/>The G.Creators team</p>
-          </div>`,
-      });
-    } catch (e) {
-      console.error("Confirmation email failed", e);
-    }
-
-    // Admin notification (soft fail)
-    if (ADMIN_EMAIL) {
-      try {
-        await resend.emails.send({
-          from: FROM,
-          to: [ADMIN_EMAIL],
-          subject: `New waitlist signup: ${full_name}`,
-          html: `
-            <div style="font-family:Inter,Arial,sans-serif;max-width:560px;padding:24px;color:#0a0a0a;">
-              <h2 style="margin:0 0 16px;">New waitlist signup</h2>
-              <table style="font-size:14px;line-height:1.6;border-collapse:collapse;">
-                <tr><td style="padding:4px 12px 4px 0;color:#666;">Name</td><td>${full_name.replace(/</g, "&lt;")}</td></tr>
-                <tr><td style="padding:4px 12px 4px 0;color:#666;">Email</td><td>${email}</td></tr>
-                <tr><td style="padding:4px 12px 4px 0;color:#666;">Content type</td><td>${content_type ?? "—"}</td></tr>
-                <tr><td style="padding:4px 12px 4px 0;color:#666;">Niche</td><td>${(niche ?? "—").replace(/</g, "&lt;")}</td></tr>
-                <tr><td style="padding:4px 12px 4px 0;color:#666;">Audience</td><td>${audience_size ?? "—"}</td></tr>
-                <tr><td style="padding:4px 12px 4px 0;color:#666;">When</td><td>${new Date().toISOString()}</td></tr>
-              </table>
-            </div>`,
-        });
-      } catch (e) {
-        console.error("Admin notification failed", e);
-      }
-    }
 
     return new Response(JSON.stringify({ ok: true, id: data.id }), {
       status: 200, headers: { "Content-Type": "application/json", ...corsHeaders },
