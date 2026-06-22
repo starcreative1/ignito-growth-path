@@ -46,6 +46,7 @@ const App = () => (
           <Route path="/messages/:conversationId" element={<Messages />} />
           <Route path="/admin/creators" element={<AdminCreators />} />
           <Route path="/admin/mentors" element={<AdminCreators />} />
+          <Route path="/admin/waitlist" element={<AdminWaitlist />} />
           <Route path="/creator-cabinet" element={<CreatorCabinet />} />
           <Route path="/mentor-cabinet" element={<CreatorCabinet />} />
           <Route path="/creator-questions" element={<CreatorQuestions />} />
