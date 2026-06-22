@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { Loader2, Trash2, Download, ShieldAlert } from "lucide-react";
+import { Loader2, Trash2, Download, ShieldAlert, ShieldCheck } from "lucide-react";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import { Button } from "@/components/ui/button";
@@ -29,7 +29,7 @@ interface WaitlistEntry {
 
 const AdminWaitlist = () => {
   const navigate = useNavigate();
-  const { isAdmin, loading: roleLoading } = useUserRole();
+  const { isAdmin, loading: roleLoading, roles, userId } = useUserRole();
   const [entries, setEntries] = useState<WaitlistEntry[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -121,11 +121,20 @@ const AdminWaitlist = () => {
         <div className="container mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-end justify-between gap-4 mb-8 flex-wrap">
             <div>
-              <h1 className="text-3xl sm:text-4xl font-display font-bold tracking-tight">
-                Waitlist <span className="gradient-text">submissions</span>
-              </h1>
-              <p className="text-muted-foreground mt-2">
+              <div className="flex items-center gap-3 mb-2">
+                <h1 className="text-3xl sm:text-4xl font-display font-bold tracking-tight">
+                  Waitlist <span className="gradient-text">submissions</span>
+                </h1>
+                <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
+                  <ShieldCheck className="w-3.5 h-3.5" />
+                  Admin
+                </span>
+              </div>
+              <p className="text-muted-foreground">
                 {entries.length} total {entries.length === 1 ? "signup" : "signups"}
+              </p>
+              <p className="text-xs text-muted-foreground/60 mt-1 font-mono">
+                User ID: {userId}
               </p>
             </div>
             <Button variant="outline" onClick={exportCsv} disabled={!entries.length}>
