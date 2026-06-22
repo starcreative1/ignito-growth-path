@@ -29,7 +29,7 @@ interface WaitlistEntry {
 
 const AdminWaitlist = () => {
   const navigate = useNavigate();
-  const { isAdmin, loading: roleLoading } = useUserRole();
+  const { isAdmin, loading: roleLoading, roles, userId } = useUserRole();
   const [entries, setEntries] = useState<WaitlistEntry[]>([]);
   const [loading, setLoading] = useState(true);
 
