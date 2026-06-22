@@ -57,11 +57,9 @@ const Hero = () => {
               variant="hero"
               size="lg"
               className="text-lg px-8 py-6"
-              onClick={() => {
-                document.getElementById('waitlist')?.scrollIntoView({ behavior: 'smooth' });
-              }}
+              onClick={() => navigate('/auth')}
             >
-              Join the waitlist as Creator
+              Start Building Free
               <ArrowRight className="ml-2" size={20} />
             </Button>
             <Button
