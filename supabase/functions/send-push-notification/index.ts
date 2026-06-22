@@ -1,5 +1,6 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.39.3";
+import webpush from "npm:web-push@3.6.7";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -12,6 +13,16 @@ interface PushSubscription {
     p256dh: string;
     auth: string;
   };
+}
+
+const VAPID_PUBLIC_KEY = "BD4HXPxmM9CEUmkr__dkNQC5y7BGwjvk9mGvqrpUpbGIqo13WS0CFlHTeThM118NuCLD_JyJkAOI38ee2Wog2Qc";
+const VAPID_PRIVATE_KEY = Deno.env.get("VAPID_PRIVATE_KEY") ?? "";
+if (VAPID_PRIVATE_KEY) {
+  webpush.setVapidDetails(
+    "mailto:support@gcreators.me",
+    VAPID_PUBLIC_KEY,
+    VAPID_PRIVATE_KEY,
+  );
 }
 
 const handler = async (req: Request): Promise<Response> => {
@@ -213,22 +224,12 @@ const handler = async (req: Request): Promise<Response> => {
       });
 
       try {
-        // Use Web Push API to send notification
-        // Note: In production, you'd use a proper web-push library
-        const response = await fetch(subscription.endpoint, {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            "TTL": "86400",
-          },
-          body: payload,
-        });
-
-        if (!response.ok) {
-          console.error("Failed to send push notification:", await response.text());
+        if (!VAPID_PRIVATE_KEY) {
+          console.error("VAPID_PRIVATE_KEY not configured");
+          return false;
         }
-
-        return response.ok;
+        await webpush.sendNotification(subscription as any, payload, { TTL: 86400 });
+        return true;
       } catch (error) {
         console.error("Error sending push notification:", error);
         return false;
