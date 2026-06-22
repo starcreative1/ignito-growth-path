@@ -20,6 +20,26 @@ const handler = async (req: Request): Promise<Response> => {
   }
 
   try {
+    // Require an authenticated caller.
+    const authHeader = req.headers.get("Authorization");
+    if (!authHeader?.startsWith("Bearer ")) {
+      return new Response(JSON.stringify({ error: "Unauthorized" }), {
+        status: 401, headers: { "Content-Type": "application/json", ...corsHeaders },
+      });
+    }
+    const supabaseAuth = createClient(
+      Deno.env.get("SUPABASE_URL") ?? "",
+      Deno.env.get("SUPABASE_ANON_KEY") ?? "",
+      { global: { headers: { Authorization: authHeader } } }
+    );
+    const { data: authData, error: authError } = await supabaseAuth.auth.getUser();
+    if (authError || !authData?.user) {
+      return new Response(JSON.stringify({ error: "Unauthorized" }), {
+        status: 401, headers: { "Content-Type": "application/json", ...corsHeaders },
+      });
+    }
+    const callerId = authData.user.id;
+
     const supabaseClient = createClient(
       Deno.env.get("SUPABASE_URL") ?? "",
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "",
@@ -34,16 +54,29 @@ const handler = async (req: Request): Promise<Response> => {
 
     console.log("Sending video answer notification for question:", questionId);
 
-    // Get the question to find the user
+    // Get the question to find the user and verify the caller is the mentor.
     const { data: question, error: questionError } = await supabaseClient
       .from("mentor_questions")
-      .select("user_id, question_text")
+      .select("user_id, question_text, mentor_id")
       .eq("id", questionId)
       .single();
 
     if (questionError || !question) {
       console.error("Error fetching question:", questionError);
       throw new Error("Failed to fetch question");
+    }
+
+    // Verify caller owns the mentor profile this question is addressed to.
+    const { data: callerMentor } = await supabaseClient
+      .from("mentor_profiles")
+      .select("id")
+      .eq("id", question.mentor_id)
+      .eq("user_id", callerId)
+      .maybeSingle();
+    if (!callerMentor) {
+      return new Response(JSON.stringify({ error: "Forbidden" }), {
+        status: 403, headers: { "Content-Type": "application/json", ...corsHeaders },
+      });
     }
 
     // Get user's profile
