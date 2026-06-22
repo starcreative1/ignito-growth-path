@@ -7,7 +7,6 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
-import SEO from "@/components/SEO";
 import ReviewCard from "@/components/ReviewCard";
 import ShopProductCard from "@/components/ShopProductCard";
 import TimeSlotSelector from "@/components/TimeSlotSelector";
@@ -366,22 +365,6 @@ const CreatorProfile = () => {
 
   return (
     <div className="min-h-screen bg-background">
-      <SEO
-        title={`${mentor.name} — ${mentor.title} | G.Creators`}
-        description={(mentor.bio || `Book sessions and explore products from ${mentor.name}, ${mentor.title} on G.Creators.`).slice(0, 158)}
-        path={`/creators/${mentor.id}`}
-        image={mentor.image}
-        type="profile"
-        jsonLd={{
-          "@context": "https://schema.org",
-          "@type": "Person",
-          name: mentor.name,
-          jobTitle: mentor.title,
-          image: mentor.image,
-          description: mentor.bio,
-          url: `https://gcreators.me/creators/${mentor.id}`,
-        }}
-      />
       <Navbar />
 
       {/* Hero Section */}

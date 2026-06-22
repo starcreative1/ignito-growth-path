@@ -6,7 +6,6 @@ import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import CreatorCard from "@/components/CreatorCard";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
-import SEO from "@/components/SEO";
 import { supabase } from "@/integrations/supabase/client";
 import type { Creator } from "@/data/creators";
 
@@ -93,11 +92,6 @@ const Creators = () => {
 
   return (
     <div className="min-h-screen bg-background">
-      <SEO
-        title="Find Creators & Experts — G.Creators"
-        description="Browse vetted creators, coaches, and industry experts across business, tech, and content. Book sessions, buy digital products, and learn directly from pros."
-        path="/creators"
-      />
       <Navbar />
       
       {/* Hero Section */}

@@ -14,31 +14,12 @@ serve(async (req) => {
   }
 
   try {
-    // Require an authenticated caller.
-    const authHeader = req.headers.get("Authorization");
-    if (!authHeader?.startsWith("Bearer ")) {
-      return new Response(JSON.stringify({ error: "Unauthorized" }), {
-        status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
-    }
-    const supabaseAuth = createClient(
-      Deno.env.get("SUPABASE_URL") ?? "",
-      Deno.env.get("SUPABASE_ANON_KEY") ?? "",
-      { global: { headers: { Authorization: authHeader } } }
-    );
-    const { data: userData, error: userError } = await supabaseAuth.auth.getUser();
-    if (userError || !userData?.user) {
-      return new Response(JSON.stringify({ error: "Unauthorized" }), {
-        status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
-    }
+    const { sessionId, bookingId } = await req.json();
 
-    const { sessionId } = await req.json();
+    console.log("[CONFIRM-BOOKING] Confirming booking:", { sessionId, bookingId });
 
-    console.log("[CONFIRM-BOOKING] Confirming session:", sessionId);
-
-    if (!sessionId) {
-      throw new Error("Missing session ID");
+    if (!sessionId || !bookingId) {
+      throw new Error("Missing session ID or booking ID");
     }
 
     const stripe = new Stripe(Deno.env.get("STRIPE_SECRET_KEY") || "", {
@@ -61,12 +42,6 @@ serve(async (req) => {
     }
 
     console.log("[CONFIRM-BOOKING] Payment verified");
-
-    // Use the bookingId stored in Stripe session metadata — never trust the client.
-    const bookingId = session.metadata?.booking_id;
-    if (!bookingId) {
-      throw new Error("Missing booking ID in session metadata");
-    }
 
     // Update booking status
     const { data: booking, error: updateError } = await supabaseClient

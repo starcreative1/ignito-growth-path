@@ -39,13 +39,8 @@ export const AvatarCreationWizard = ({ mentorId, existingAvatar, onSuccess }: Av
     for (let i = 0; i < Math.min(files.length, 5 - photos.length); i++) {
       const file = files[i];
       const fileExt = file.name.split('.').pop();
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) {
-        toast.error("You must be signed in to upload");
-        return;
-      }
       const fileName = `${mentorId}-${Date.now()}-${i}.${fileExt}`;
-      const filePath = `${user.id}/${fileName}`;
+      const filePath = `${fileName}`;
 
       const { error: uploadError, data } = await supabase.storage
         .from('avatar-photos')
@@ -73,13 +68,8 @@ export const AvatarCreationWizard = ({ mentorId, existingAvatar, onSuccess }: Av
     if (!file) return;
 
     const fileExt = file.name.split('.').pop();
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) {
-      toast.error("You must be signed in to upload");
-      return;
-    }
     const fileName = `${mentorId}-voice.${fileExt}`;
-    const filePath = `${user.id}/${fileName}`;
+    const filePath = `${fileName}`;
 
     const { error: uploadError } = await supabase.storage
       .from('avatar-voices')

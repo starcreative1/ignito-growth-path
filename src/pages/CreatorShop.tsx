@@ -3,7 +3,6 @@ import { useParams, useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
-import SEO from "@/components/SEO";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -144,35 +143,6 @@ const CreatorShop = () => {
 
   return (
     <div className="min-h-screen bg-background">
-      <SEO
-        title={`${mentor.name}'s Shop — Digital Products | G.Creators`}
-        description={(mentor.bio || `Shop digital products, courses, and resources from ${mentor.name} on G.Creators.`).slice(0, 158)}
-        path={`/${mentor.username || username || ""}`}
-        image={mentor.image_url || undefined}
-        jsonLd={[
-          {
-            "@context": "https://schema.org",
-            "@type": "Person",
-            name: mentor.name,
-            jobTitle: mentor.title,
-            image: mentor.image_url,
-            url: `https://gcreators.me/${mentor.username || ""}`,
-          },
-          ...products.map((p) => ({
-            "@context": "https://schema.org",
-            "@type": "Product",
-            name: p.title,
-            description: p.description,
-            image: p.preview_image_url || undefined,
-            offers: {
-              "@type": "Offer",
-              price: p.price,
-              priceCurrency: "USD",
-              availability: "https://schema.org/InStock",
-            },
-          })),
-        ]}
-      />
       <Navbar />
       <main className="container pt-32 px-4 pb-16">
         {/* Creator Header */}

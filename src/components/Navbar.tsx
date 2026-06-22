@@ -51,9 +51,6 @@ const Navbar = () => {
             <a href="/#how-it-works" className="text-foreground hover:text-accent transition-colors">
               How It Works
             </a>
-            <Link to="/waitlist" className="text-foreground hover:text-accent transition-colors">
-              Join Waitlist
-            </Link>
           </div>
 
           {/* CTA Buttons */}
@@ -127,13 +124,6 @@ const Navbar = () => {
             >
               How It Works
             </a>
-            <Link
-              to="/waitlist"
-              className="block text-foreground hover:text-accent transition-colors"
-              onClick={() => setIsOpen(false)}
-            >
-              Join Waitlist
-            </Link>
             <div className="pt-4 space-y-2">
               {user && (
                 <Button
