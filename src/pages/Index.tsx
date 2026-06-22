@@ -2,7 +2,6 @@ import Navbar from "@/components/Navbar";
 import Hero from "@/components/Hero";
 import SEO from "@/components/SEO";
 import HowItWorks from "@/components/HowItWorks";
-import Waitlist from "@/components/Waitlist";
 import Storefront from "@/components/Storefront";
 import RealTimeMonetization from "@/components/RealTimeMonetization";
 import CTA from "@/components/CTA";
@@ -19,7 +18,6 @@ const Index = () => {
       <Navbar />
       <Hero />
       <HowItWorks />
-      <Waitlist />
       <Storefront />
       <RealTimeMonetization />
       <CTA />
